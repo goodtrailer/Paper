@@ -1,17 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "Tile.h"
 
-// Sets default values
+
+
 ATile::ATile()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-
 }
 
-// Called when the game starts or when spawned
 void ATile::BeginPlay()
 {
 	Super::BeginPlay();
@@ -19,3 +16,12 @@ void ATile::BeginPlay()
 }
 
 
+void ATile::SetIsTargetable(bool a) { bIsTargetable = a; }
+
+bool ATile::GetIsTargetable() { return bIsTargetable; }
+
+void ATile::SetHP(uint8 a) { HP = a; }
+
+uint8 ATile::GetHP() { return HP; }
+
+uint8 ATile::GetHPMax() { return HPMax; }

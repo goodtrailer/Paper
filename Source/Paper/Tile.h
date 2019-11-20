@@ -2,6 +2,9 @@
 
 #pragma once
 
+
+#include "Cardinal.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "Tile.generated.h"
@@ -11,24 +14,30 @@ class PAPER_API ATile : public AActor
 {
 	GENERATED_BODY()
 	
-public:	
-	// Sets default values for this actor's properties
+public:
 	ATile();
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	virtual void BeginPlay();
 
-public:	
-	struct bIsCollidable
-	{
-		bool up;
-		bool left;
-		bool down;
-		bool right;
-	};
+public:
+	UPROPERTY(BlueprintReadWrite)
+	FCardinal bIsCollidable;
+
+	uint8 GetHPMax();
+	uint8 GetHP();
+	void SetHP(uint8 a);
+
+	bool GetIsTargetable();
+	void SetIsTargetable(bool a);
+
+protected:
+	UPROPERTY(BlueprintReadWrite)
 	bool bIsTargetable;
-	uint8_t HP;
-	const static uint8_t MaxHP;
-	
+	UPROPERTY(BlueprintReadWrite)
+	uint8 HP;
+	UPROPERTY(BlueprintReadWrite)
+	uint8 HPMax;
+
 };

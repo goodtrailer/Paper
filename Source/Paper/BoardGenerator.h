@@ -2,11 +2,15 @@
 
 #pragma once
 
+
 #include "Tile.h"
+#include "Ground.h"
+
 #include "TextureResource.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BoardGenerator.generated.h"
+
 
 UCLASS()
 class PAPER_API ABoardGenerator : public AActor
@@ -16,13 +20,16 @@ class PAPER_API ABoardGenerator : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ABoardGenerator();
+	~ABoardGenerator();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+private:
 	bool ColorsNearlyEqual(FColor a, FColor b);
 
-protected:
+private:
 	UWorld* GameWorld;
 
 	UPROPERTY(EditAnywhere)
@@ -30,12 +37,17 @@ protected:
 	FTexture2DMipMap* BoardLayoutMipmap;
 	FColor* BoardLayoutColorArray;
 	int BoardLayoutBounds[2][2];
+	int BoardWidth;
+	int BoardHeight;
+
+	AGround** GroundBoard;
+
 
 	UPROPERTY(EditAnywhere, Category="Misc")
 	float ColorsNearlyEqualThreshold;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Classes")
-	TSubclassOf<ATile> GroundClass;
+	TSubclassOf<ATile> GroundBP;
 	
 };
 
@@ -50,12 +62,15 @@ namespace ColorCode
 	const FColor Bounds = FColor(0, 0, 0);
 	const FColor Mine = FColor(255, 216, 0);
 	const FColor Ground = FColor(255, 255, 255);
-	const FColor OneWayTL = FColor(72, 1, 255);
-	const FColor OneWayT = FColor(255, 0, 218);
-	const FColor OneWayTR = FColor(178, 1, 255);
+	const FColor Hole = FColor(255, 106, 0);
+
+	const FColor OneWayUL = FColor(72, 1, 255);
+	const FColor OneWayU = FColor(255, 0, 218);
+	const FColor OneWayUR = FColor(178, 1, 255);
 	const FColor OneWayL = FColor(128, 0, 111);
 	const FColor OneWayR = FColor(255, 0, 110);
-	const FColor OneWayBL = FColor(32, 0, 125);
-	const FColor OneWayB = FColor(127, 0, 55);
-	const FColor OneWayBR = FColor(86, 0, 127);
+	const FColor OneWayDL = FColor(32, 0, 125);
+	const FColor OneWayD = FColor(127, 0, 55);
+	const FColor OneWayDR = FColor(86, 0, 127);
 }
+
