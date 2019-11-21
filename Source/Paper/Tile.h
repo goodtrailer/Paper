@@ -33,11 +33,11 @@ public:
 	void SetIsTargetable(bool a);
 
 protected:
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bIsTargetable;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 HP;
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 HPMax;
 
 };

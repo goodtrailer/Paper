@@ -13,6 +13,7 @@ ABoardGenerator::ABoardGenerator()
 ABoardGenerator::~ABoardGenerator()
 {
 	delete GroundBoard;
+	delete UnitBoard;
 }
 
 void ABoardGenerator::BeginPlay()
@@ -39,6 +40,7 @@ void ABoardGenerator::BeginPlay()
 		BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
 		BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
 		GroundBoard = new AGround*[BoardWidth * BoardHeight];
+		UnitBoard = new AUnit*[BoardWidth * BoardHeight];
 
 
 		for (int x = BoardLayoutBounds[0][0]; x <= BoardLayoutBounds[1][0]; x++)
@@ -50,14 +52,18 @@ void ABoardGenerator::BeginPlay()
 				int CurrentBoardCoordinates = x - BoardLayoutBounds[0][0] + (y - BoardLayoutBounds[0][1]) * BoardWidth;
 				int CurrentBoardLayoutCoordinates = x + y * BoardLayoutWidth;
 
+				//if not hole, then process, otherwise just skip and never generate
 				if (!ColorsNearlyEqual(CurrentColor, ColorCode::Hole))
 				{
+					// spawn ground, because the board should have ground underneath regardless
 					GroundBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AGround>(GroundBP, SpawnLocation, SpawnRotation);
 					
+					// if normal ground
 					if (ColorsNearlyEqual(CurrentColor, ColorCode::Ground))
 						for (unsigned char q = FCardinal::Up; q <= FCardinal::Left; q++)
 							GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(q, false);
-							
+					
+					// if directional ground
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayU))
 						GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Up, true);
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayR))
@@ -91,10 +97,18 @@ void ABoardGenerator::BeginPlay()
 					
 					else
 					{
+						// if ground not explicitly normal nor directional, then the ground underneath is normal
 						for (unsigned char i = 0; i < 4; i++)
 							GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(i, false);
 
-						//PUT OTHER SURFACE LEVEL TILES HERE
+						// surface layer now, so spawn 200 units up (size of a block)
+						SpawnLocation.Z += 200;
+
+						if (ColorsNearlyEqual(CurrentColor, ColorCode::Wall))
+						{
+							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(WallBP, SpawnLocation, SpawnRotation);
+							// TODO: room to set team later maybe
+						}
 					}
 					
 					GroundBoard[CurrentBoardCoordinates]->GenerateOneWayArrows();

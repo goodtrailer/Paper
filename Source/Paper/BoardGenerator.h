@@ -4,6 +4,7 @@
 
 
 #include "Tile.h"
+#include "Unit.h"
 #include "Ground.h"
 
 #include "TextureResource.h"
@@ -41,6 +42,7 @@ private:
 	int BoardHeight;
 
 	AGround** GroundBoard;
+	AUnit** UnitBoard;
 
 
 	UPROPERTY(EditAnywhere, Category="Misc")
@@ -48,6 +50,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Tile Classes")
 	TSubclassOf<ATile> GroundBP;
+	UPROPERTY(EditAnywhere, Category = "Tile Classes")
+	TSubclassOf<AUnit> WallBP;
 	
 };
 
