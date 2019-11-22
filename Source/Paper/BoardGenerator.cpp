@@ -105,10 +105,9 @@ void ABoardGenerator::BeginPlay()
 						SpawnLocation.Z += 200;
 
 						if (ColorsNearlyEqual(CurrentColor, ColorCode::Wall))
-						{
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(WallBP, SpawnLocation, SpawnRotation);
-							// TODO: room to set team later maybe
-						}
+						else if (ColorsNearlyEqual(CurrentColor, ColorCode::Mine))
+							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(MineBP, SpawnLocation, SpawnRotation);
 					}
 					
 					GroundBoard[CurrentBoardCoordinates]->GenerateOneWayArrows();

@@ -48,10 +48,12 @@ private:
 	UPROPERTY(EditAnywhere, Category="Misc")
 	float ColorsNearlyEqualThreshold;
 
-	UPROPERTY(EditAnywhere, Category = "Tile Classes")
+	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<ATile> GroundBP;
-	UPROPERTY(EditAnywhere, Category = "Tile Classes")
+	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<AUnit> WallBP;
+	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
+	TSubclassOf<AUnit> MineBP;
 	
 };
 
