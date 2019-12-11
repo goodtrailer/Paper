@@ -2,3 +2,5 @@
 
 
 #include "Unit.h"
+
+void AUnit::Passive() { }

@@ -3,9 +3,7 @@
 
 #include "Ground.h"
 
-
-void AGround::GenerateOneWayArrows_Implementation()
+void AGround::BuildMisc_Implementation()
 {
-	UE_LOG(LogTemp, Display, TEXT("GenerateOneWayArrows_Implementation() called."))
+	UE_LOG(LogTemp, Warning, TEXT("BuildMisc_Implementation() called."))
 }
-

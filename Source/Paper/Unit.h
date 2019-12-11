@@ -18,8 +18,7 @@ class PAPER_API AUnit : public ATile
 	GENERATED_BODY()
 
 protected:
-	virtual void Passive() {}
-
+	virtual void Passive();
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 Team;
 

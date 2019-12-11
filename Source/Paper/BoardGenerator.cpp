@@ -42,7 +42,7 @@ void ABoardGenerator::BeginPlay()
 		GroundBoard = new AGround*[BoardWidth * BoardHeight];
 		UnitBoard = new AUnit*[BoardWidth * BoardHeight];
 
-
+		int CurrentSpawnToRegister[2] = { 0,0 };
 		for (int x = BoardLayoutBounds[0][0]; x <= BoardLayoutBounds[1][0]; x++)
 			for (int y = BoardLayoutBounds[0][1]; y <= BoardLayoutBounds[1][1]; y++)
 			{
@@ -72,6 +72,7 @@ void ABoardGenerator::BeginPlay()
 						GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Down, true);
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayL))
 						GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Left, true);
+				
 
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayUL))
 					{
@@ -97,6 +98,7 @@ void ABoardGenerator::BeginPlay()
 					
 					else
 					{
+
 						// if ground not explicitly normal nor directional, then the ground underneath is normal
 						for (unsigned char i = 0; i < 4; i++)
 							GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(i, false);
@@ -108,13 +110,22 @@ void ABoardGenerator::BeginPlay()
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(WallBP, SpawnLocation, SpawnRotation);
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::Mine))
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(MineBP, SpawnLocation, SpawnRotation);
+						else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnGreen))
+						{
+							BoardSpawn[0][CurrentSpawnToRegister[0]] = CurrentBoardCoordinates;
+							CurrentSpawnToRegister[0]++;
+							
+							UE_LOG(LogTemp, Display, TEXT("Green Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
+						}
+						else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnRed))
+						{
+							BoardSpawn[1][CurrentSpawnToRegister[1]] = CurrentBoardCoordinates;
+							CurrentSpawnToRegister[1]++;
+							UE_LOG(LogTemp, Display, TEXT("Red Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
+						}
 					}
 					
-					GroundBoard[CurrentBoardCoordinates]->GenerateOneWayArrows();
-				}
-				else
-				{
-					UE_LOG(LogTemp, Display, TEXT("False on: (%d, %d), Color: (%d, %d, %d)"), x, y, CurrentColor.R, CurrentColor.G, CurrentColor.B)
+					GroundBoard[CurrentBoardCoordinates]->BuildMisc();
 				}
 			}
 	}

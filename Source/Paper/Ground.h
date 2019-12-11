@@ -14,8 +14,8 @@ class PAPER_API AGround : public ATile
 
 public:
 	UFUNCTION(BlueprintNativeEvent)
-	void GenerateOneWayArrows();
-	void GenerateOneWayArrows_Implementation();
+	void BuildMisc() override;
+	void BuildMisc_Implementation();
 	
 };
 

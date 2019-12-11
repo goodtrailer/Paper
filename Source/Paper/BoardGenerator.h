@@ -38,6 +38,8 @@ private:
 	FTexture2DMipMap* BoardLayoutMipmap;
 	FColor* BoardLayoutColorArray;
 	int BoardLayoutBounds[2][2];
+	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)], value is location in x + y * BoardWidth
+	int BoardSpawn[2][2];
 	int BoardWidth;
 	int BoardHeight;
 
@@ -79,4 +81,3 @@ namespace ColorCode
 	const FColor OneWayD = FColor(127, 0, 55);
 	const FColor OneWayDR = FColor(86, 0, 127);
 }
-

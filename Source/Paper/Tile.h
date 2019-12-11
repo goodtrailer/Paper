@@ -16,6 +16,7 @@ class PAPER_API ATile : public AActor
 	
 public:
 	ATile();
+	virtual void BuildMisc() = 0;
 
 protected:
 	// Called when the game starts or when spawned
