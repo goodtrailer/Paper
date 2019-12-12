@@ -6,6 +6,7 @@
 #include "Tile.h"
 #include "Unit.h"
 #include "Ground.h"
+#include "Spawn.h"
 
 #include "TextureResource.h"
 #include "CoreMinimal.h"
@@ -34,12 +35,12 @@ private:
 	UWorld* GameWorld;
 
 	UPROPERTY(EditAnywhere)
-	UTexture2D* BoardLayoutTexture;
+		UTexture2D* BoardLayoutTexture;
 	FTexture2DMipMap* BoardLayoutMipmap;
 	FColor* BoardLayoutColorArray;
 	int BoardLayoutBounds[2][2];
 	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)], value is location in x + y * BoardWidth
-	int BoardSpawn[2][2];
+	ASpawn* BoardSpawn[2][2];
 	int BoardWidth;
 	int BoardHeight;
 
@@ -51,11 +52,13 @@ private:
 	float ColorsNearlyEqualThreshold;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-	TSubclassOf<ATile> GroundBP;
+		TSubclassOf<ATile> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-	TSubclassOf<AUnit> WallBP;
+		TSubclassOf<AUnit> WallBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-	TSubclassOf<AUnit> MineBP;
+		TSubclassOf<AUnit> MineBP;
+	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
+		TSubclassOf<ASpawn> SpawnBP;
 	
 };
 
@@ -81,3 +84,4 @@ namespace ColorCode
 	const FColor OneWayD = FColor(127, 0, 55);
 	const FColor OneWayDR = FColor(86, 0, 127);
 }
+

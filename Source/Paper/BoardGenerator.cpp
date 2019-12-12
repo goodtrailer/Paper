@@ -107,22 +107,34 @@ void ABoardGenerator::BeginPlay()
 						SpawnLocation.Z += 200;
 
 						if (ColorsNearlyEqual(CurrentColor, ColorCode::Wall))
+						{
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(WallBP, SpawnLocation, SpawnRotation);
+							UnitBoard[CurrentBoardCoordinates]->BuildMisc();
+						}
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::Mine))
+						{
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(MineBP, SpawnLocation, SpawnRotation);
+							UnitBoard[CurrentBoardCoordinates]->BuildMisc();
+						}
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnGreen))
 						{
-							BoardSpawn[0][CurrentSpawnToRegister[0]] = CurrentBoardCoordinates;
+							BoardSpawn[0][CurrentSpawnToRegister[0]] = GameWorld->SpawnActor<ASpawn>(SpawnBP, SpawnLocation, SpawnRotation);
+							BoardSpawn[0][CurrentSpawnToRegister[0]]->Coordinates = CurrentBoardCoordinates;
+							BoardSpawn[0][CurrentSpawnToRegister[0]]->Team = AUnit::TeamGreen;
+							BoardSpawn[0][CurrentSpawnToRegister[0]]->BuildMisc();
 							CurrentSpawnToRegister[0]++;
 							
 							UE_LOG(LogTemp, Display, TEXT("Green Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
 						}
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnRed))
 						{
-							BoardSpawn[1][CurrentSpawnToRegister[1]] = CurrentBoardCoordinates;
+							BoardSpawn[1][CurrentSpawnToRegister[1]] = GameWorld->SpawnActor<ASpawn>(SpawnBP, SpawnLocation, SpawnRotation);
+							BoardSpawn[1][CurrentSpawnToRegister[1]]->Coordinates = CurrentBoardCoordinates;
+							BoardSpawn[1][CurrentSpawnToRegister[1]]->Team = AUnit::TeamRed;
+							BoardSpawn[1][CurrentSpawnToRegister[1]]->BuildMisc();
 							CurrentSpawnToRegister[1]++;
 							UE_LOG(LogTemp, Display, TEXT("Red Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
-						}
+						}						
 					}
 					
 					GroundBoard[CurrentBoardCoordinates]->BuildMisc();

@@ -10,16 +10,17 @@
 UCLASS()
 class PAPER_API AUnit : public ATile
 {
+	GENERATED_BODY()
+
+public:
+	void BuildMisc() override;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	uint8 Team;
 	enum ETeam : unsigned char
 	{
-		TeamNeutral = 0, TeamRed, TeamGreen
+		TeamGreen = 0, TeamRed, TeamNeutral
 	};
-
-	GENERATED_BODY()
 
 protected:
 	virtual void Passive();
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	uint8 Team;
-
 };

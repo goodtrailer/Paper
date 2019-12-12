@@ -15,6 +15,11 @@ void ATile::BeginPlay()
 	
 }
 
+void ATile::BuildMisc()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Called ATile::BuildMisc()."))
+}
+
 
 void ATile::SetIsTargetable(bool a) { bIsTargetable = a; }
 
