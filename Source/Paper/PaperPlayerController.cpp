@@ -1,11 +1,17 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #include "PaperPlayerController.h"
 
 APaperPlayerController::APaperPlayerController()
 {
-	bShowMouseCursor = true;
+	bAutoManageActiveCameraTarget = false;
 	bEnableClickEvents = true;
-	bEnableTouchEvents = true;
-	DefaultMouseCursor = EMouseCursor::Crosshairs;
+	bShowMouseCursor = true;
+	DefaultMouseCursor = EMouseCursor::Hand;
+}
+
+void APaperPlayerController::BeginPlay()
+{
+	SetViewTargetWithBlend(GetPawn(), 1.f);
 }

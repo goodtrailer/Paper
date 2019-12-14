@@ -1,13 +1,11 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
+
 
 #include "PaperGameMode.h"
-#include "PaperPlayerController.h"
-#include "PaperPawn.h"
 
 APaperGameMode::APaperGameMode()
 {
-	// no pawn by default
-	DefaultPawnClass = APaperPawn::StaticClass();
-	// use our own player controller class
 	PlayerControllerClass = APaperPlayerController::StaticClass();
+	DefaultPawnClass = ACameraPawn::StaticClass();
+	
 }

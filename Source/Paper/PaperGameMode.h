@@ -1,20 +1,21 @@
-// Copyright 1998-2019 Epic Games, Inc. All Rights Reserved.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+#include "PaperPlayerController.h"
+#include "CameraPawn.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "PaperGameMode.generated.h"
 
-/** GameMode class to specify pawn and playercontroller */
-UCLASS(minimalapi)
-class APaperGameMode : public AGameModeBase
+/**
+ * 
+ */
+UCLASS()
+class PAPER_API APaperGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
-
 public:
 	APaperGameMode();
+
 };
-
-
-

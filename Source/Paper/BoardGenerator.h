@@ -59,6 +59,7 @@ private:
 		TSubclassOf<AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<ASpawn> SpawnBP;
+
 	
 };
 
