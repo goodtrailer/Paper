@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,9 +5,6 @@
 #include "GameFramework/PlayerController.h"
 #include "PaperPlayerController.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PAPER_API APaperPlayerController : public APlayerController
 {
@@ -17,7 +12,7 @@ class PAPER_API APaperPlayerController : public APlayerController
 public:
 	APaperPlayerController();
 	UPROPERTY(VisibleAnywhere)
-		FString PawnName;
+	FString PawnName;
 protected:
 	void BeginPlay() override;
 };

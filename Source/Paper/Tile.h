@@ -40,5 +40,4 @@ protected:
 	uint8 HP;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 HPMax;
-
 };

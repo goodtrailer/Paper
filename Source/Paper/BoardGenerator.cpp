@@ -12,12 +12,13 @@ ABoardGenerator::ABoardGenerator()
 
 ABoardGenerator::~ABoardGenerator()
 {
-	delete GroundBoard;
-	delete UnitBoard;
+	delete[] GroundBoard;
+	delete[] UnitBoard;
 }
 
 void ABoardGenerator::BeginPlay()
 {
+	
 	Super::BeginPlay();
 	GameWorld = this->GetWorld();
 
@@ -40,7 +41,11 @@ void ABoardGenerator::BeginPlay()
 		BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
 		BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
 		GroundBoard = new AGround*[BoardWidth * BoardHeight];
+		for (int i = 0; i < BoardWidth * BoardHeight; i++)
+			GroundBoard[i] = nullptr;
 		UnitBoard = new AUnit*[BoardWidth * BoardHeight];
+		for (int i = 0; i < BoardWidth * BoardHeight; i++)
+			UnitBoard[i] = nullptr;
 
 		int CurrentSpawnToRegister[2] = { 0,0 };
 		for (int x = BoardLayoutBounds[0][0]; x <= BoardLayoutBounds[1][0]; x++)
@@ -62,6 +67,7 @@ void ABoardGenerator::BeginPlay()
 					if (ColorsNearlyEqual(CurrentColor, ColorCode::Ground))
 						for (unsigned char q = FCardinal::Up; q <= FCardinal::Left; q++)
 							GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(q, false);
+
 					
 					// if directional ground
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayU))
@@ -110,11 +116,13 @@ void ABoardGenerator::BeginPlay()
 						{
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(WallBP, SpawnLocation, SpawnRotation);
 							UnitBoard[CurrentBoardCoordinates]->BuildMisc();
+							UnitBoard[CurrentBoardCoordinates]->UnitBoard = UnitBoard;
 						}
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::Mine))
 						{
 							UnitBoard[CurrentBoardCoordinates] = GameWorld->SpawnActor<AUnit>(MineBP, SpawnLocation, SpawnRotation);
 							UnitBoard[CurrentBoardCoordinates]->BuildMisc();
+							UnitBoard[CurrentBoardCoordinates]->UnitBoard = UnitBoard;
 						}
 						else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnGreen))
 						{
@@ -136,15 +144,14 @@ void ABoardGenerator::BeginPlay()
 							UE_LOG(LogTemp, Display, TEXT("Red Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
 						}						
 					}
-					
 					GroundBoard[CurrentBoardCoordinates]->BuildMisc();
+					GroundBoard[CurrentBoardCoordinates]->GroundBoard = GroundBoard;
 				}
 			}
 	}
 	BoardLayoutMipmap->BulkData.Unlock();
 	UE_LOG(LogTemp, Display, TEXT("BoardLayoutBounds are (%d, %d), (%d, %d)"), BoardLayoutBounds[0][0], BoardLayoutBounds[0][1], BoardLayoutBounds[1][0], BoardLayoutBounds[1][1]);
 }
-
 
 
 bool ABoardGenerator::ColorsNearlyEqual(FColor a, FColor b)

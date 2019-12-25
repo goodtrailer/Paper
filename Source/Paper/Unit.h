@@ -14,13 +14,18 @@ class PAPER_API AUnit : public ATile
 
 public:
 	void BuildMisc() override;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 Team;
+	AUnit** UnitBoard;
+
 	enum ETeam : unsigned char
 	{
 		TeamGreen = 0, TeamRed, TeamNeutral
 	};
 
+
 protected:
 	virtual void Passive();
+	
 };

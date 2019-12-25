@@ -7,5 +7,4 @@ APaperGameMode::APaperGameMode()
 {
 	PlayerControllerClass = APaperPlayerController::StaticClass();
 	DefaultPawnClass = ACameraPawn::StaticClass();
-	
 }

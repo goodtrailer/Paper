@@ -2,7 +2,6 @@
 
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "Tile.h"
 #include "Ground.generated.h"
@@ -13,6 +12,7 @@ class PAPER_API AGround : public ATile
 	GENERATED_BODY()
 
 public:
+	AGround** GroundBoard;
 	UFUNCTION(BlueprintNativeEvent)
 	void BuildMisc() override;
 	void BuildMisc_Implementation();

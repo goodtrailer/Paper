@@ -14,4 +14,5 @@ APaperPlayerController::APaperPlayerController()
 void APaperPlayerController::BeginPlay()
 {
 	SetViewTargetWithBlend(GetPawn(), 1.f);
+	
 }

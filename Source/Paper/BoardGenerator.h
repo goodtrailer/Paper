@@ -43,7 +43,7 @@ private:
 	ASpawn* BoardSpawn[2][2];
 	int BoardWidth;
 	int BoardHeight;
-
+	
 	AGround** GroundBoard;
 	AUnit** UnitBoard;
 

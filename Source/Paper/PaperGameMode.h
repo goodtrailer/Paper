@@ -3,14 +3,12 @@
 #pragma once
 #include "PaperPlayerController.h"
 #include "CameraPawn.h"
+#include "Ground.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "PaperGameMode.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PAPER_API APaperGameMode : public AGameModeBase
 {
