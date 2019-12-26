@@ -13,11 +13,12 @@ class PAPER_API AUnit : public ATile
 	GENERATED_BODY()
 
 public:
+	AUnit();
 	void BuildMisc() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 Team;
-	AUnit** UnitBoard;
+	TArray<AUnit*> UnitBoard;
 
 	enum ETeam : unsigned char
 	{

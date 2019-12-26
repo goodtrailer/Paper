@@ -6,9 +6,6 @@
 #include "Unit.h"
 #include "Wall.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class PAPER_API AWall : public AUnit
 {
@@ -17,4 +14,5 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void BuildMisc() override;
 	void BuildMisc_Implementation();
+	AWall();
 };

@@ -2,6 +2,9 @@
 
 
 #include "CameraPawn.h"
+#include "EngineGlobals.h"
+#include "EngineUtils.h"
+#include "Runtime/Engine/Classes/Engine/Engine.h"
 
 ACameraPawn::ACameraPawn()
 {
@@ -19,8 +22,8 @@ ACameraPawn::ACameraPawn()
 	ZoomSensitivity = 1.f;
 	RotateSensitivity = 2.5f;
 	PanSensitivity = 10.f;
-
 }
+
 
 void ACameraPawn::BeginPlay()
 {
@@ -29,6 +32,10 @@ void ACameraPawn::BeginPlay()
 	FVector MyVector(2000.f, 2800.f, 300.f);
 	SetActorLocation(MyVector);
 	
+	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
+	{
+		BoardGenerator = *i;
+	}
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -48,6 +55,26 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 }
 
+void ACameraPawn::Debug()
+{
+	/*
+	if (Role < ROLE_Authority)
+		ServerDebug();
+		*/
+	GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, TEXT("Debug()!") /*FString::Printf(TEXT("Team of first green spawn: %d"), BoardGenerator->BoardSpawn[0][0]->Team)*/);
+}
+/*
+bool ACameraPawn::ServerDebug_Validate()
+{
+	return true;
+}
+
+void ACameraPawn::ServerDebug_Implementation()
+{
+	Debug();
+}
+*/
+
 void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -59,6 +86,7 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Zoom Out", IE_Pressed, this, &ACameraPawn::ZoomOut);
 	PlayerInputComponent->BindAxis("Mouse X", this, &ACameraPawn::SetMouseX);
 	PlayerInputComponent->BindAxis("Mouse Y", this, &ACameraPawn::SetMouseY);
+	PlayerInputComponent->BindAction("Debug", IE_Pressed, this, &ACameraPawn::Debug);
 }
 
 void ACameraPawn::ZoomIn()

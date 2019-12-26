@@ -6,9 +6,7 @@
 #include "Unit.h"
 #include "Spawn.generated.h"
 
-/**
- * 
- */
+
 UCLASS()
 class PAPER_API ASpawn : public AUnit
 {

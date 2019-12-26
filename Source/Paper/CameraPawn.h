@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "BoardGenerator.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
@@ -32,8 +34,14 @@ protected:
 	void SetMouseY(float f);
 	void ZoomIn();
 	void ZoomOut();
+	void Debug();
+	/*
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerDebug();
+	*/
 
 public:
+	ABoardGenerator* BoardGenerator;
 protected:
 	UPROPERTY(VisibleAnywhere)
 		class UCameraComponent* Camera;

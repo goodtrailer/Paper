@@ -16,3 +16,10 @@ void AUnit::BuildMisc()
 	HP = HPMax;
 	bIsTargetable = true;
 }
+
+AUnit::AUnit()
+{
+	bReplicates = true;
+	bAlwaysRelevant = true;
+	PrimaryActorTick.bCanEverTick = false;
+}

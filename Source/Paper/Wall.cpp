@@ -7,3 +7,9 @@ void AWall::BuildMisc_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Called BuildMisc_Implementation()."))
 }
+
+AWall::AWall()
+	:Super()
+{
+
+}

@@ -22,30 +22,32 @@ class PAPER_API ABoardGenerator : public AActor
 public:	
 	// Sets default values for this actor's properties
 	ABoardGenerator();
-	~ABoardGenerator();
+	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]
+	ASpawn* BoardSpawn[2][2];
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void GenerateBoard();
+	UFUNCTION(Reliable, Server, WithValidation)
+	void ServerGenerateBoard();
+	
 
 private:
 	bool ColorsNearlyEqual(FColor a, FColor b);
 
 private:
-	UWorld* GameWorld;
-
 	UPROPERTY(EditAnywhere)
-		UTexture2D* BoardLayoutTexture;
+	UTexture2D* BoardLayoutTexture;
 	FTexture2DMipMap* BoardLayoutMipmap;
 	FColor* BoardLayoutColorArray;
 	int BoardLayoutBounds[2][2];
-	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)], value is location in x + y * BoardWidth
-	ASpawn* BoardSpawn[2][2];
+	
 	int BoardWidth;
 	int BoardHeight;
 	
-	AGround** GroundBoard;
-	AUnit** UnitBoard;
+	TArray<AGround*> GroundBoard;
+	TArray<AUnit*> UnitBoard;
 
 
 	UPROPERTY(EditAnywhere, Category="Misc")

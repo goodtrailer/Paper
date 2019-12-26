@@ -7,3 +7,7 @@ void AGround::BuildMisc_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("BuildMisc_Implementation() called."))
 }
+
+AGround::AGround()
+{
+}

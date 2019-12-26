@@ -12,10 +12,10 @@ class PAPER_API AGround : public ATile
 	GENERATED_BODY()
 
 public:
-	AGround** GroundBoard;
+	TArray<AGround*> GroundBoard;
 	UFUNCTION(BlueprintNativeEvent)
 	void BuildMisc() override;
 	void BuildMisc_Implementation();
-	
+	AGround();
 };
 
