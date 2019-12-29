@@ -17,14 +17,24 @@ void ABoardGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 	GenerateBoard();
+	Turn = AUnit::ETeam::TeamGreen;
+}
+
+bool ABoardGenerator::SpawnUnit(uint8 team, TSubclassOf<AUnit> type)
+{
+	for (int i = 0; i < 2; i++)
+		if (UnitBoard[BoardSpawn[team][i]->Coordinates] == nullptr)
+		{
+			UnitBoard[BoardSpawn[team][i]->Coordinates] = GetWorld()->SpawnActor<AUnit>(type, FVector((BoardSpawn[team][i]->Coordinates % BoardWidth) * 200, BoardSpawn[team][i]->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+			UnitBoard[BoardSpawn[team][i]->Coordinates]->Team = team;
+			UnitBoard[BoardSpawn[team][i]->Coordinates]->BuildMisc();
+			return true;
+		}
+	return false;
 }
 
 void ABoardGenerator::GenerateBoard()
 {
-	if (Role < ROLE_Authority)
-		ServerGenerateBoard();
-
-
 	BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];
 	BoardLayoutColorArray = static_cast<FColor*>(BoardLayoutMipmap->BulkData.Lock(LOCK_READ_ONLY));
 
@@ -149,16 +159,6 @@ void ABoardGenerator::GenerateBoard()
 		}
 	BoardLayoutMipmap->BulkData.Unlock();
 	UE_LOG(LogTemp, Display, TEXT("BoardLayoutBounds are (%d, %d), (%d, %d)"), BoardLayoutBounds[0][0], BoardLayoutBounds[0][1], BoardLayoutBounds[1][0], BoardLayoutBounds[1][1]);
-}
-
-bool ABoardGenerator::ServerGenerateBoard_Validate()
-{
-	return true;
-}
-
-void ABoardGenerator::ServerGenerateBoard_Implementation()
-{
-	GenerateBoard();
 }
 
 bool ABoardGenerator::ColorsNearlyEqual(FColor a, FColor b)

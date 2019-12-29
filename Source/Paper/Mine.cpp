@@ -9,5 +9,6 @@ void AMine::BuildMisc_Implementation()
 }
 
 AMine::AMine()
-	:Super()
-{ }
+{
+	PrimaryActorTick.bCanEverTick = false;
+}

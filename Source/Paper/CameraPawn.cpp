@@ -2,13 +2,15 @@
 
 
 #include "CameraPawn.h"
-#include "EngineGlobals.h"
+#include "Unit.h"
+#include "GameFramework/PlayerState.h"
 #include "EngineUtils.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 
 ACameraPawn::ACameraPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
+
 	Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
 	SetRootComponent(Scene);
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
@@ -24,7 +26,6 @@ ACameraPawn::ACameraPawn()
 	PanSensitivity = 10.f;
 }
 
-
 void ACameraPawn::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,9 +34,7 @@ void ACameraPawn::BeginPlay()
 	SetActorLocation(MyVector);
 	
 	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
-	{
 		BoardGenerator = *i;
-	}
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -55,25 +54,99 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 }
 
-void ACameraPawn::Debug()
+
+
+bool ACameraPawn::IsTurn()
 {
-	/*
-	if (Role < ROLE_Authority)
-		ServerDebug();
-		*/
-	GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Yellow, TEXT("Debug()!") /*FString::Printf(TEXT("Team of first green spawn: %d"), BoardGenerator->BoardSpawn[0][0]->Team)*/);
+	if (BoardGenerator->Turn % 2 == Team)
+		return true;
+	else
+		return false;
 }
-/*
-bool ACameraPawn::ServerDebug_Validate()
+
+
+
+void ACameraPawn::EndTurn()
+{
+	BoardGenerator->Turn++;
+}
+
+bool ACameraPawn::Server_EndTurn_Validate()
 {
 	return true;
 }
 
-void ACameraPawn::ServerDebug_Implementation()
+void ACameraPawn::Server_EndTurn_Implementation()
+{
+	if (IsRunningDedicatedServer())
+		EndTurn();
+	Multicast_EndTurn();
+}
+
+void ACameraPawn::Multicast_EndTurn_Implementation()
+{
+	EndTurn();
+}
+
+
+
+void ACameraPawn::SpawnUnit(uint8 team, TSubclassOf<AUnit> type)
+{
+	if (!BoardGenerator->SpawnUnit(team, type))
+		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, TEXT("Spawns are full!"));
+}
+
+bool ACameraPawn::Server_SpawnUnit_Validate(uint8 team, TSubclassOf<AUnit> type)
+{
+	return true;
+}
+
+void ACameraPawn::Server_SpawnUnit_Implementation(uint8 team, TSubclassOf<AUnit> type)
+{
+	if (IsRunningDedicatedServer())
+		SpawnUnit(team, type);
+	Multicast_SpawnUnit(team, type);
+}
+
+void ACameraPawn::Multicast_SpawnUnit_Implementation(uint8 team, TSubclassOf<AUnit> type)
+{
+	SpawnUnit(team, type);
+}
+
+
+
+void ACameraPawn::Debug()
+{
+	UE_LOG(LogTemp, Display, TEXT("%d"), BoardGenerator->Turn)
+	GEngine->AddOnScreenDebugMessage(1, 8.f, FColor::Yellow, TEXT("Debug!"));
+	//UE_LOG(LogTemp, Display, TEXT("Team: %d\nTurn: %d\nIs Turn?: %s"), Team, Turn, (IsTurn()) ? TEXT("True") : TEXT("False?"))
+}
+
+bool ACameraPawn::Server_Debug_Validate()
+{
+	return true;
+}
+
+void ACameraPawn::Server_Debug_Implementation()
+{
+	if (IsRunningDedicatedServer())
+		Debug();
+	Multicast_Debug();
+}
+
+void ACameraPawn::Multicast_Debug_Implementation()
 {
 	Debug();
 }
-*/
+
+
+
+void ACameraPawn::Client_SetTeam_Implementation(uint8 t)
+{
+	Team = t;
+}
+
+
 
 void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -92,7 +165,6 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 void ACameraPawn::ZoomIn()
 {
 	SpringArm->TargetArmLength -= 100 * ZoomSensitivity * SpringArm->TargetArmLength / 1000;
-	UE_LOG(LogTemp, Display, TEXT("BUMP"))
 }
 
 void ACameraPawn::ZoomOut()

@@ -20,38 +20,18 @@ class PAPER_API ABoardGenerator : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ABoardGenerator();
-	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]
-	ASpawn* BoardSpawn[2][2];
+	bool SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
 
 protected:
 	virtual void BeginPlay() override;
-
 	void GenerateBoard();
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerGenerateBoard();
-	
-
-private:
 	bool ColorsNearlyEqual(FColor a, FColor b);
 
-private:
-	UPROPERTY(EditAnywhere)
-	UTexture2D* BoardLayoutTexture;
-	FTexture2DMipMap* BoardLayoutMipmap;
-	FColor* BoardLayoutColorArray;
-	int BoardLayoutBounds[2][2];
-	
-	int BoardWidth;
-	int BoardHeight;
-	
-	TArray<AGround*> GroundBoard;
-	TArray<AUnit*> UnitBoard;
-
-
-	UPROPERTY(EditAnywhere, Category="Misc")
-	float ColorsNearlyEqualThreshold;
+public:
+	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]
+	ASpawn* BoardSpawn[2][2];
+	uint16 Turn;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<ATile> GroundBP;
@@ -61,8 +41,21 @@ private:
 		TSubclassOf<AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<ASpawn> SpawnBP;
-
+	TArray<AGround*> GroundBoard;
+	TArray<AUnit*> UnitBoard;
+private:
+	UPROPERTY(EditAnywhere)
+	UTexture2D* BoardLayoutTexture;
+	FTexture2DMipMap* BoardLayoutMipmap;
+	FColor* BoardLayoutColorArray;
+	int BoardLayoutBounds[2][2];
 	
+	int BoardWidth;
+	int BoardHeight;
+
+
+	UPROPERTY(EditAnywhere, Category="Misc")
+	float ColorsNearlyEqualThreshold;
 };
 
 

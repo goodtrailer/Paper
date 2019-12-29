@@ -19,7 +19,5 @@ void AUnit::BuildMisc()
 
 AUnit::AUnit()
 {
-	bReplicates = true;
-	bAlwaysRelevant = true;
 	PrimaryActorTick.bCanEverTick = false;
 }

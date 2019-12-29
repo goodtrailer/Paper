@@ -6,7 +6,6 @@
 #include "Unit.h"
 #include "Mine.generated.h"
 
-
 UCLASS()
 class PAPER_API AMine : public AUnit
 {

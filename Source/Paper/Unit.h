@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Tile.h"
+#include "Materials/Material.h"
 #include "Unit.generated.h"
 
 
@@ -16,8 +17,10 @@ public:
 	AUnit();
 	void BuildMisc() override;
 
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 Team;
+	FString Name;
 	TArray<AUnit*> UnitBoard;
 
 	enum ETeam : unsigned char

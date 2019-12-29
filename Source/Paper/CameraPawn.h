@@ -19,10 +19,16 @@ class PAPER_API ACameraPawn : public APawn
 
 public:
 	ACameraPawn();
-
 	virtual void Tick(float DeltaTime) override;
-
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UFUNCTION(Client, Reliable)
+	void Client_SetTeam(uint8 t);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_EndTurn();
+	UFUNCTION(BlueprintCallable)
+	bool IsTurn();
 
 protected:
 	virtual void BeginPlay() override;
@@ -34,21 +40,33 @@ protected:
 	void SetMouseY(float f);
 	void ZoomIn();
 	void ZoomOut();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_EndTurn();
+	void EndTurn();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	void SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Debug();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Debug();
 	void Debug();
-	/*
-	UFUNCTION(Reliable, Server, WithValidation)
-	void ServerDebug();
-	*/
 
 public:
+	UPROPERTY(BlueprintReadOnly)
 	ABoardGenerator* BoardGenerator;
+	UPROPERTY(BlueprintReadOnly)
+	uint8 Team;
 protected:
 	UPROPERTY(VisibleAnywhere)
-		class UCameraComponent* Camera;
+	class UCameraComponent* Camera;
 	UPROPERTY(VisibleAnywhere)
-		class USceneComponent* Scene;
+	class USceneComponent* Scene;
 	UPROPERTY(VisibleAnywhere)
-		class USpringArmComponent* SpringArm;
+	class USpringArmComponent* SpringArm;
 
 	bool bPanButtonDown;
 	bool bRotateButtonDown;
@@ -56,10 +74,9 @@ protected:
 	float MouseY;
 
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-		float RotateSensitivity;
+	float RotateSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-		float ZoomSensitivity;
+	float ZoomSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-		float PanSensitivity;
-
+	float PanSensitivity;
 };

@@ -9,7 +9,6 @@ void AWall::BuildMisc_Implementation()
 }
 
 AWall::AWall()
-	:Super()
 {
-
+	PrimaryActorTick.bCanEverTick = false;
 }
