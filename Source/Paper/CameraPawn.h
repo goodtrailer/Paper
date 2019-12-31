@@ -72,6 +72,7 @@ protected:
 	bool bRotateButtonDown;
 	float MouseX;
 	float MouseY;
+	APlayerController* PlayerController;
 
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
 	float RotateSensitivity;

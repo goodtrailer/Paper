@@ -3,7 +3,7 @@
 
 #include "CameraPawn.h"
 #include "Unit.h"
-#include "GameFramework/PlayerState.h"
+#include "GameFramework/PlayerController.h"
 #include "EngineUtils.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 
@@ -35,6 +35,8 @@ void ACameraPawn::BeginPlay()
 	
 	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
 		BoardGenerator = *i;
+	if (!IsRunningDedicatedServer())
+		PlayerController = Cast<APlayerController>(GetController());
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -51,6 +53,14 @@ void ACameraPawn::Tick(float DeltaTime)
 	{
 		FVector MyVector(0.f, MouseX, MouseY);
 		AddActorLocalOffset(MyVector * -PanSensitivity * SpringArm->TargetArmLength / 1000);
+	}
+	
+	if (PlayerController != nullptr)
+	{
+		FHitResult Hit(ForceInit);
+		if (PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit))
+			GEngine->AddOnScreenDebugMessage(0, .1f, FColor::Yellow, FString::Printf(TEXT("%s"), *Cast<AUnit>(Hit.GetActor())->Name));
+
 	}
 }
 

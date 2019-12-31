@@ -11,4 +11,5 @@ void AWall::BuildMisc_Implementation()
 AWall::AWall()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	Name = "Wall";
 }

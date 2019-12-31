@@ -12,6 +12,7 @@ class PAPER_API ASpawn : public AUnit
 {
 	GENERATED_BODY()
 public:
+	ASpawn();
 	int Coordinates;
 	UFUNCTION(BlueprintNativeEvent)
 	void BuildMisc() override;

@@ -11,4 +11,5 @@ void AMine::BuildMisc_Implementation()
 AMine::AMine()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	Name = "Mine";
 }

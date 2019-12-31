@@ -2,10 +2,7 @@
 
 #pragma once
 
-
-#include "Tile.h"
 #include "Unit.h"
-#include "Ground.h"
 #include "Spawn.h"
 
 #include "TextureResource.h"
@@ -34,14 +31,14 @@ public:
 	uint16 Turn;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<ATile> GroundBP;
+		TSubclassOf<AUnit> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> WallBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<ASpawn> SpawnBP;
-	TArray<AGround*> GroundBoard;
+	TArray<AUnit*> GroundBoard;
 	TArray<AUnit*> UnitBoard;
 private:
 	UPROPERTY(EditAnywhere)

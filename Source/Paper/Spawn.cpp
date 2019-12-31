@@ -7,3 +7,9 @@ void ASpawn::BuildMisc_Implementation()
 {
 	UE_LOG(LogTemp, Warning, TEXT("ASpawn::BuildMisc_Implementation() called."))
 }
+
+ASpawn::ASpawn()
+{
+	PrimaryActorTick.bCanEverTick = false;
+	Name = "Spawn";
+}

@@ -10,4 +10,6 @@ void AGround::BuildMisc_Implementation()
 
 AGround::AGround()
 {
+	PrimaryActorTick.bCanEverTick = false;
+	Name = "Ground";
 }

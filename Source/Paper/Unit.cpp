@@ -20,4 +20,16 @@ void AUnit::BuildMisc()
 AUnit::AUnit()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	Name = "Unit";
 }
+
+
+void AUnit::SetIsTargetable(bool a) { bIsTargetable = a; }
+
+bool AUnit::GetIsTargetable() { return bIsTargetable; }
+
+void AUnit::SetHP(uint8 a) { HP = a; }
+
+uint8 AUnit::GetHP() { return HP; }
+
+uint8 AUnit::GetHPMax() { return HPMax; }

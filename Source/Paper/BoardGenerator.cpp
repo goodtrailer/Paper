@@ -70,7 +70,7 @@ void ABoardGenerator::GenerateBoard()
 			if (!ColorsNearlyEqual(CurrentColor, ColorCode::Hole))
 			{
 				// spawn ground, because the board should have ground underneath regardless
-				GroundBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<AGround>(GroundBP, SpawnLocation, SpawnRotation);
+				GroundBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<AUnit>(GroundBP, SpawnLocation, SpawnRotation);
 
 				// if normal ground
 				if (ColorsNearlyEqual(CurrentColor, ColorCode::Ground))
