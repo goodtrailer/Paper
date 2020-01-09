@@ -15,16 +15,17 @@ class PAPER_API AUnit : public AActor
 
 public:
 	AUnit();
-	virtual void BuildMisc();
-	bool GetIsTargetable();
-	void SetIsTargetable(bool a);
+	UFUNCTION(BlueprintNativeEvent)
+	void Build(uint8 team);
+	virtual void Build_Implementation(uint8 team);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 Team;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FCardinal bIsCollidable;
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FString Name;
+	int Coordinates;
 
 	TArray<AUnit*> UnitBoard;
 	TArray<AUnit*> GroundBoard;
@@ -38,11 +39,8 @@ public:
 		TeamGreen = 0, TeamRed, TeamNeutral
 	};
 
-
 protected:
 	virtual void Passive();
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	bool bIsTargetable;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 HP;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

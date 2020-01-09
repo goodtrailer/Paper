@@ -3,7 +3,6 @@
 #pragma once
 
 #include "Unit.h"
-#include "Spawn.h"
 
 #include "TextureResource.h"
 #include "CoreMinimal.h"
@@ -27,7 +26,7 @@ protected:
 
 public:
 	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]
-	ASpawn* BoardSpawn[2][2];
+	AUnit* BoardSpawn[2][2];
 	uint16 Turn;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
@@ -37,7 +36,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<ASpawn> SpawnBP;
+		TSubclassOf<AUnit> SpawnBP;
 	TArray<AUnit*> GroundBoard;
 	TArray<AUnit*> UnitBoard;
 private:

@@ -15,6 +15,7 @@ struct FCardinal
 		Up = 0, Right, Down, Left
 	};
 
+	
 	void Set(unsigned char d, bool b);
 	bool Get(unsigned char d);
 
