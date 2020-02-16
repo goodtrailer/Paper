@@ -1,4 +1,4 @@
-# Paper 0.2.3.0
+# Paper 0.2.3.1
 UE4 videogame based on paper board games from my childhood. Multiplayer through IP connections like Minecraft. It works over LAN and can work over the internet either through port forwarding or P2P VPNs like Hamachi or Wippien.
 
 # Screenshots (WIP)
