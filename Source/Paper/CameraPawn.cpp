@@ -59,7 +59,7 @@ void ACameraPawn::Tick(float DeltaTime)
 	{
 		FHitResult Hit(ForceInit);
 		if (PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit))
-			GEngine->AddOnScreenDebugMessage(0, .1f, FColor::Yellow, FString::Printf(TEXT("%s"), *Cast<AUnit>(Hit.GetActor())->Name));
+			GEngine->AddOnScreenDebugMessage(0, .1f, FColor::Yellow, FString::Printf(TEXT("%d\n(%d, %d)"), Cast<AUnit>(Hit.GetActor())->Type, Cast<AUnit>(Hit.GetActor())->Coordinates % BoardGenerator->BoardWidth, Cast<AUnit>(Hit.GetActor())->Coordinates / BoardGenerator->BoardWidth));
 
 	}
 }
@@ -68,7 +68,7 @@ void ACameraPawn::Tick(float DeltaTime)
 
 bool ACameraPawn::IsTurn()
 {
-	if (BoardGenerator->Turn % 2 == Team)
+	if (BoardGenerator->Turn % 2 == static_cast<uint8>(Team))
 		return true;
 	else
 		return false;
@@ -100,25 +100,25 @@ void ACameraPawn::Multicast_EndTurn_Implementation()
 
 
 
-void ACameraPawn::SpawnUnit(uint8 team, TSubclassOf<AUnit> type)
+void ACameraPawn::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 {
 	if (!BoardGenerator->SpawnUnit(team, type))
 		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, TEXT("Spawns are full!"));
 }
 
-bool ACameraPawn::Server_SpawnUnit_Validate(uint8 team, TSubclassOf<AUnit> type)
+bool ACameraPawn::Server_SpawnUnit_Validate(ETeam team, TSubclassOf<AUnit> type)
 {
 	return true;
 }
 
-void ACameraPawn::Server_SpawnUnit_Implementation(uint8 team, TSubclassOf<AUnit> type)
+void ACameraPawn::Server_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUnit> type)
 {
 	if (IsRunningDedicatedServer())
 		SpawnUnit(team, type);
 	Multicast_SpawnUnit(team, type);
 }
 
-void ACameraPawn::Multicast_SpawnUnit_Implementation(uint8 team, TSubclassOf<AUnit> type)
+void ACameraPawn::Multicast_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUnit> type)
 {
 	SpawnUnit(team, type);
 }
@@ -151,7 +151,7 @@ void ACameraPawn::Multicast_Debug_Implementation()
 
 
 
-void ACameraPawn::Client_SetTeam_Implementation(uint8 t)
+void ACameraPawn::Client_SetTeam_Implementation(ETeam t)
 {
 	Team = t;
 }

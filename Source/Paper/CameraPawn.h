@@ -22,9 +22,9 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UFUNCTION(Client, Reliable)
-	void Client_SetTeam(uint8 t);
+	void Client_SetTeam(ETeam t);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	void Server_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
 	UFUNCTION(BlueprintCallable)
@@ -46,8 +46,8 @@ protected:
 	void EndTurn();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
-	void SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	void Multicast_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
+	void SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 	
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Debug();
@@ -59,7 +59,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	ABoardGenerator* BoardGenerator;
 	UPROPERTY(BlueprintReadOnly)
-	uint8 Team;
+	ETeam Team;
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class UCameraComponent* Camera;

@@ -8,6 +8,25 @@
 #include "Unit.generated.h"
 
 
+UENUM(BlueprintType)
+enum class ETeam : uint8
+{
+	TeamGreen		UMETA(DisplayName = "Green"),
+	TeamRed			UMETA(DisplayName = "Red"),
+	TeamNeutral		UMETA(DisplayName = "Neutral")
+};
+
+UENUM(BlueprintType)
+enum class EType : uint8
+{
+	TypeUnit		UMETA(DisplayName = "Unit"),
+	TypeWall		UMETA(DisplayName = "Wall"),
+	TypeSpawn		UMETA(DisplayName = "Spawn"),
+	TypeGround		UMETA(DisplayName = "Ground"),
+	TypeMine		UMETA(DisplayName = "Mine"),
+	TypeKnight		UMETA(DisplayName = "Knight")
+};
+
 UCLASS()
 class PAPER_API AUnit : public AActor
 {
@@ -16,15 +35,17 @@ class PAPER_API AUnit : public AActor
 public:
 	AUnit();
 	UFUNCTION(BlueprintNativeEvent)
-	void Build(uint8 team);
-	virtual void Build_Implementation(uint8 team);
+	void Build(ETeam team);
+	virtual void Build_Implementation(ETeam team);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	uint8 Team;
+	ETeam Team;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	FCardinal bIsCollidable;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FString Name;
+	EType Type;
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsTargetable;
 	int Coordinates;
 
 	TArray<AUnit*> UnitBoard;
@@ -34,10 +55,6 @@ public:
 	uint8 GetHP();
 	void SetHP(uint8 a);
 
-	enum ETeam : unsigned char
-	{
-		TeamGreen = 0, TeamRed, TeamNeutral
-	};
 
 protected:
 	virtual void Passive();

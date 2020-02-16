@@ -17,16 +17,16 @@ void ABoardGenerator::BeginPlay()
 {
 	Super::BeginPlay();
 	GenerateBoard();
-	Turn = AUnit::ETeam::TeamGreen;
+	Turn = static_cast<uint8>(ETeam::TeamGreen);
 }
 
-bool ABoardGenerator::SpawnUnit(uint8 team, TSubclassOf<AUnit> type)
+bool ABoardGenerator::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 {
 	for (int i = 0; i < 2; i++)
-		if (UnitBoard[BoardSpawn[team][i]->Coordinates] == nullptr)
+		if (UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates] == nullptr)
 		{
-			UnitBoard[BoardSpawn[team][i]->Coordinates] = GetWorld()->SpawnActor<AUnit>(type, FVector((BoardSpawn[team][i]->Coordinates % BoardWidth) * 200, BoardSpawn[team][i]->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
-			UnitBoard[BoardSpawn[team][i]->Coordinates]->Build(team);
+			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates] = GetWorld()->SpawnActor<AUnit>(type, FVector((BoardSpawn[static_cast<int>(team)][i]->Coordinates % BoardWidth) * 200, BoardSpawn[static_cast<int>(team)][i]->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates]->Build(team);
 			return true;
 		}
 	return false;
@@ -122,8 +122,8 @@ void ABoardGenerator::GenerateBoard()
 					{
 						BoardSpawn[0][CurrentSpawnToRegister[0]] = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, SpawnRotation);
 						BoardSpawn[0][CurrentSpawnToRegister[0]]->Coordinates = CurrentBoardCoordinates;
-						BoardSpawn[0][CurrentSpawnToRegister[0]]->Team = AUnit::TeamGreen;
-						BoardSpawn[0][CurrentSpawnToRegister[0]]->Build(AUnit::TeamGreen);
+						BoardSpawn[0][CurrentSpawnToRegister[0]]->Team = ETeam::TeamGreen;
+						BoardSpawn[0][CurrentSpawnToRegister[0]]->Build(ETeam::TeamGreen);
 						CurrentSpawnToRegister[0]++;
 
 						UE_LOG(LogTemp, Display, TEXT("Green Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
@@ -132,8 +132,8 @@ void ABoardGenerator::GenerateBoard()
 					{
 						BoardSpawn[1][CurrentSpawnToRegister[1]] = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, SpawnRotation);
 						BoardSpawn[1][CurrentSpawnToRegister[1]]->Coordinates = CurrentBoardCoordinates;
-						BoardSpawn[1][CurrentSpawnToRegister[1]]->Team = AUnit::TeamRed;
-						BoardSpawn[1][CurrentSpawnToRegister[1]]->Build(AUnit::TeamRed);
+						BoardSpawn[1][CurrentSpawnToRegister[1]]->Team = ETeam::TeamRed;
+						BoardSpawn[1][CurrentSpawnToRegister[1]]->Build(ETeam::TeamRed);
 						CurrentSpawnToRegister[1]++;
 						UE_LOG(LogTemp, Display, TEXT("Red Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
 					}
@@ -142,11 +142,11 @@ void ABoardGenerator::GenerateBoard()
 					if (UnitBoard[CurrentBoardCoordinates] != nullptr)
 					{
 						UnitBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
-						UnitBoard[CurrentBoardCoordinates]->Build(AUnit::TeamNeutral);
+						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
 						UnitBoard[CurrentBoardCoordinates]->UnitBoard = UnitBoard;
 					}
 				}
-				GroundBoard[CurrentBoardCoordinates]->Build(AUnit::TeamNeutral);
+				GroundBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
 				GroundBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
 				GroundBoard[CurrentBoardCoordinates]->GroundBoard = GroundBoard;
 			}

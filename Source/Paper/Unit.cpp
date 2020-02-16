@@ -8,10 +8,10 @@ void AUnit::Passive() { }
 AUnit::AUnit()
 {
 	PrimaryActorTick.bCanEverTick = false;
-	Name = "Unit";
+	Type = EType::TypeUnit;
 }
 
-void AUnit::Build_Implementation(uint8 team)
+void AUnit::Build_Implementation(ETeam team)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Build_Implementation"))
 }

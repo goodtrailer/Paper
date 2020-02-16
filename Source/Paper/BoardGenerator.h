@@ -17,7 +17,7 @@ class PAPER_API ABoardGenerator : public AActor
 	
 public:	
 	ABoardGenerator();
-	bool SpawnUnit(uint8 team, TSubclassOf<AUnit> type);
+	bool SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 
 protected:
 	virtual void BeginPlay() override;
@@ -37,8 +37,11 @@ public:
 		TSubclassOf<AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> SpawnBP;
+
 	TArray<AUnit*> GroundBoard;
 	TArray<AUnit*> UnitBoard;
+	int BoardWidth;
+	int BoardHeight;
 private:
 	UPROPERTY(EditAnywhere)
 	UTexture2D* BoardLayoutTexture;
@@ -46,9 +49,6 @@ private:
 	FColor* BoardLayoutColorArray;
 	int BoardLayoutBounds[2][2];
 	
-	int BoardWidth;
-	int BoardHeight;
-
 
 	UPROPERTY(EditAnywhere, Category="Misc")
 	float ColorsNearlyEqualThreshold;

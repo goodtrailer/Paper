@@ -30,6 +30,6 @@ void APaperGameMode::Tick(float DeltaSeconds)
 		UE_LOG(LogTemp, Display, TEXT("setting teams"))
 		uint8 temp = PlayerCount;
 		for (int i = -1; i >= temp - GameState->PlayerArray.Num(); i--)
-			GameState->PlayerArray[i + GameState->PlayerArray.Num()]->GetPawn<ACameraPawn>()->Client_SetTeam(PlayerCount++);
+			GameState->PlayerArray[i + GameState->PlayerArray.Num()]->GetPawn<ACameraPawn>()->Client_SetTeam(static_cast<ETeam>(PlayerCount++));
 	}
 }
