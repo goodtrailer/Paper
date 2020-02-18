@@ -23,9 +23,9 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UFUNCTION(Client, Reliable)
 	void Client_SetTeam(ETeam t);
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	UFUNCTION(Server, Reliable, BlueprintCallable, WithValidation)
 	void Server_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	UFUNCTION(Server, Reliable, BlueprintCallable, WithValidation)
 	void Server_EndTurn();
 	UFUNCTION(BlueprintCallable)
 	bool IsTurn();
@@ -55,6 +55,11 @@ protected:
 	void Multicast_Debug();
 	void Debug();
 
+	void MoveUnit();
+	void SelectUnit();
+	void MoveOverlayOn();
+	void MoveOverlayOff();
+
 public:
 	UPROPERTY(BlueprintReadOnly)
 	ABoardGenerator* BoardGenerator;
@@ -70,8 +75,13 @@ protected:
 
 	bool bPanButtonDown;
 	bool bRotateButtonDown;
+	bool bSelectButtonDown;
+	bool bMoveButtonDown;
+
 	float MouseX;
 	float MouseY;
+	AUnit* SelectedUnit;
+	AUnit* HoveredUnit;
 	APlayerController* PlayerController;
 
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")

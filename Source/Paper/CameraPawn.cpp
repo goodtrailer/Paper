@@ -49,7 +49,7 @@ void ACameraPawn::Tick(float DeltaTime)
 		FRotator Pitch(MouseY, 0.f, 0.f);
 		AddActorLocalRotation(Pitch * RotateSensitivity);
 	}
-	else if (bPanButtonDown)
+	else if (bPanButtonDown && (SelectedUnit == nullptr || SelectedUnit->Team != Team))
 	{
 		FVector MyVector(0.f, MouseX, MouseY);
 		AddActorLocalOffset(MyVector * -PanSensitivity * SpringArm->TargetArmLength / 1000);
@@ -57,11 +57,21 @@ void ACameraPawn::Tick(float DeltaTime)
 	
 	if (PlayerController != nullptr)
 	{
-		FHitResult Hit(ForceInit);
-		if (PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit))
-			GEngine->AddOnScreenDebugMessage(0, .1f, FColor::Yellow, FString::Printf(TEXT("%d\n(%d, %d)"), Cast<AUnit>(Hit.GetActor())->Type, Cast<AUnit>(Hit.GetActor())->Coordinates % BoardGenerator->BoardWidth, Cast<AUnit>(Hit.GetActor())->Coordinates / BoardGenerator->BoardWidth));
-
+		FHitResult Hit;
+		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
+		HoveredUnit = Cast<AUnit>(Hit.GetActor());
 	}
+
+	if (SelectedUnit == nullptr)
+		GEngine->AddOnScreenDebugMessage(5, 1.f, FColor::Red, TEXT("Selected NULL"), false);
+	else
+		GEngine->AddOnScreenDebugMessage(5, 1.f, FColor::Green, FString::Printf(TEXT("Selected %d"), SelectedUnit->Type), false);
+
+	if (HoveredUnit == nullptr)
+		GEngine->AddOnScreenDebugMessage(6, 1.f, FColor::Red, TEXT("Hovered NULL"), false);
+	else
+		GEngine->AddOnScreenDebugMessage(6, 1.f, FColor::Green, FString::Printf(TEXT("Hovered %d"), HoveredUnit->Type), false);
+
 }
 
 
@@ -81,16 +91,16 @@ void ACameraPawn::EndTurn()
 	BoardGenerator->Turn++;
 }
 
-bool ACameraPawn::Server_EndTurn_Validate()
-{
-	return true;
-}
-
 void ACameraPawn::Server_EndTurn_Implementation()
 {
 	if (IsRunningDedicatedServer())
 		EndTurn();
 	Multicast_EndTurn();
+}
+
+bool ACameraPawn::Server_EndTurn_Validate()
+{
+	return true;
 }
 
 void ACameraPawn::Multicast_EndTurn_Implementation()
@@ -106,16 +116,16 @@ void ACameraPawn::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, TEXT("Spawns are full!"));
 }
 
-bool ACameraPawn::Server_SpawnUnit_Validate(ETeam team, TSubclassOf<AUnit> type)
-{
-	return true;
-}
-
 void ACameraPawn::Server_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUnit> type)
 {
 	if (IsRunningDedicatedServer())
 		SpawnUnit(team, type);
 	Multicast_SpawnUnit(team, type);
+}
+
+bool ACameraPawn::Server_SpawnUnit_Validate(ETeam team, TSubclassOf<AUnit> type)
+{
+	return true;
 }
 
 void ACameraPawn::Multicast_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUnit> type)
@@ -132,16 +142,16 @@ void ACameraPawn::Debug()
 	//UE_LOG(LogTemp, Display, TEXT("Team: %d\nTurn: %d\nIs Turn?: %s"), Team, Turn, (IsTurn()) ? TEXT("True") : TEXT("False?"))
 }
 
-bool ACameraPawn::Server_Debug_Validate()
-{
-	return true;
-}
-
 void ACameraPawn::Server_Debug_Implementation()
 {
 	if (IsRunningDedicatedServer())
 		Debug();
 	Multicast_Debug();
+}
+
+bool ACameraPawn::Server_Debug_Validate()
+{
+	return true;
 }
 
 void ACameraPawn::Multicast_Debug_Implementation()
@@ -158,6 +168,40 @@ void ACameraPawn::Client_SetTeam_Implementation(ETeam t)
 
 
 
+void ACameraPawn::SelectUnit()
+{
+	if (HoveredUnit != nullptr && HoveredUnit->bIsTargetable)
+	{
+		SelectedUnit = HoveredUnit;
+		bSelectButtonDown = true;
+		MoveOverlayOn();
+	}
+	else
+		SelectedUnit = nullptr;
+}
+
+void ACameraPawn::MoveUnit()
+{
+	bSelectButtonDown = false;
+	MoveOverlayOff();
+	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit != nullptr && HoveredUnit != nullptr && SelectedUnit->Team == Team)
+		SelectedUnit->Server_MoveTo(HoveredUnit->Coordinates, BoardGenerator->BoardWidth);
+}
+
+void ACameraPawn::MoveOverlayOn()
+{
+	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
+		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Green, TEXT("Move Overlay ON"), false);
+}
+
+void ACameraPawn::MoveOverlayOff()
+{
+	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit != nullptr && SelectedUnit->Team == Team)
+		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Red, TEXT("Move Overlay OFF"), false);
+}
+
+
+
 void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
@@ -170,6 +214,10 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAxis("Mouse X", this, &ACameraPawn::SetMouseX);
 	PlayerInputComponent->BindAxis("Mouse Y", this, &ACameraPawn::SetMouseY);
 	PlayerInputComponent->BindAction("Debug", IE_Pressed, this, &ACameraPawn::Debug);
+	PlayerInputComponent->BindAction("Select Unit", IE_Pressed, this, &ACameraPawn::SelectUnit);
+	PlayerInputComponent->BindAction("Select Unit", IE_Released, this, &ACameraPawn::MoveUnit);
+	PlayerInputComponent->BindAction("Move Unit", IE_Pressed, this, &ACameraPawn::MoveOverlayOn);
+	PlayerInputComponent->BindAction("Move Unit", IE_Released, this, &ACameraPawn::MoveUnit);
 }
 
 void ACameraPawn::ZoomIn()

@@ -13,6 +13,12 @@ ABoardGenerator::ABoardGenerator()
 	bAlwaysRelevant = true;	
 }
 
+ABoardGenerator::~ABoardGenerator()
+{
+	delete[] UnitBoard;
+	delete[] GroundBoard;
+}
+
 void ABoardGenerator::BeginPlay()
 {
 	Super::BeginPlay();
@@ -27,6 +33,8 @@ bool ABoardGenerator::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 		{
 			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates] = GetWorld()->SpawnActor<AUnit>(type, FVector((BoardSpawn[static_cast<int>(team)][i]->Coordinates % BoardWidth) * 200, BoardSpawn[static_cast<int>(team)][i]->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
 			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates]->Build(team);
+			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates]->UnitBoard = UnitBoard;
+			UnitBoard[BoardSpawn[static_cast<int>(team)][i]->Coordinates]->Coordinates = BoardSpawn[static_cast<int>(team)][i]->Coordinates;
 			return true;
 		}
 	return false;
@@ -52,15 +60,20 @@ void ABoardGenerator::GenerateBoard()
 	BoardLayoutBounds[0][0]++; BoardLayoutBounds[0][1]++; BoardLayoutBounds[1][0]--; BoardLayoutBounds[1][1]--; // crop unused outline around playable board
 	BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
 	BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
-	GroundBoard.Init(nullptr, BoardWidth * BoardHeight);
-	UnitBoard.Init(nullptr, BoardWidth * BoardHeight);
+	GroundBoard = new AUnit*[BoardWidth * BoardHeight];
+	UnitBoard = new AUnit*[BoardWidth * BoardHeight];
+	for (int i = 0; i < BoardWidth * BoardHeight; i++)
+	{
+		UnitBoard[i] = nullptr;
+		GroundBoard[i] = nullptr;
+	}
 
 	int CurrentSpawnToRegister[2] = { 0,0 };
 	for (int x = BoardLayoutBounds[0][0]; x <= BoardLayoutBounds[1][0]; x++)
 		for (int y = BoardLayoutBounds[0][1]; y <= BoardLayoutBounds[1][1]; y++)
 		{
-			FVector SpawnLocation = FVector((x - BoardLayoutBounds[0][0]) * 200, (y - BoardLayoutBounds[0][1]) * 200, 0);
-			FRotator SpawnRotation = FRotator(0, 0, 0);
+			FVector SpawnLocation((x - BoardLayoutBounds[0][0]) * 200, (y - BoardLayoutBounds[0][1]) * 200, 0);
+			FRotator SpawnRotation(0, 0, 0);
 			FColor CurrentColor = BoardLayoutColorArray[x + y * BoardLayoutWidth];
 			int CurrentBoardCoordinates = x - BoardLayoutBounds[0][0] + (y - BoardLayoutBounds[0][1]) * BoardWidth;
 			int CurrentBoardLayoutCoordinates = x + y * BoardLayoutWidth;

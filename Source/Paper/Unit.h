@@ -35,21 +35,12 @@ class PAPER_API AUnit : public AActor
 public:
 	AUnit();
 	UFUNCTION(BlueprintNativeEvent)
+
 	void Build(ETeam team);
 	virtual void Build_Implementation(ETeam team);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	ETeam Team;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FCardinal bIsCollidable;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	EType Type;
-	UPROPERTY(BlueprintReadWrite)
-	bool bIsTargetable;
-	int Coordinates;
-
-	TArray<AUnit*> UnitBoard;
-	TArray<AUnit*> GroundBoard;
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveTo(int destination, int boardWidth);
 
 	uint8 GetHPMax();
 	uint8 GetHP();
@@ -58,6 +49,29 @@ public:
 
 protected:
 	virtual void Passive();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void Multicast_MoveTo(int destination, int boardWidth);
+	void MoveTo(int destination, int boardWidth);
+
+
+public:
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	ETeam Team;
+	UPROPERTY(BlueprintReadWrite)
+	bool bIsTargetable;
+	UPROPERTY(BlueprintReadWrite)
+	FCardinal bIsCollidable;
+
+	int Coordinates;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	EType Type;
+
+	AUnit** UnitBoard;
+	AUnit** GroundBoard;
+
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	uint8 HP;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

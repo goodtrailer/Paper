@@ -17,6 +17,7 @@ class PAPER_API ABoardGenerator : public AActor
 	
 public:	
 	ABoardGenerator();
+	~ABoardGenerator();
 	bool SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 
 protected:
@@ -38,8 +39,8 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> SpawnBP;
 
-	TArray<AUnit*> GroundBoard;
-	TArray<AUnit*> UnitBoard;
+	AUnit** GroundBoard;
+	AUnit** UnitBoard;
 	int BoardWidth;
 	int BoardHeight;
 private:
