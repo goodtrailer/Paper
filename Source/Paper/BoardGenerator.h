@@ -20,10 +20,17 @@ public:
 	~ABoardGenerator();
 	bool SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Move(int start, int destination);
+
 protected:
 	virtual void BeginPlay() override;
 	void GenerateBoard();
 	bool ColorsNearlyEqual(FColor a, FColor b);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Move(int start, int destination);
+	void Move(int start, int destination);
 
 public:
 	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]

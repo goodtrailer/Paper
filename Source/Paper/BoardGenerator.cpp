@@ -40,6 +40,39 @@ bool ABoardGenerator::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 	return false;
 }
 
+
+
+void ABoardGenerator::Server_Move_Implementation(int start, int destination)
+{
+	if (UnitBoard[destination] == nullptr /* && check if destination is within range */)
+	{
+		if (IsRunningDedicatedServer())
+			Move(start, destination);
+		Multicast_Move(start, destination);
+	}
+}
+
+bool ABoardGenerator::Server_Move_Validate(int start, int destination)
+{
+	return true;
+}
+
+void ABoardGenerator::Multicast_Move_Implementation(int start, int destination)
+{
+	Move(start, destination);
+}
+
+void ABoardGenerator::Move(int start, int destination)
+{
+	UnitBoard[destination] = UnitBoard[start];
+	UE_LOG(LogTemp, Display, TEXT("AUnit *unit: %d"), UnitBoard[destination])
+	UnitBoard[start] = nullptr;
+	UnitBoard[destination]->Coordinates = destination;
+	UnitBoard[destination]->SetActorLocation(FVector(destination % BoardWidth * 200, destination / BoardWidth * 200, UnitBoard[destination]->GetActorLocation().Z));
+}
+
+
+
 void ABoardGenerator::GenerateBoard()
 {
 	BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];

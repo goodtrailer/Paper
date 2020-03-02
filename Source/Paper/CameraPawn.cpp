@@ -35,6 +35,7 @@ void ACameraPawn::BeginPlay()
 	
 	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
 		BoardGenerator = *i;
+	BoardGenerator->SetOwner(this);
 	if (!IsRunningDedicatedServer())
 		PlayerController = Cast<APlayerController>(GetController());
 }
@@ -137,7 +138,6 @@ void ACameraPawn::Multicast_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUn
 
 void ACameraPawn::Debug()
 {
-	UE_LOG(LogTemp, Display, TEXT("%d"), BoardGenerator->Turn)
 	GEngine->AddOnScreenDebugMessage(1, 8.f, FColor::Yellow, TEXT("Debug!"));
 	//UE_LOG(LogTemp, Display, TEXT("Team: %d\nTurn: %d\nIs Turn?: %s"), Team, Turn, (IsTurn()) ? TEXT("True") : TEXT("False?"))
 }
@@ -184,19 +184,19 @@ void ACameraPawn::MoveUnit()
 {
 	bSelectButtonDown = false;
 	MoveOverlayOff();
-	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit != nullptr && HoveredUnit != nullptr && SelectedUnit->Team == Team)
-		SelectedUnit->Server_MoveTo(HoveredUnit->Coordinates, BoardGenerator->BoardWidth);
+	if (SelectedUnit != nullptr && IsTurn() && HoveredUnit != nullptr && SelectedUnit->Team == Team)
+		BoardGenerator->Server_Move(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
 }
 
 void ACameraPawn::MoveOverlayOn()
 {
-	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
+	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Green, TEXT("Move Overlay ON"), false);
 }
 
 void ACameraPawn::MoveOverlayOff()
 {
-	if (BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit != nullptr && SelectedUnit->Team == Team)
+	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Red, TEXT("Move Overlay OFF"), false);
 }
 

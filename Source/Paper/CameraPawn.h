@@ -63,7 +63,7 @@ protected:
 public:
 	UPROPERTY(BlueprintReadOnly)
 	ABoardGenerator* BoardGenerator;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	ETeam Team;
 protected:
 	UPROPERTY(VisibleAnywhere)

@@ -39,9 +39,6 @@ public:
 	void Build(ETeam team);
 	virtual void Build_Implementation(ETeam team);
 
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveTo(int destination, int boardWidth);
-
 	uint8 GetHPMax();
 	uint8 GetHP();
 	void SetHP(uint8 a);
@@ -49,10 +46,6 @@ public:
 
 protected:
 	virtual void Passive();
-
-	UFUNCTION(NetMulticast, Reliable)
-		void Multicast_MoveTo(int destination, int boardWidth);
-	void MoveTo(int destination, int boardWidth);
 
 
 public:
