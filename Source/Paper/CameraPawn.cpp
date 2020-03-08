@@ -170,9 +170,12 @@ void ACameraPawn::Client_SetTeam_Implementation(ETeam t)
 
 void ACameraPawn::SelectUnit()
 {
-	if (HoveredUnit != nullptr && HoveredUnit->bIsTargetable)
+	if (HoveredUnit != nullptr)
 	{
-		SelectedUnit = HoveredUnit;
+		if (HoveredUnit->bIsTargetable)
+			SelectedUnit = HoveredUnit;
+		else
+			SelectedUnit = BoardGenerator->UnitBoard[HoveredUnit->Coordinates];
 		bSelectButtonDown = true;
 		MoveOverlayOn();
 	}
