@@ -48,8 +48,10 @@ public:
 
 	AUnit** GroundBoard;
 	AUnit** UnitBoard;
-	int BoardWidth;
-	int BoardHeight;
+	UPROPERTY(BlueprintReadOnly)
+		int BoardWidth;
+	UPROPERTY(BlueprintReadOnly)
+		int BoardHeight;
 private:
 	UPROPERTY(EditAnywhere)
 	UTexture2D* BoardLayoutTexture;

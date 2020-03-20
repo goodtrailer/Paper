@@ -10,34 +10,23 @@
 ACameraPawn::ACameraPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	Scene = CreateDefaultSubobject<USceneComponent>(TEXT("Scene"));
-	SetRootComponent(Scene);
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	SpringArm->SetupAttachment(Scene);
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	Camera->SetupAttachment(SpringArm);
-
-	SpringArm->TargetArmLength = 5000;
-	SpringArm->bDoCollisionTest = false;
-
-	ZoomSensitivity = 1.f;
-	RotateSensitivity = 2.5f;
-	PanSensitivity = 10.f;
 }
 
 void ACameraPawn::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	FVector MyVector(2000.f, 2800.f, 300.f);
-	SetActorLocation(MyVector);
-	
-	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
-		BoardGenerator = *i;
-	BoardGenerator->SetOwner(this);
+
+	// Don't wanna hard code this, but not really possible not to hard code until we get board editing, since
+	// then we could be passed BoardWidth/BoardHeight before BeginPlay, so that we don't just keep getting None and errors
+	SetActorLocation(FVector(2000.f, 2800.f, 300.f));
+
 	if (!IsRunningDedicatedServer())
 		PlayerController = Cast<APlayerController>(GetController());
+	for (TActorIterator<ABoardGenerator> i(GetWorld()); i; ++i)
+		BoardGenerator = *i;
+
+	SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator);
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -52,8 +41,8 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 	else if (bPanButtonDown && (SelectedUnit == nullptr || SelectedUnit->Team != Team))
 	{
-		FVector MyVector(0.f, MouseX, MouseY);
-		AddActorLocalOffset(MyVector * -PanSensitivity * SpringArm->TargetArmLength / 1000);
+		UE_LOG(LogTemp, Display, TEXT("NIGGA"))
+		AddActorLocalOffset(FVector(0.f, MouseX, MouseY) * -PanSensitivity * SpringArm->TargetArmLength / 1000);
 	}
 	
 	if (PlayerController != nullptr)
@@ -64,15 +53,26 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 
 	if (SelectedUnit == nullptr)
-		GEngine->AddOnScreenDebugMessage(5, 1.f, FColor::Red, TEXT("Selected NULL"), false);
+	{
+		SelectOverlay->GetRootComponent()->SetVisibility(false);
+	}
 	else
+	{
+		SelectOverlay->GetRootComponent()->SetVisibility(true);
+		SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
 		GEngine->AddOnScreenDebugMessage(5, 1.f, FColor::Green, FString::Printf(TEXT("Selected %d"), SelectedUnit->Type), false);
-
+	}
 	if (HoveredUnit == nullptr)
+	{
+		HoverOverlay->GetRootComponent()->SetVisibility(false);
 		GEngine->AddOnScreenDebugMessage(6, 1.f, FColor::Red, TEXT("Hovered NULL"), false);
+	}
 	else
+	{
+		HoverOverlay->GetRootComponent()->SetVisibility(true);
+		HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 		GEngine->AddOnScreenDebugMessage(6, 1.f, FColor::Green, FString::Printf(TEXT("Hovered %d"), HoveredUnit->Type), false);
-
+	}
 }
 
 
@@ -195,6 +195,7 @@ void ACameraPawn::MoveOverlayOn()
 {
 	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Green, TEXT("Move Overlay ON"), false);
+
 }
 
 void ACameraPawn::MoveOverlayOff()

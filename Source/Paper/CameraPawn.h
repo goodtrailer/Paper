@@ -19,16 +19,17 @@ class PAPER_API ACameraPawn : public APawn
 
 public:
 	ACameraPawn();
+
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UFUNCTION(Client, Reliable)
-	void Client_SetTeam(ETeam t);
+		void Client_SetTeam(ETeam t);
 	UFUNCTION(Server, Reliable, BlueprintCallable, WithValidation)
-	void Server_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
+		void Server_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 	UFUNCTION(Server, Reliable, BlueprintCallable, WithValidation)
-	void Server_EndTurn();
+		void Server_EndTurn();
 	UFUNCTION(BlueprintCallable)
-	bool IsTurn();
+		bool IsTurn();
 
 protected:
 	virtual void BeginPlay() override;
@@ -42,17 +43,17 @@ protected:
 	void ZoomOut();
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_EndTurn();
+		void Multicast_EndTurn();
 	void EndTurn();
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
+		void Multicast_SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 	void SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 	
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Debug();
+		void Server_Debug();
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Debug();
+		void Multicast_Debug();
 	void Debug();
 
 	void MoveUnit();
@@ -62,21 +63,35 @@ protected:
 
 public:
 	UPROPERTY(BlueprintReadOnly)
-	ABoardGenerator* BoardGenerator;
+		ABoardGenerator* BoardGenerator;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
-	ETeam Team;
+		ETeam Team;
 protected:
-	UPROPERTY(VisibleAnywhere)
-	class UCameraComponent* Camera;
-	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* Scene;
-	UPROPERTY(VisibleAnywhere)
-	class USpringArmComponent* SpringArm;
+	UPROPERTY(BlueprintReadWrite)
+		class USpringArmComponent* SpringArm;
+
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> MovableOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> HoverOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> SelectOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> MoveArrowBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> MoveLineBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+		TSubclassOf<AActor> MoveJointBP;
 
 	bool bPanButtonDown;
 	bool bRotateButtonDown;
 	bool bSelectButtonDown;
 	bool bMoveButtonDown;
+
+	TArray<AActor*> MovableOverlayArray;
+	TArray<AActor*> MoveOverlayArray;
+	AActor* SelectOverlay;
+	AActor* HoverOverlay;
 
 	float MouseX;
 	float MouseY;
@@ -85,9 +100,9 @@ protected:
 	APlayerController* PlayerController;
 
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-	float RotateSensitivity;
+		float RotateSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-	float ZoomSensitivity;
+		float ZoomSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-	float PanSensitivity;
+		float PanSensitivity;
 };
