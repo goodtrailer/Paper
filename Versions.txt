@@ -1,4 +1,5 @@
 Format: Major.Minor.Patch.Revision
+. : Self-explanatory
 
 0. Alpha
 	0. Board generation
@@ -13,37 +14,33 @@ Format: Major.Minor.Patch.Revision
 		2. Units part 1
 			Unrecorded
 		3. Bug fixes and major restructuring of code and blueprints
-			0. Created unit blueprint to derive from unit C++ class
-			1. Optimization of integer types and strings into UEnums
+			- Created unit blueprint to derive from unit C++ class
+			- Optimization of integer types and strings into UEnums
 		4. Basic replication of unit movement
-			0. Unchecked teleportation of units with left and right click
-			1. Squashed tens of fatal bugs involving networking and pointers that resulted in numerous crashes in release packages through major restructuring of code.
+			- Unchecked teleportation of units with left and right click
+			- Squashed tens of fatal bugs involving networking and pointers that resulted in numerous crashes in release packages through major restructuring of code.
 	3. Unit movement
 		0. Select and hover overlays
-			0. Assets for select and hover overlays, fixed extreme FPS lag from faulty lighting
-			1. Converted all C++ classes but BoardGenerator to blueprints
-			2. Implemented client side select and hover overlays
+			- Assets for select and hover overlays, fixed extreme FPS lag from faulty lighting
+			- Converted all C++ classes but BoardGenerator to blueprints
+			- Implemented client side select and hover overlays
 		1. Pathfinding
-			0.
+			- .
+			- Updated versioning again, to be more similar to semantic versioning
 		2. Pathfinding graphics
-			0.
+			- Blue overlays to see where is movable
+			- Arrow to cursor
 		3. Checked unit movement
-			0.
+			- .
 	4. Unit attacking
 		0.
-			0.
 	5. Bases and win conditions
 		0.
-			0.
 	6. Units part 2
 		0. Miners
-			0.
 		1. Money system
-			0.
 	7. Polish, bug fixes, and housekeeping
 		0.
-			0.
 1. Release
 	0.
 		0.
-			0.

@@ -55,6 +55,8 @@ public:
 	bool bIsTargetable;
 	UPROPERTY(BlueprintReadWrite)
 	FCardinal bIsCollidable;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	uint8 Energy;
 
 	int Coordinates;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)

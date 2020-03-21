@@ -65,7 +65,6 @@ void ABoardGenerator::Multicast_Move_Implementation(int start, int destination)
 void ABoardGenerator::Move(int start, int destination)
 {
 	UnitBoard[destination] = UnitBoard[start];
-	UE_LOG(LogTemp, Display, TEXT("AUnit *unit: %d"), UnitBoard[destination])
 	UnitBoard[start] = nullptr;
 	UnitBoard[destination]->Coordinates = destination;
 	UnitBoard[destination]->SetActorLocation(FVector(destination % BoardWidth * 200, destination / BoardWidth * 200, UnitBoard[destination]->GetActorLocation().Z));
