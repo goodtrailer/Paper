@@ -27,6 +27,7 @@ void ACameraPawn::BeginPlay()
 
 	SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
 	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0.f, 0.f, 200.f), FRotator::ZeroRotator);
+	LastHoveredForMoveUnit = nullptr;
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -64,6 +65,12 @@ void ACameraPawn::Tick(float DeltaTime)
 		HoverOverlay->GetRootComponent()->SetVisibility(true);
 		HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 	}
+	if (bMoveOverlayIsOn && LastHoveredForMoveUnit != HoveredUnit)
+	{
+		UE_LOG(LogTemp, Display, TEXT("Update Move Arrow"))
+		LastHoveredForMoveUnit = HoveredUnit;
+	}
+	
 }
 
 
@@ -177,13 +184,15 @@ void ACameraPawn::SelectUnit()
 void ACameraPawn::MoveUnit()
 {
 	bSelectButtonDown = false;
-	MoveOverlayOff();
-	if (SelectedUnit != nullptr && IsTurn() && HoveredUnit != nullptr && SelectedUnit->Team == Team)
+	if (SelectedUnit != nullptr && IsTurn() && HoveredUnit != nullptr && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == Team)
 		BoardGenerator->Server_Move(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
+	MoveOverlayOff();
 }
 
 void ACameraPawn::MoveOverlayOn()
 {
+	LastHoveredForMoveUnit = nullptr;
+	bMoveOverlayIsOn = true;
 	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 	{
 		UE_LOG(LogTemp, Display, TEXT("START"))
@@ -192,8 +201,6 @@ void ACameraPawn::MoveOverlayOn()
 		TSet<int> TilesForNextPass;
 		TSet<int> TilesForCurrentPass;
 		TSet<int> TilesPreviouslyQueuedForPassing;
-		TArray<int> MovableTileLocations;
-		TArray<uint8> MovableTileEnergies;
 
 		//TODO: add support for holes in the ground, not with another if statement, but by modifying ground blueprint so that it has no mesh and collision on all sides for the color orange
 		
@@ -209,6 +216,7 @@ void ACameraPawn::MoveOverlayOn()
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth);
+			MovableTiles.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates });
 		}
 
 		// Same calculations, but right
@@ -216,6 +224,7 @@ void ACameraPawn::MoveOverlayOn()
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + 1);
+			MovableTiles.Add(SelectedUnit->Coordinates + 1, { 0, SelectedUnit->Coordinates });
 		}
 
 		// Same calculations, but down
@@ -223,6 +232,7 @@ void ACameraPawn::MoveOverlayOn()
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth);
+			MovableTiles.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates });
 		}
 
 		// Same calculations, but left
@@ -230,6 +240,7 @@ void ACameraPawn::MoveOverlayOn()
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates - 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - 1);
+			MovableTiles.Add(SelectedUnit->Coordinates - 1, { 0, SelectedUnit->Coordinates });
 		}
 		
 		for (int16 EnergyLeft = SelectedUnit->Energy - 1; EnergyLeft > -1; EnergyLeft--)
@@ -238,47 +249,51 @@ void ACameraPawn::MoveOverlayOn()
 			TilesForNextPass.Empty();
 			for (auto coord : TilesForCurrentPass)
 			{
-				MovableTileLocations.Add(coord);
-				MovableTileEnergies.Add(EnergyLeft);
+				MovableTiles[coord].EnergyLeft = EnergyLeft;
 				if (coord / BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord - BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord - BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Down))
 				{
 					TilesForNextPass.Add(coord - BoardGenerator->BoardWidth);
 					TilesPreviouslyQueuedForPassing.Add(coord - BoardGenerator->BoardWidth);
+					MovableTiles.Add(coord - BoardGenerator->BoardWidth, { 0, coord });
 				}
 
 				if (coord % BoardGenerator->BoardWidth < BoardGenerator->BoardWidth - 1 && !BoardGenerator->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && !BoardGenerator->GroundBoard[coord + 1]->bIsCollidable.Get(FCardinal::Left))
 				{
 					TilesForNextPass.Add(coord + 1);
 					TilesPreviouslyQueuedForPassing.Add(coord + 1);
+					MovableTiles.Add(coord + 1, { 0, coord });
 				}
 
 				if (coord / BoardGenerator->BoardWidth < BoardGenerator->BoardHeight - 1 && !BoardGenerator->UnitBoard[coord + BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord + BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord + BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Up))
 				{
 					TilesForNextPass.Add(coord + BoardGenerator->BoardWidth);
 					TilesPreviouslyQueuedForPassing.Add(coord + BoardGenerator->BoardWidth);
+					MovableTiles.Add(coord + BoardGenerator->BoardWidth, { 0, coord });
 				}
 
 				if (coord % BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && !BoardGenerator->GroundBoard[coord - 1]->bIsCollidable.Get(FCardinal::Right))
 				{
 					TilesForNextPass.Add(coord - 1);
 					TilesPreviouslyQueuedForPassing.Add(coord - 1);
+					MovableTiles.Add(coord - 1, { 0, coord });
 				}
 			}
 		}
-		for (auto Coordinates : MovableTileLocations)
-			MovableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(MovableOverlayBP, FVector((Coordinates % BoardGenerator->BoardWidth) * 200.f, (Coordinates / BoardGenerator->BoardWidth) * 200.f, 200.f), FRotator::ZeroRotator));
-		UE_LOG(LogTemp, Display, TEXT("DONE"))
+		for (auto& MovableTile : MovableTiles)
+			MovableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(MovableOverlayBP, FVector((MovableTile.Key % BoardGenerator->BoardWidth) * 200.f, (MovableTile.Key / BoardGenerator->BoardWidth) * 200.f, 200.f), FRotator::ZeroRotator));
 	}
 }
 
 void ACameraPawn::MoveOverlayOff()
 {
+	bMoveOverlayIsOn = false;
 	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 	{
 		for (auto MovableOverlay : MovableOverlayArray)
 			MovableOverlay->Destroy();
 		MovableOverlayArray.Empty();
 	}
+	MovableTiles.Empty();
 }
 
 

@@ -32,6 +32,12 @@ public:
 		bool IsTurn();
 
 protected:
+	struct MovableTileInfo
+	{
+		uint8 EnergyLeft;
+		int SourceTileCoordinates;
+	};
+
 	virtual void BeginPlay() override;
 	void SetTruebPanButtonDown();
 	void SetFalsebPanButtonDown();
@@ -87,16 +93,21 @@ protected:
 	bool bRotateButtonDown;
 	bool bSelectButtonDown;
 	bool bMoveButtonDown;
+	bool bMoveOverlayIsOn;
 
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
 
+	//int : Coords, uint8 : EnergyLeft
+	TMap<int, MovableTileInfo> MovableTiles;
+
 	float MouseX;
 	float MouseY;
 	AUnit* SelectedUnit;
 	AUnit* HoveredUnit;
+	AUnit* LastHoveredForMoveUnit;
 	APlayerController* PlayerController;
 
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
@@ -105,4 +116,6 @@ protected:
 		float ZoomSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
 		float PanSensitivity;
+
+	
 };
