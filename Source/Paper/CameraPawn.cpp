@@ -40,7 +40,7 @@ void ACameraPawn::Tick(float DeltaTime)
 		FRotator Pitch(MouseY, 0.f, 0.f);
 		AddActorLocalRotation(Pitch * RotateSensitivity);
 	}
-	else if (bPanButtonDown && (SelectedUnit == nullptr || SelectedUnit->Team != Team))
+	else if (bPanButtonDown && (!IsTurn() || !SelectedUnit || (!SelectedUnit->Energy && SelectedUnit->Team == Team)))
 		AddActorLocalOffset(FVector(0.f, MouseX, MouseY) * -PanSensitivity * SpringArm->TargetArmLength / 1000);
 
 	
@@ -67,7 +67,30 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 	if (bMoveOverlayIsOn && LastHoveredForMoveUnit != HoveredUnit)
 	{
-		UE_LOG(LogTemp, Display, TEXT("Update Move Arrow"))
+		if (MoveOverlayArray.Num())
+			for (auto MoveOverlay : MoveOverlayArray)
+				MoveOverlay->Destroy();
+		MoveOverlayArray.Empty();
+		if (HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates))
+		{
+			UWorld* World = GetWorld();
+
+			int16 yRotation = 90 * static_cast<int>(MovableTiles[HoveredUnit->Coordinates].DirectionToSourceTile);
+			MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveArrowBP, 200 * FVector(HoveredUnit->Coordinates % BoardGenerator->BoardWidth, HoveredUnit->Coordinates / BoardGenerator->BoardWidth, 1), FRotator(0, yRotation, 0)));
+			int CurrentTileCoordinates = MovableTiles[HoveredUnit->Coordinates].SourceTileCoordinates;
+			MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % BoardGenerator->BoardWidth, CurrentTileCoordinates / BoardGenerator->BoardWidth, 1), FRotator(0, 180 + yRotation, 0)));
+
+			for (int i = 1; i < SelectedUnit->Energy - MovableTiles[HoveredUnit->Coordinates].EnergyLeft; i++)
+			{
+				yRotation = 90 * static_cast<int>(MovableTiles[CurrentTileCoordinates].DirectionToSourceTile);
+				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % BoardGenerator->BoardWidth, CurrentTileCoordinates / BoardGenerator->BoardWidth, 1), FRotator(0, yRotation, 0)));
+				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveJointBP, 200 * FVector(CurrentTileCoordinates % BoardGenerator->BoardWidth, CurrentTileCoordinates / BoardGenerator->BoardWidth, 1), FRotator::ZeroRotator));
+				CurrentTileCoordinates = MovableTiles[CurrentTileCoordinates].SourceTileCoordinates;
+				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % BoardGenerator->BoardWidth, CurrentTileCoordinates / BoardGenerator->BoardWidth, 1), FRotator(0, 180 + yRotation, 0)));
+			}
+			UE_LOG(LogTemp, Display, TEXT("\n-------------------\n"))
+		}
+		// to check for next tick
 		LastHoveredForMoveUnit = HoveredUnit;
 	}
 	
@@ -175,7 +198,7 @@ void ACameraPawn::SelectUnit()
 		else
 			SelectedUnit = BoardGenerator->UnitBoard[HoveredUnit->Coordinates];
 		bSelectButtonDown = true;
-		MoveOverlayOn();
+		MovableOverlayOn();
 	}
 	else
 		SelectedUnit = nullptr;
@@ -185,18 +208,16 @@ void ACameraPawn::MoveUnit()
 {
 	bSelectButtonDown = false;
 	if (SelectedUnit != nullptr && IsTurn() && HoveredUnit != nullptr && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == Team)
-		BoardGenerator->Server_Move(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
-	MoveOverlayOff();
+		BoardGenerator->Server_Move(SelectedUnit->Coordinates, HoveredUnit->Coordinates, MovableTiles[HoveredUnit->Coordinates].EnergyLeft);
+	MovableOverlayOff();
 }
 
-void ACameraPawn::MoveOverlayOn()
+void ACameraPawn::MovableOverlayOn()
 {
-	LastHoveredForMoveUnit = nullptr;
-	bMoveOverlayIsOn = true;
-	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
+	if (SelectedUnit && SelectedUnit->Energy > 0 && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 	{
-		UE_LOG(LogTemp, Display, TEXT("START"))
-		GEngine->AddOnScreenDebugMessage(3, 1.f, FColor::Green, TEXT("Move Overlay ON"), false);
+		LastHoveredForMoveUnit = nullptr;
+		bMoveOverlayIsOn = true;
 		
 		TSet<int> TilesForNextPass;
 		TSet<int> TilesForCurrentPass;
@@ -212,70 +233,70 @@ void ACameraPawn::MoveOverlayOn()
 			// Prevent repeating passing on tiles, since that would result in using up all your energy for any move, even one space moves
 			&& !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - BoardGenerator->BoardWidth)
 			// Check if passable upwards, since there are ground tiles that block one direction
-			&& !BoardGenerator->GroundBoard[SelectedUnit->Coordinates - BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Down))
+			&& !BoardGenerator->GroundBoard[SelectedUnit->Coordinates - BoardGenerator->BoardWidth]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth);
-			MovableTiles.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates });
+			MovableTiles.Add(SelectedUnit->Coordinates - BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates, EDirection::Down });
 		}
 
 		// Same calculations, but right
-		if (SelectedUnit->Coordinates % BoardGenerator->BoardWidth < BoardGenerator->BoardWidth - 1 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + 1) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates + 1]->bIsCollidable.Get(FCardinal::Left))
+		if (SelectedUnit->Coordinates % BoardGenerator->BoardWidth < BoardGenerator->BoardWidth - 1 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + 1) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + 1);
-			MovableTiles.Add(SelectedUnit->Coordinates + 1, { 0, SelectedUnit->Coordinates });
+			MovableTiles.Add(SelectedUnit->Coordinates + 1, { 0, SelectedUnit->Coordinates, EDirection::Left });
 		}
 
 		// Same calculations, but down
-		if (SelectedUnit->Coordinates / BoardGenerator->BoardWidth < BoardGenerator->BoardHeight - 1 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates + BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates + BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Up))
+		if (SelectedUnit->Coordinates / BoardGenerator->BoardWidth < BoardGenerator->BoardHeight - 1 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates + BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates + BoardGenerator->BoardWidth]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth);
-			MovableTiles.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates });
+			MovableTiles.Add(SelectedUnit->Coordinates + BoardGenerator->BoardWidth, { 0, SelectedUnit->Coordinates, EDirection::Up });
 		}
 
 		// Same calculations, but left
-		if (SelectedUnit->Coordinates % BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - 1) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates - 1]->bIsCollidable.Get(FCardinal::Right))
+		if (SelectedUnit->Coordinates % BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[SelectedUnit->Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - 1) && !BoardGenerator->GroundBoard[SelectedUnit->Coordinates - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates - 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - 1);
-			MovableTiles.Add(SelectedUnit->Coordinates - 1, { 0, SelectedUnit->Coordinates });
+			MovableTiles.Add(SelectedUnit->Coordinates - 1, { 0, SelectedUnit->Coordinates, EDirection::Right });
 		}
 		
-		for (int16 EnergyLeft = SelectedUnit->Energy - 1; EnergyLeft > -1; EnergyLeft--)
+		for (int16 EnergyLeft = SelectedUnit->Energy - 1; EnergyLeft > 0; EnergyLeft--)
 		{
 			TilesForCurrentPass = TilesForNextPass;
 			TilesForNextPass.Empty();
 			for (auto coord : TilesForCurrentPass)
 			{
 				MovableTiles[coord].EnergyLeft = EnergyLeft;
-				if (coord / BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord - BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord - BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Down))
+				if (coord / BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord - BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord - BoardGenerator->BoardWidth]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
 				{
 					TilesForNextPass.Add(coord - BoardGenerator->BoardWidth);
 					TilesPreviouslyQueuedForPassing.Add(coord - BoardGenerator->BoardWidth);
-					MovableTiles.Add(coord - BoardGenerator->BoardWidth, { 0, coord });
+					MovableTiles.Add(coord - BoardGenerator->BoardWidth, { 0, coord, EDirection::Down });
 				}
 
-				if (coord % BoardGenerator->BoardWidth < BoardGenerator->BoardWidth - 1 && !BoardGenerator->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && !BoardGenerator->GroundBoard[coord + 1]->bIsCollidable.Get(FCardinal::Left))
+				if (coord % BoardGenerator->BoardWidth < BoardGenerator->BoardWidth - 1 && !BoardGenerator->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && !BoardGenerator->GroundBoard[coord + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
 				{
 					TilesForNextPass.Add(coord + 1);
 					TilesPreviouslyQueuedForPassing.Add(coord + 1);
-					MovableTiles.Add(coord + 1, { 0, coord });
+					MovableTiles.Add(coord + 1, { 0, coord, EDirection::Left });
 				}
 
-				if (coord / BoardGenerator->BoardWidth < BoardGenerator->BoardHeight - 1 && !BoardGenerator->UnitBoard[coord + BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord + BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord + BoardGenerator->BoardWidth]->bIsCollidable.Get(FCardinal::Up))
+				if (coord / BoardGenerator->BoardWidth < BoardGenerator->BoardHeight - 1 && !BoardGenerator->UnitBoard[coord + BoardGenerator->BoardWidth] && !TilesPreviouslyQueuedForPassing.Contains(coord + BoardGenerator->BoardWidth) && !BoardGenerator->GroundBoard[coord + BoardGenerator->BoardWidth]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
 				{
 					TilesForNextPass.Add(coord + BoardGenerator->BoardWidth);
 					TilesPreviouslyQueuedForPassing.Add(coord + BoardGenerator->BoardWidth);
-					MovableTiles.Add(coord + BoardGenerator->BoardWidth, { 0, coord });
+					MovableTiles.Add(coord + BoardGenerator->BoardWidth, { 0, coord, EDirection::Up });
 				}
 
-				if (coord % BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && !BoardGenerator->GroundBoard[coord - 1]->bIsCollidable.Get(FCardinal::Right))
+				if (coord % BoardGenerator->BoardWidth > 0 && !BoardGenerator->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && !BoardGenerator->GroundBoard[coord - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
 				{
 					TilesForNextPass.Add(coord - 1);
 					TilesPreviouslyQueuedForPassing.Add(coord - 1);
-					MovableTiles.Add(coord - 1, { 0, coord });
+					MovableTiles.Add(coord - 1, { 0, coord, EDirection::Right });
 				}
 			}
 		}
@@ -284,16 +305,21 @@ void ACameraPawn::MoveOverlayOn()
 	}
 }
 
-void ACameraPawn::MoveOverlayOff()
+void ACameraPawn::MovableOverlayOff()
 {
-	bMoveOverlayIsOn = false;
 	if (SelectedUnit != nullptr && BoardGenerator->Turn % 2 == static_cast<int>(Team) && SelectedUnit->Team == Team)
 	{
+		bMoveOverlayIsOn = false;
 		for (auto MovableOverlay : MovableOverlayArray)
 			MovableOverlay->Destroy();
 		MovableOverlayArray.Empty();
+		if (MoveOverlayArray.Num())
+			for (auto MoveOverlay : MoveOverlayArray)
+				MoveOverlay->Destroy();
+		MovableOverlayArray.Empty();
+		MovableTiles.Empty();
 	}
-	MovableTiles.Empty();
+	
 }
 
 
@@ -312,7 +338,7 @@ void ACameraPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	PlayerInputComponent->BindAction("Debug", IE_Pressed, this, &ACameraPawn::Debug);
 	PlayerInputComponent->BindAction("Select Unit", IE_Pressed, this, &ACameraPawn::SelectUnit);
 	PlayerInputComponent->BindAction("Select Unit", IE_Released, this, &ACameraPawn::MoveUnit);
-	PlayerInputComponent->BindAction("Move Unit", IE_Pressed, this, &ACameraPawn::MoveOverlayOn);
+	PlayerInputComponent->BindAction("Move Unit", IE_Pressed, this, &ACameraPawn::MovableOverlayOn);
 	PlayerInputComponent->BindAction("Move Unit", IE_Released, this, &ACameraPawn::MoveUnit);
 }
 

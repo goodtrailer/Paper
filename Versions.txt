@@ -30,6 +30,7 @@ Format: Major.Minor.Patch.Revision
 		2. Pathfinding graphics
 			- Blue overlays to see where is movable
 			- Arrow to cursor
+			- Completely reworked the FCardinal struct
 		3. Checked unit movement
 			- .
 	4. Unit attacking

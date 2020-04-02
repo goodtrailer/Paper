@@ -42,32 +42,33 @@ bool ABoardGenerator::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
 
 
 
-void ABoardGenerator::Server_Move_Implementation(int start, int destination)
+void ABoardGenerator::Server_Move_Implementation(int start, int destination, uint8 energyLeft)
 {
 	if (UnitBoard[destination] == nullptr /* && check if destination is within range */)
 	{
 		if (IsRunningDedicatedServer())
-			Move(start, destination);
-		Multicast_Move(start, destination);
+			Move(start, destination, energyLeft);
+		Multicast_Move(start, destination, energyLeft);
 	}
 }
 
-bool ABoardGenerator::Server_Move_Validate(int start, int destination)
+bool ABoardGenerator::Server_Move_Validate(int start, int destination, uint8 energyLeft)
 {
 	return true;
 }
 
-void ABoardGenerator::Multicast_Move_Implementation(int start, int destination)
+void ABoardGenerator::Multicast_Move_Implementation(int start, int destination, uint8 energyLeft)
 {
-	Move(start, destination);
+	Move(start, destination, energyLeft);
 }
 
-void ABoardGenerator::Move(int start, int destination)
+void ABoardGenerator::Move(int start, int destination, uint8 energyLeft)
 {
 	UnitBoard[destination] = UnitBoard[start];
 	UnitBoard[start] = nullptr;
 	UnitBoard[destination]->Coordinates = destination;
 	UnitBoard[destination]->SetActorLocation(FVector(destination % BoardWidth * 200, destination / BoardWidth * 200, UnitBoard[destination]->GetActorLocation().Z));
+	UnitBoard[destination]->Energy = energyLeft;
 }
 
 
@@ -117,45 +118,45 @@ void ABoardGenerator::GenerateBoard()
 				GroundBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<AUnit>(GroundBP, SpawnLocation, SpawnRotation);
 
 				if (ColorsNearlyEqual(CurrentColor, ColorCode::Ground))
-					for (unsigned char q = FCardinal::Up; q <= FCardinal::Left; q++)
-						GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(q, false);
+					for (uint8 q = 0; q <= 3; q++)
+						GroundBoard[CurrentBoardCoordinates]->bIsCollidable[q] = false;
 
 				// if directional ground
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayU))
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Up, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Up] = true;
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayR))
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Right, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Right] = true;
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayD))
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Down, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Down] = true;
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayL))
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Left, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Left] = true;
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayUL))
 				{
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Up, true);
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Left, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Up] = true;
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Left] = true;
 				}
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayUR))
 				{
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Up, true);
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Right, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Up] = true;
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Right] = true;
 
 				}
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayDR))
 				{
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Down, true);
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Right, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Down] = true;
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Right] = true;
 				}
 				else if (ColorsNearlyEqual(CurrentColor, ColorCode::OneWayDL))
 				{
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Down, true);
-					GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(FCardinal::Left, true);
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Down] = true;
+					GroundBoard[CurrentBoardCoordinates]->bIsCollidable[EDirection::Left] = true;
 				}
 
 				else
 				{
 					// if ground not explicitly normal nor directional, then the ground underneath is normal
 					for (unsigned char i = 0; i < 4; i++)
-						GroundBoard[CurrentBoardCoordinates]->bIsCollidable.Set(i, false);
+						GroundBoard[CurrentBoardCoordinates]->bIsCollidable[i] = false;
 					// surface layer now, so spawn 200 units up (size of a block)
 					SpawnLocation.Z += 200;
 					

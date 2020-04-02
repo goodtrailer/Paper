@@ -21,7 +21,7 @@ public:
 	bool SpawnUnit(ETeam team, TSubclassOf<AUnit> type);
 
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Move(int start, int destination);
+	void Server_Move(int start, int destination, uint8 energyLeft);
 
 protected:
 	virtual void BeginPlay() override;
@@ -29,8 +29,8 @@ protected:
 	bool ColorsNearlyEqual(FColor a, FColor b);
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_Move(int start, int destination);
-	void Move(int start, int destination);
+	void Multicast_Move(int start, int destination, uint8 energyLeft);
+	void Move(int start, int destination, uint8 energyLeft);
 
 public:
 	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]

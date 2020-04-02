@@ -36,6 +36,7 @@ protected:
 	{
 		uint8 EnergyLeft;
 		int SourceTileCoordinates;
+		EDirection DirectionToSourceTile;
 	};
 
 	virtual void BeginPlay() override;
@@ -64,8 +65,8 @@ protected:
 
 	void MoveUnit();
 	void SelectUnit();
-	void MoveOverlayOn();
-	void MoveOverlayOff();
+	void MovableOverlayOn();
+	void MovableOverlayOff();
 
 public:
 	UPROPERTY(BlueprintReadOnly)
