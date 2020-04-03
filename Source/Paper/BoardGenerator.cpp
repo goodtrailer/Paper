@@ -3,7 +3,6 @@
 #include "BoardGenerator.h"
 #include "UnrealNetwork.h"
 #include "Engine/World.h"
-#include "Engine/Texture2D.h"
 
 
 ABoardGenerator::ABoardGenerator()

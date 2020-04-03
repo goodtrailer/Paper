@@ -3,7 +3,10 @@
 
 #include "Unit.h"
 
-void AUnit::Passive() { }
+void AUnit::Passive()
+{
+	Energy = EnergyMax;
+}
 
 AUnit::AUnit()
 {

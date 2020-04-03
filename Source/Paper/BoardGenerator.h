@@ -4,7 +4,6 @@
 
 #include "Unit.h"
 
-#include "TextureResource.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BoardGenerator.generated.h"
@@ -30,7 +29,7 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Move(int start, int destination, uint8 energyLeft);
-	void Move(int start, int destination, uint8 energyLeft);
+	void Move(int start, int destination, uint8 energyLeft	);
 
 public:
 	//BoardSpawn[team color (green ~ 0, red ~ 1)][spawn number (there can be multiple spawn locations)]

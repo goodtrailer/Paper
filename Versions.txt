@@ -1,5 +1,7 @@
 Format: Major.Minor.Patch.Revision
 . : Self-explanatory
++ : Done
+- : Planned
 
 0. Alpha
 	0. Board generation
@@ -14,25 +16,27 @@ Format: Major.Minor.Patch.Revision
 		2. Units part 1
 			Unrecorded
 		3. Bug fixes and major restructuring of code and blueprints
-			- Created unit blueprint to derive from unit C++ class
-			- Optimization of integer types and strings into UEnums
+			+ Created unit blueprint to derive from unit C++ class
+			+ Optimization of integer types and strings into UEnums
 		4. Basic replication of unit movement
-			- Unchecked teleportation of units with left and right click
-			- Squashed tens of fatal bugs involving networking and pointers that resulted in numerous crashes in release packages through major restructuring of code.
+			+ Unchecked teleportation of units with left and right click
+			+ Squashed tens of fatal bugs involving networking and pointers that resulted in numerous crashes in release packages through major restructuring of code.
 	3. Unit movement
 		0. Select and hover overlays
-			- Assets for select and hover overlays, fixed extreme FPS lag from faulty lighting
-			- Converted all C++ classes but BoardGenerator to blueprints
-			- Implemented client side select and hover overlays
+			+ Assets for select and hover overlays, fixed extreme FPS lag from faulty lighting
+			+ Converted all C++ classes but BoardGenerator to blueprints
+			+ Implemented client side select and hover overlays
 		1. Pathfinding
-			- .
-			- Updated versioning again, to be more similar to semantic versioning
+			+ .
+			+ Updated versioning again, to be more similar to semantic versioning
 		2. Pathfinding graphics
-			- Blue overlays to see where is movable
-			- Arrow to cursor
-			- Completely reworked the FCardinal struct
+			+ Blue overlays to see where is movable
+			+ Arrow to cursor
+			+ Completely reworked the FCardinal struct
 		3. Checked unit movement
-			- .
+			+ Subtracting from energy when moving
+			+ Restoring energy at the beginning of turn
+			+ Changed how Unit stats are handled (EditAnywhere insead of BlueprintReadWrite)
 	4. Unit attacking
 		0.
 	5. Bases and win conditions

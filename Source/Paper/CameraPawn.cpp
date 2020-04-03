@@ -2,8 +2,8 @@
 
 
 #include "CameraPawn.h"
-#include "Unit.h"
 #include "GameFramework/PlayerController.h"
+#include "Components/InputComponent.h"
 #include "EngineUtils.h"
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 
@@ -67,9 +67,8 @@ void ACameraPawn::Tick(float DeltaTime)
 	}
 	if (bMoveOverlayIsOn && LastHoveredForMoveUnit != HoveredUnit)
 	{
-		if (MoveOverlayArray.Num())
-			for (auto MoveOverlay : MoveOverlayArray)
-				MoveOverlay->Destroy();
+		for (auto MoveOverlay : MoveOverlayArray)
+			MoveOverlay->Destroy();
 		MoveOverlayArray.Empty();
 		if (HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates))
 		{
@@ -88,7 +87,6 @@ void ACameraPawn::Tick(float DeltaTime)
 				CurrentTileCoordinates = MovableTiles[CurrentTileCoordinates].SourceTileCoordinates;
 				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % BoardGenerator->BoardWidth, CurrentTileCoordinates / BoardGenerator->BoardWidth, 1), FRotator(0, 180 + yRotation, 0)));
 			}
-			UE_LOG(LogTemp, Display, TEXT("\n-------------------\n"))
 		}
 		// to check for next tick
 		LastHoveredForMoveUnit = HoveredUnit;
@@ -111,6 +109,9 @@ bool ACameraPawn::IsTurn()
 void ACameraPawn::EndTurn()
 {
 	BoardGenerator->Turn++;
+	for (int i = 0; i < BoardGenerator->BoardWidth * BoardGenerator->BoardHeight; i++)
+		if (BoardGenerator->UnitBoard[i] && static_cast<uint8>(BoardGenerator->UnitBoard[i]->Team) == BoardGenerator->Turn % 2)
+			BoardGenerator->UnitBoard[i]->Passive();
 }
 
 void ACameraPawn::Server_EndTurn_Implementation()
@@ -159,7 +160,7 @@ void ACameraPawn::Multicast_SpawnUnit_Implementation(ETeam team, TSubclassOf<AUn
 
 void ACameraPawn::Debug()
 {
-	GEngine->AddOnScreenDebugMessage(1, 8.f, FColor::Yellow, TEXT("Debug!"));
+	UE_LOG(LogTemp, Display, TEXT("At (0,0) Energy: %d"), BoardGenerator->UnitBoard[0] ? BoardGenerator->UnitBoard[0]->Energy : -1)
 	//UE_LOG(LogTemp, Display, TEXT("Team: %d\nTurn: %d\nIs Turn?: %s"), Team, Turn, (IsTurn()) ? TEXT("True") : TEXT("False?"))
 }
 
@@ -313,11 +314,10 @@ void ACameraPawn::MovableOverlayOff()
 		for (auto MovableOverlay : MovableOverlayArray)
 			MovableOverlay->Destroy();
 		MovableOverlayArray.Empty();
-		if (MoveOverlayArray.Num())
-			for (auto MoveOverlay : MoveOverlayArray)
-				MoveOverlay->Destroy();
-		MovableOverlayArray.Empty();
 		MovableTiles.Empty();
+		for (auto MoveOverlay : MoveOverlayArray)
+			MoveOverlay->Destroy();
+		MoveOverlayArray.Empty();
 	}
 	
 }

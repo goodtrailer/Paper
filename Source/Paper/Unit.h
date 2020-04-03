@@ -2,8 +2,8 @@
 
 #pragma once
 #include "Cardinal.h"
+
 #include "CoreMinimal.h"
-#include "Materials/Material.h"
 #include "GameFramework/Actor.h"
 #include "Unit.generated.h"
 
@@ -15,6 +15,7 @@ enum class ETeam : uint8
 	TeamRed			UMETA(DisplayName = "Red"),
 	TeamNeutral		UMETA(DisplayName = "Neutral")
 };
+
 
 UENUM(BlueprintType)
 enum class EType : uint8
@@ -43,32 +44,32 @@ public:
 	uint8 GetHP();
 	void SetHP(uint8 a);
 
-
-protected:
 	virtual void Passive();
 
 
 public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Stats")
 	ETeam Team;
 	UPROPERTY(BlueprintReadWrite)
-	bool bIsTargetable;
-	UPROPERTY(BlueprintReadWrite)
 	FCardinal bIsCollidable;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	uint8 Energy;
-
 	int Coordinates;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	EType Type;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats")
+		bool bIsTargetable;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats")
+		EType Type;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
+		uint8 Energy;
 
 	AUnit** UnitBoard;
 	AUnit** GroundBoard;
 
 
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	uint8 HP;
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	uint8 HPMax;
+	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
+		uint8 EnergyMax;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats", DisplayName="Starting HP")
+		uint8 HP;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Stats", DisplayName="Max HP")
+		uint8 HPMax;
 };

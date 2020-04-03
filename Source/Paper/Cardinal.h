@@ -26,7 +26,7 @@ struct FCardinal
 	* @param	Down	Boolean value for Down (index 2) in Directions.
 	* @param	Left	Boolean value for Left (index 3) in Directions.
 	*/
-	FCardinal(const bool& Up, const bool& Right, const bool& Down, const bool& Left)
+	FCardinal(const bool Up, const bool Right, const bool Down, const bool Left)
 	{
 		Directions[0] = Up;
 		Directions[1] = Right;
@@ -67,7 +67,7 @@ struct FCardinal
 	 *
 	 * @param	Direction	Direction to get the boolean value of.
 	 */
-	bool& operator[](const EDirection& Direction)
+	bool& operator[](const EDirection Direction)
 	{
 		return Directions[static_cast<uint8>(Direction)];
 	}
@@ -77,7 +77,7 @@ struct FCardinal
 	 *
 	 * @param	Direction	Direction to get the boolean value of.
 	 */
-	const bool& operator[](const EDirection& Direction) const
+	const bool& operator[](const EDirection Direction) const
 	{
 		return Directions[static_cast<uint8>(Direction)];
 	}
@@ -87,7 +87,7 @@ struct FCardinal
 	 *
 	 * @param	Direction	Direction as a uint8 to get the boolean value of.
 	 */
-	bool& operator[](const uint8& Direction)
+	bool& operator[](const uint8 Direction)
 	{
 		return Directions[Direction];
 	}
@@ -97,9 +97,19 @@ struct FCardinal
 	 *
 	 * @param	Direction	Direction as a uint8 to get the boolean value of.
 	 */
-	const bool& operator[](const uint8& Direction) const
+	const bool& operator[](const uint8 Direction) const
 	{
 		return Directions[Direction];
+	}
+
+	/**
+	 * Equivalency operator. Returns true if Directions are equivalent.
+	 *
+	 *@param	Other		The other FCardinal to be compared to.
+	 */
+	bool operator==(const FCardinal& Other) const
+	{
+		return Directions == Other.Directions;
 	}
 };
 
