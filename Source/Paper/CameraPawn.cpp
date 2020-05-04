@@ -40,8 +40,8 @@ void ACameraPawn::Tick(float DeltaTime)
 		FRotator Pitch(MouseY, 0.f, 0.f);
 		AddActorLocalRotation(Pitch * RotateSensitivity);
 	}
-	else if (bPanButtonDown && (!IsTurn() || !SelectedUnit || (!SelectedUnit->Energy && SelectedUnit->Team == Team)))
-		AddActorLocalOffset(FVector(0.f, MouseX, MouseY) * -PanSensitivity * SpringArm->TargetArmLength / 1000);
+	else if (bPanButtonDown && (!IsTurn() || !SelectedUnit || !SelectedUnit->Energy || SelectedUnit->Team != Team))
+			AddActorLocalOffset(FVector(0.f, MouseX, MouseY) * -PanSensitivity * SpringArm->TargetArmLength / 1000);
 
 	
 	if (PlayerController != nullptr)

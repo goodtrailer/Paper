@@ -3,7 +3,8 @@
 #pragma once
 
 #include "Unit.h"
-
+#include "TextureResource.h"
+#include "Engine/Texture2D.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "BoardGenerator.generated.h"

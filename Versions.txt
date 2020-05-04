@@ -38,7 +38,11 @@ Format: Major.Minor.Patch.Revision
 			+ Restoring energy at the beginning of turn
 			+ Changed how Unit stats are handled (EditAnywhere insead of BlueprintReadWrite)
 	4. Unit attacking
-		0.
+		0. Attack graphics
+			+ Attackable overlays
+			- Attack overlay (target/crosshair?)
+			- Generate attack range using range and []/<>
+		1.
 	5. Bases and win conditions
 		0.
 	6. Units part 2

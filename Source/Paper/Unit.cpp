@@ -3,7 +3,7 @@
 
 #include "Unit.h"
 
-void AUnit::Passive()
+void AUnit::Passive_Implementation()
 {
 	Energy = EnergyMax;
 }
@@ -12,11 +12,6 @@ AUnit::AUnit()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	Type = EType::TypeUnit;
-}
-
-void AUnit::Build_Implementation(ETeam team)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Build_Implementation"))
 }
 
 void AUnit::SetHP(uint8 a) { HP = a; }
