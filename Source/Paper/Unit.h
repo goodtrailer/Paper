@@ -43,46 +43,38 @@ class PAPER_API AUnit : public AActor
 public:
 	AUnit();
 	UFUNCTION(BlueprintImplementableEvent)
-	void Build(ETeam team);
-
+		void Build(ETeam team);
+	UFUNCTION(BlueprintNativeEvent)
+		void Passive();
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	uint8 GetHPMax();
 	uint8 GetHP();
 	void SetHP(uint8 a);
 
-	UFUNCTION(BlueprintNativeEvent)
-	void Passive();
-
-
-public:
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
-	ETeam Team;
-	UPROPERTY(BlueprintReadWrite)
-	FCardinal bIsCollidable;
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
+		ETeam Team;
+	UPROPERTY(Replicated, BlueprintReadWrite)
+		FCardinal bIsCollidable;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
+		bool bIsTargetable;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
+		EType Type;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Attack")
+		uint8 Attack;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range")
+		uint8 Range;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
+		ERangeType RangeType;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
+		uint8 Energy;
+	UPROPERTY(Replicated)
 	int Coordinates;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")
-		bool bIsTargetable;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")
-		EType Type;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Attack")
-		uint8 Attack;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range")
-		uint8 Range;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
-		ERangeType RangeType;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
-		uint8 Energy;
-
-	AUnit** UnitBoard;
-	AUnit** GroundBoard;
-
-
 protected:
-	UPROPERTY(EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
+	UPROPERTY(Replicated, EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
 		uint8 EnergyMax;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting HP")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting HP")
 		uint8 HP;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Max HP")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Max HP")
 		uint8 HPMax;
-	
 };

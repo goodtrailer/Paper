@@ -113,6 +113,7 @@ struct FCardinal
 	}
 };
 
+#if 0
 /**
  * Cardinal of booleans.
  *
@@ -120,7 +121,6 @@ struct FCardinal
  * Meant for use with EDirection, which is used to represent the cardinal directions, but can just
  * as easily be used with uint8 without need for static_cast.
  */
-/*
 template <typename T = bool>
 class TCardinal : public UClass
 {
@@ -178,7 +178,7 @@ public:
 		Directions[static_cast<uint8>(Direction)] = Value;
 	}
 };
-*/
+#endif
 
 UENUM(BlueprintType)
 enum class EDirection : uint8
