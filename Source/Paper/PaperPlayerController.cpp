@@ -9,37 +9,41 @@ APaperPlayerController::APaperPlayerController()
 	bAutoManageActiveCameraTarget = false;
 	bEnableClickEvents = true;
 	bShowMouseCursor = true;
-	DefaultMouseCursor = EMouseCursor::Hand;
+	DefaultMouseCursor = EMouseCursor::Default;
 }
 
 void APaperPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	PlayerState = GetPlayerState<APaperPlayerState>();
 	GameState = GetWorld()->GetGameState<APaperGameState>();
-	CameraPawn = Cast<ACameraPawn>(GetPawn());
+
+	CameraPawn = GetPawn<ACameraPawn>();
 	SetViewTargetWithBlend(CameraPawn, 1.f);
+
+	UWorld* World = GetWorld();
 	SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
 	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
 	LastHoveredForMoveUnit = nullptr;
-	UE_LOG(LogTemp, Warning, TEXT("PLAYER INDEX: %d"), PlayerState->PlayerId)
-		
 }
 
 void APaperPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+
 	FHitResult Hit;
 	GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
 	HoveredUnit = Cast<AUnit>(Hit.GetActor());
 
 	// Show/hide hover overlay
-	if (!HoveredUnit)
-		HoverOverlay->GetRootComponent()->SetVisibility(false);
-	else
+	if (HoverOverlay)
 	{
-		HoverOverlay->GetRootComponent()->SetVisibility(true);
-		HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+		if (!HoveredUnit)
+			HoverOverlay->GetRootComponent()->SetVisibility(false);
+		else
+		{
+			HoverOverlay->GetRootComponent()->SetVisibility(true);
+			HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+		}
 	}
 
 	// (Re)generate movement arrow
@@ -69,7 +73,6 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 		// to check for next tick
 		LastHoveredForMoveUnit = HoveredUnit;
 	}
-
 }
 
 void APaperPlayerController::SetupInputComponent()
@@ -90,18 +93,10 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Move Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
 }
 
-/*void APaperPlayerController::InitInputSystem()
-{
-	Super::InitInputSystem();
-	UE_LOG(LogTemp, Display, TEXT("InitInputSystem()"))
-		UE_LOG(LogTemp, Display, TEXT("InputComponent->bIsActive: %s"), (InputComponent->bIsActive) ? *FString("true") : *FString("false"))
-
-}*/
-
 void APaperPlayerController::MovableOverlayOff()
 {
 	bMoveOverlayOn = false;
-	if (SelectedUnit != nullptr && PlayerState->IsTurn() && SelectedUnit->Team == PlayerState->Team)
+	if (SelectedUnit != nullptr && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		bMoveOverlayOn = false;
 		for (auto MovableOverlay : MovableOverlayArray)
@@ -114,55 +109,66 @@ void APaperPlayerController::MovableOverlayOff()
 	}
 }
 
+inline APaperPlayerState* APaperPlayerController::GetPaperPlayerState() const
+{
+	return GetPlayerState<APaperPlayerState>();
+}
+
+
 #pragma region Input Functions
 
 void APaperPlayerController::RotateStart()
 {
-	CameraPawn->bIsRotating = true;
+	if (CameraPawn)
+		CameraPawn->bIsRotating = true;
 }
 
 void APaperPlayerController::RotateStop()
 {
-	CameraPawn->bIsRotating = false;
+	if (CameraPawn)
+		CameraPawn->bIsRotating = false;
 }
 
 void APaperPlayerController::PanStart()
 {
-	if (!(PlayerState->IsTurn() && SelectedUnit && SelectedUnit->Energy && SelectedUnit->Team == PlayerState->Team))
+	if (CameraPawn && !(GetPaperPlayerState()->IsTurn() && SelectedUnit && SelectedUnit->Energy && SelectedUnit->Team == GetPaperPlayerState()->Team))
 		CameraPawn->bIsPanning = true;
 }
 
 void APaperPlayerController::PanStop()
 {
-	CameraPawn->bIsPanning = false;
+	if (CameraPawn)
+		CameraPawn->bIsPanning = false;
 }
 
 void APaperPlayerController::ZoomIn()
 {
-	GLog->Log(TEXT("APaperPlayerController::ZoomIn()"));
-	CameraPawn->ZoomIn();
+	if (CameraPawn)
+		CameraPawn->ZoomIn();
 }
 
 void APaperPlayerController::ZoomOut()
 {
-	GLog->Log(TEXT("APaperPlayerController::ZoomOut()"));
-	CameraPawn->ZoomOut();
+	if (CameraPawn)
+		CameraPawn->ZoomOut();
 }
 
 void APaperPlayerController::MouseX(float f)
 {
-	CameraPawn->MouseDeltaX = f;
+	if (CameraPawn)
+		CameraPawn->MouseDeltaX = f;
 }
 
 void APaperPlayerController::MouseY(float f)
 {
-	CameraPawn->MouseDeltaY = f;
+	if (CameraPawn)
+		CameraPawn->MouseDeltaY = f;
 }
 
 void APaperPlayerController::Debug()
 {
-	GLog->Log(TEXT("Debug()"));
-	CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
+	if (CameraPawn)
+		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
 }
 
 void APaperPlayerController::SelectUnit()
@@ -189,7 +195,7 @@ void APaperPlayerController::SelectUnit()
 
 void APaperPlayerController::MovableOverlayOn()
 {
-	if (SelectedUnit && SelectedUnit->Energy > 0 && PlayerState->IsTurn() && SelectedUnit->Team == PlayerState->Team)
+	if (SelectedUnit && SelectedUnit->Energy > 0 && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		LastHoveredForMoveUnit = nullptr;
 		bMoveOverlayOn = true;
@@ -282,7 +288,7 @@ void APaperPlayerController::MovableOverlayOn()
 
 void APaperPlayerController::MoveUnit()
 {
-	if (SelectedUnit && PlayerState->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == PlayerState->Team)
+	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		GameState->UnitBoard[HoveredUnit->Coordinates] = GameState->UnitBoard[SelectedUnit->Coordinates];
 		GameState->UnitBoard[SelectedUnit->Coordinates] = nullptr;

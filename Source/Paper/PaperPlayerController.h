@@ -3,6 +3,7 @@
 #include "PaperPlayerState.h"
 #include "PaperGameState.h"
 #include "CameraPawn.h"
+#include "Async/AsyncWork.h"
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
@@ -26,7 +27,6 @@ protected:
 	void BeginPlay() override;
 	void PlayerTick(float) override;
 	void SetupInputComponent() override;
-	//void InitInputSystem() override;
 	void RotateStart();
 	void RotateStop();
 	void PanStart();
@@ -40,6 +40,7 @@ protected:
 	void MoveUnit();
 	void MovableOverlayOn();
 	void MovableOverlayOff();
+	inline APaperPlayerState* GetPaperPlayerState() const;
 
 	ACameraPawn* CameraPawn;
 	AUnit* SelectedUnit;
@@ -51,7 +52,6 @@ protected:
 	TMap<int, MovableTileInfo> MovableTiles;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
-	APaperPlayerState* PlayerState;
 	APaperGameState* GameState;
 
 	bool bMoveOverlayOn;

@@ -15,7 +15,7 @@ public:
 	APaperPlayerState();
 	bool IsTurn();
 	void BeginPlay() override;
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 		ETeam Team;

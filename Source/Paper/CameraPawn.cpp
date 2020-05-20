@@ -32,13 +32,11 @@ void ACameraPawn::Tick(float DeltaTime)
 
 void ACameraPawn::ZoomIn()
 {
-	GLog->Log(TEXT("ACameraPawn::ZoomIn()"));
 	SpringArm->TargetArmLength -= ZoomSensitivity * SpringArm->TargetArmLength / 10;
 }
 
 void ACameraPawn::ZoomOut()
 {
-	GLog->Log(TEXT("ACameraPawn::ZoomOut()"));
 	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength / 10;
 }
 

@@ -42,7 +42,7 @@ void APaperGameMode::GenerateBoard()
 
 
 	auto* BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];
-	auto* BoardLayoutColorArray = static_cast<FColor*>(BoardLayoutMipmap->BulkData.Lock(LOCK_READ_ONLY));
+	auto* BoardLayoutColorArray = reinterpret_cast<FColor*>(BoardLayoutMipmap->BulkData.Lock(LOCK_READ_ONLY));
 	int BoardLayoutBounds[2][2];
 
 	int BoardLayoutWidth = BoardLayoutMipmap->SizeX;

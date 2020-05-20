@@ -16,6 +16,7 @@ int APaperGameState::GetBoardWidth() const
 
 void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(APaperGameState, BoardSpawns);
 	DOREPLIFETIME(APaperGameState, Turn);
 	DOREPLIFETIME(APaperGameState, UnitBoard);
