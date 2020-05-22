@@ -109,10 +109,38 @@ void APaperPlayerController::MovableOverlayOff()
 	}
 }
 
-inline APaperPlayerState* APaperPlayerController::GetPaperPlayerState() const
+APaperPlayerState* APaperPlayerController::GetPaperPlayerState() const
 {
 	return GetPlayerState<APaperPlayerState>();
 }
+
+void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
+{
+	ETeam Team = GetPaperPlayerState()->Team;
+	int BoardWidth = GameState->GetBoardWidth();
+	for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
+		if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
+		{
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.bHideFromSceneOutliner = false;
+			
+			AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
+			GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
+			SpawnedUnit->Build(Team);
+			SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
+			return;
+		}
+}
+
+bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
+{
+	return true;
+}
+
+
+
+
+
 
 
 #pragma region Input Functions
@@ -290,13 +318,26 @@ void APaperPlayerController::MoveUnit()
 {
 	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
-		GameState->UnitBoard[HoveredUnit->Coordinates] = GameState->UnitBoard[SelectedUnit->Coordinates];
-		GameState->UnitBoard[SelectedUnit->Coordinates] = nullptr;
-		GameState->UnitBoard[HoveredUnit->Coordinates]->Coordinates = HoveredUnit->Coordinates;
-		GameState->UnitBoard[HoveredUnit->Coordinates]->SetActorLocation(FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth() * 200, HoveredUnit->Coordinates / GameState->GetBoardWidth() * 200, GameState->UnitBoard[HoveredUnit->Coordinates]->GetActorLocation().Z));
-		GameState->UnitBoard[HoveredUnit->Coordinates]->Energy = MovableTiles[HoveredUnit->Coordinates].EnergyLeft;
+		Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates, MovableTiles[HoveredUnit->Coordinates].EnergyLeft);
 	}
 	MovableOverlayOff();
+}
+
+bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)
+{
+	if (Origin < GameState->UnitBoard.Num() && Destination < GameState->UnitBoard.Num() && Destination != Origin)
+		return true;
+	else
+		return false;
+}
+
+void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Destination, uint8 EnergyLeft)
+{
+	GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
+	GameState->UnitBoard[Origin] = nullptr;
+	GameState->UnitBoard[Destination]->Coordinates = Destination;
+	GameState->UnitBoard[Destination]->SetActorLocation(FVector(Destination % GameState->GetBoardWidth() * 200, Destination / GameState->GetBoardWidth() * 200, GameState->UnitBoard[Destination]->GetActorLocation().Z));
+	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
 }
 
 #pragma endregion

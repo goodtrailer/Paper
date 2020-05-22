@@ -22,7 +22,6 @@ protected:
 	void GenerateBoard();
 	bool ColorsNearlyEqual(FColor a, FColor b);
 	
-protected:
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 		TSubclassOf<AUnit> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
@@ -38,6 +37,8 @@ protected:
 		float ColorsNearlyEqualThreshold;
 	
 	APaperGameState* GameState;
+
+	int Count;
 };
 
 namespace ColorCode

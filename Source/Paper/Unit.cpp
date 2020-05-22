@@ -22,6 +22,17 @@ uint8 AUnit::GetHP() { return HP; }
 
 uint8 AUnit::GetHPMax() { return HPMax; }
 
+void AUnit::OnRep_Team()
+{
+	if (UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(GetRootComponent()->GetChildComponent(0)))
+		Mesh->SetMaterial(0, TeamMaterials[static_cast<int>(Team)]);
+}
+
+/*void AUnit::OnRep_Coordinates()
+{
+
+}*/
+
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	DOREPLIFETIME(AUnit, Team)

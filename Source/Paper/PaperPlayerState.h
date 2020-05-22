@@ -13,6 +13,7 @@ class PAPER_API APaperPlayerState : public APlayerState
 	GENERATED_BODY()
 public:
 	APaperPlayerState();
+	UFUNCTION(BlueprintCallable)
 	bool IsTurn();
 	void BeginPlay() override;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;

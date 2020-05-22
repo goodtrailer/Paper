@@ -27,10 +27,9 @@ void APaperGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	static int Count = 0;
-
-	UE_LOG(LogTemp, Display, TEXT("static_cast<ETeam>: %d"), Count)
+	GLog->Logf(TEXT("Count before: %d"), Count);
 	NewPlayer->GetPlayerState<APaperPlayerState>()->Team = static_cast<ETeam>(Count++);
+	GLog->Logf(TEXT("Count after: %d"), Count);
 }
 
 void APaperGameMode::GenerateBoard()

@@ -42,7 +42,7 @@ class PAPER_API AUnit : public AActor
 
 public:
 	AUnit();
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 		void Build(ETeam team);
 	UFUNCTION(BlueprintNativeEvent)
 		void Passive();
@@ -51,30 +51,37 @@ public:
 	uint8 GetHP();
 	void SetHP(uint8 a);
 
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
-		ETeam Team;
+	UPROPERTY(ReplicatedUsing=OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
+	ETeam Team;
 	UPROPERTY(Replicated, BlueprintReadWrite)
-		FCardinal bIsCollidable;
+	FCardinal bIsCollidable;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
-		bool bIsTargetable;
+	bool bIsTargetable;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
-		EType Type;
+	EType Type;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Attack")
-		uint8 Attack;
+	uint8 Attack;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range")
-		uint8 Range;
+	uint8 Range;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
-		ERangeType RangeType;
+	ERangeType RangeType;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
-		uint8 Energy;
-	UPROPERTY(Replicated)
+	uint8 Energy;
+	UPROPERTY(Replicated/*Using=OnRep_Coordinates*/, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Meta")
+	TArray<UMaterialInterface*> TeamMaterials;
 
 protected:
+	UFUNCTION()
+	void OnRep_Team();
+	/*UFUNCTION()
+	void OnRep_Coordinates();*/
+	
 	UPROPERTY(Replicated, EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
-		uint8 EnergyMax;
+	uint8 EnergyMax;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting HP")
-		uint8 HP;
+	uint8 HP;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Max HP")
-		uint8 HPMax;
+	uint8 HPMax;
 };

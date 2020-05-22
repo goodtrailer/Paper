@@ -15,6 +15,10 @@ class PAPER_API APaperPlayerController : public APlayerController
 	GENERATED_BODY()
 public:
 	APaperPlayerController();
+	UFUNCTION(BlueprintCallable)
+	APaperPlayerState* GetPaperPlayerState() const;
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_SpawnUnit(TSubclassOf<AUnit> Type);
 	
 protected:
 	struct MovableTileInfo
@@ -38,9 +42,10 @@ protected:
 	void Debug();
 	void SelectUnit();
 	void MoveUnit();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
-	inline APaperPlayerState* GetPaperPlayerState() const;
 
 	ACameraPawn* CameraPawn;
 	AUnit* SelectedUnit;

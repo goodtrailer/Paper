@@ -7,11 +7,11 @@
 #include "PaperGameState.generated.h"
 
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct FTeamSpawns
 {
-	GENERATED_USTRUCT_BODY()
-	UPROPERTY()
+	GENERATED_BODY()
+	UPROPERTY(BlueprintReadOnly)
 		TArray<AUnit*> Spawns;
 };
 
@@ -26,19 +26,19 @@ public:
 	APaperGameState();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	UFUNCTION(BlueprintCallable)
-		int GetBoardWidth() const;
+	int GetBoardWidth() const;
 	UFUNCTION(BlueprintCallable)
-		int GetBoardHeight() const;
+	int GetBoardHeight() const;
 	UFUNCTION(BlueprintCallable)
-		AUnit* GetBoardSpawn(ETeam team, int index) const;
+	AUnit* GetBoardSpawn(ETeam team, int index) const;
 
-	UPROPERTY(Replicated)
-		TArray<FTeamSpawns> BoardSpawns;
-	UPROPERTY(Replicated)
-	uint16 Turn;
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadOnly, Replicated)
+	TArray<FTeamSpawns> BoardSpawns;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	int32 Turn;
+	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<AUnit*> UnitBoard;
-	UPROPERTY(Replicated)
+	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<AUnit*> GroundBoard;
 
 protected:
