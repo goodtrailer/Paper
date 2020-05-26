@@ -1,11 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
-#include "PaperGameState.h"
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerState.h"
 #include "PaperPlayerState.generated.h"
+
+
+enum class ETeam : uint8;
 
 UCLASS()
 class PAPER_API APaperPlayerState : public APlayerState
@@ -19,8 +19,7 @@ public:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
-		ETeam Team;
+	ETeam Team;
 private:
-	APaperGameState* GameState;
-	
+	class APaperGameState* GameState;
 };

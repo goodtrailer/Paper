@@ -1,6 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "Unit.h"
+
+#include "PaperEnums.h"
+#include "PaperGameInstance.h"
+#include "PaperGameState.h"
 #include "Net/UnrealNetwork.h"
 
 void AUnit::Passive_Implementation()
@@ -28,10 +30,10 @@ void AUnit::OnRep_Team()
 		Mesh->SetMaterial(0, TeamMaterials[static_cast<int>(Team)]);
 }
 
-/*void AUnit::OnRep_Coordinates()
+void AUnit::OnRep_Coordinates()
 {
-
-}*/
+	SetActorLocation(FVector(Coordinates % GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, Coordinates / GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, GetActorLocation().Z));
+}
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

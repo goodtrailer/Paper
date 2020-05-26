@@ -1,7 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
 #include "CameraPawn.h"
+
+#include "Unit.h"
+#include "Cardinal.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
 #include "EngineUtils.h"
@@ -39,20 +42,3 @@ void ACameraPawn::ZoomOut()
 {
 	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength / 10;
 }
-
-
-#if 0
-void ACameraPawn::EndTurn()
-{
-	BoardGenerator->Turn++;
-	for (int i = 0; i < BoardGenerator->BoardWidth * BoardGenerator->BoardHeight; i++)
-		if (BoardGenerator->UnitBoard[i] && static_cast<uint8>(BoardGenerator->UnitBoard[i]->Team) == BoardGenerator->Turn % 2)
-			BoardGenerator->UnitBoard[i]->Passive();
-}
-
-void ACameraPawn::SpawnUnit(ETeam team, TSubclassOf<AUnit> type)
-{
-	if (!BoardGenerator->SpawnUnit(team, type))
-		GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, TEXT("Spawns are full!"));
-}
-#endif

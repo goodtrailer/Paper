@@ -1,39 +1,14 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
-#include "Cardinal.h"
 
 #include "CoreMinimal.h"
+#include "Cardinal.h"
 #include "GameFramework/Actor.h"
 #include "Unit.generated.h"
 
 
-UENUM(BlueprintType)
-enum class ETeam : uint8
-{
-	TeamGreen		UMETA(DisplayName = "Green"),
-	TeamRed			UMETA(DisplayName = "Red"),
-	TeamNeutral		UMETA(DisplayName = "Neutral")
-};
-
-
-UENUM(BlueprintType)
-enum class EType : uint8
-{
-	TypeUnit		UMETA(DisplayName = "Unit"),
-	TypeWall		UMETA(DisplayName = "Wall"),
-	TypeSpawn		UMETA(DisplayName = "Spawn"),
-	TypeGround		UMETA(DisplayName = "Ground"),
-	TypeMine		UMETA(DisplayName = "Mine"),
-	TypeKnight		UMETA(DisplayName = "Knight")
-};
-
-UENUM(BlueprintType)
-enum class ERangeType : uint8
-{
-	RangeTypeNormal		UMETA(DisplayName = "Normal"),
-	RangeTypeSquare		UMETA(DisplayName = "Square")
-};
+enum class ETeam : uint8;
+enum class EType : uint8;
+enum class ERangeType : uint8;
 
 UCLASS()
 class PAPER_API AUnit : public AActor
@@ -43,9 +18,11 @@ class PAPER_API AUnit : public AActor
 public:
 	AUnit();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-		void Build(ETeam team);
+	void Build(ETeam team);
 	UFUNCTION(BlueprintNativeEvent)
-		void Passive();
+	void Passive();
+	UFUNCTION()
+	void OnRep_Coordinates();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	uint8 GetHPMax();
 	uint8 GetHP();
@@ -67,16 +44,14 @@ public:
 	ERangeType RangeType;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
-	UPROPERTY(Replicated/*Using=OnRep_Coordinates*/, BlueprintReadWrite, Category = "Meta")
+	UPROPERTY(ReplicatedUsing=OnRep_Coordinates, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Meta")
-	TArray<UMaterialInterface*> TeamMaterials;
+	TArray<class UMaterialInterface*> TeamMaterials;
 
 protected:
 	UFUNCTION()
 	void OnRep_Team();
-	/*UFUNCTION()
-	void OnRep_Coordinates();*/
 	
 	UPROPERTY(Replicated, EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
 	uint8 EnergyMax;

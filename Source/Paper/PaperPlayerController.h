@@ -1,13 +1,10 @@
 #pragma once
 
-#include "PaperPlayerState.h"
-#include "PaperGameState.h"
-#include "CameraPawn.h"
-#include "Async/AsyncWork.h"
 #include "CoreMinimal.h"
-#include "GameFramework/Pawn.h"
 #include "GameFramework/PlayerController.h"
 #include "PaperPlayerController.generated.h"
+
+enum class EDirection : uint8;
 
 UCLASS()
 class PAPER_API APaperPlayerController : public APlayerController
@@ -16,9 +13,11 @@ class PAPER_API APaperPlayerController : public APlayerController
 public:
 	APaperPlayerController();
 	UFUNCTION(BlueprintCallable)
-	APaperPlayerState* GetPaperPlayerState() const;
+	class APaperPlayerState* GetPaperPlayerState() const;
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_SpawnUnit(TSubclassOf<AUnit> Type);
+	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_EndTurn();
 	
 protected:
 	struct MovableTileInfo
@@ -47,17 +46,17 @@ protected:
 	void MovableOverlayOn();
 	void MovableOverlayOff();
 
-	ACameraPawn* CameraPawn;
-	AUnit* SelectedUnit;
-	AUnit* HoveredUnit;
-	AUnit* LastHoveredForMoveUnit;
+	class ACameraPawn* CameraPawn;
+	class AUnit* SelectedUnit;
+	class AUnit* HoveredUnit;
+	class AUnit* LastHoveredForMoveUnit;
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
 	//int : Coords, uint8 : EnergyLeft
 	TMap<int, MovableTileInfo> MovableTiles;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
-	APaperGameState* GameState;
+	class APaperGameState* GameState;
 
 	bool bMoveOverlayOn;
 

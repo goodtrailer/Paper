@@ -1,6 +1,10 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #include "PaperPlayerController.h"
+
+#include "Unit.h"
+#include "PaperPlayerState.h"
+#include "CameraPawn.h"
+#include "PaperGameState.h"
+#include "PaperEnums.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerInput.h"
 
@@ -89,8 +93,9 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
 	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
-	InputComponent->BindAction("Move Unit", IE_Pressed, this, &APaperPlayerController::MovableOverlayOn);
-	InputComponent->BindAction("Move Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
+	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
+	//InputComponent->BindAction("Move Unit", IE_Pressed, this, &APaperPlayerController::MovableOverlayOn);
+	//InputComponent->BindAction("Move Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
 }
 
 void APaperPlayerController::MovableOverlayOff()
@@ -159,7 +164,7 @@ void APaperPlayerController::RotateStop()
 
 void APaperPlayerController::PanStart()
 {
-	if (CameraPawn && !(GetPaperPlayerState()->IsTurn() && SelectedUnit && SelectedUnit->Energy && SelectedUnit->Team == GetPaperPlayerState()->Team))
+	if (CameraPawn/* && !(GetPaperPlayerState()->IsTurn() && SelectedUnit && SelectedUnit->Energy && SelectedUnit->Team == GetPaperPlayerState()->Team)*/)
 		CameraPawn->bIsPanning = true;
 }
 
@@ -197,6 +202,7 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
+	GLog->Logf(TEXT("Team: %d, IsTurn: %s"), GetPaperPlayerState()->Team, GetPaperPlayerState()->IsTurn()?*FString("true"):*FString("false"));
 }
 
 void APaperPlayerController::SelectUnit()
@@ -218,6 +224,7 @@ void APaperPlayerController::SelectUnit()
 	{
 		SelectOverlay->GetRootComponent()->SetVisibility(true);
 		SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
+		MovableOverlayOn();
 	}
 }
 
@@ -336,8 +343,21 @@ void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Dest
 	GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
 	GameState->UnitBoard[Origin] = nullptr;
 	GameState->UnitBoard[Destination]->Coordinates = Destination;
-	GameState->UnitBoard[Destination]->SetActorLocation(FVector(Destination % GameState->GetBoardWidth() * 200, Destination / GameState->GetBoardWidth() * 200, GameState->UnitBoard[Destination]->GetActorLocation().Z));
+	GameState->UnitBoard[Destination]->OnRep_Coordinates();
 	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
+}
+
+void APaperPlayerController::Server_EndTurn_Implementation()
+{
+	GameState->Turn++;
+	for (auto Unit : GameState->UnitBoard)
+		if (Unit && GameState->Turn % GameState->BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
+			Unit->Passive();
+}
+
+bool APaperPlayerController::Server_EndTurn_Validate()
+{
+	return true;
 }
 
 #pragma endregion

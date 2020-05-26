@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+#include "PaperEnums.h"
 #include "Cardinal.generated.h"
 
 /**
@@ -111,77 +112,4 @@ struct FCardinal
 	{
 		return Directions == Other.Directions;
 	}
-};
-
-#if 0
-/**
- * Cardinal of booleans.
- *
- * Simple wrapper for TArray that holds booleans for each cardinal direction: Up, Right, Down, Left.
- * Meant for use with EDirection, which is used to represent the cardinal directions, but can just
- * as easily be used with uint8 without need for static_cast.
- */
-template <typename T = bool>
-class TCardinal : public UClass
-{
-	//GENERATED_BODY()
-	TArray<T> Directions;
-
-public:
-	TCardinal(const T& Up, const T& Right, const T& Down, const T& Left)
-	{
-		Directions.Add(Up);
-		Directions.Add(Right);
-		Directions.Add(Down);
-		Directions.Add(Left);
-	}
-
-	TCardinal(const TCardinal& Source)
-	{
-		Directions = TArray<T>(Source.Directions);
-	}
-
-	TCardinal()
-	{
-		Directions.Init(false, 4);
-	}
-
-	T& operator[](const EDirection& Direction)
-	{
-		return Directions[static_cast<uint8>(Direction)];
-	}
-
-	const T& operator[](const EDirection& Direction) const
-	{
-		return Directions[static_cast<uint8>(Direction)];
-	}
-
-	T& operator[](const uint8& Direction)
-	{
-		return Directions[Direction];
-	}
-
-	const T& operator[](const uint8& Direction) const
-	{
-		return Directions[Direction];
-	}
-
-	UFUNCTION(BlueprintCallable)
-		const T& Get(const EDirection& Direction) const
-	{
-		return Directions[static_cast<uint8>(Direction)];
-	}
-
-	UFUNCTION(BlueprintCallable)
-		void Set(const EDirection& Direction, const T& Value)
-	{
-		Directions[static_cast<uint8>(Direction)] = Value;
-	}
-};
-#endif
-
-UENUM(BlueprintType)
-enum class EDirection : uint8
-{
-	Up = 0, Right, Down, Left
 };

@@ -1,11 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "Unit.h"
-#include "PaperGameState.h"
-#include "TextureResource.h"
-#include "Engine/Texture2D.h"
 #include "CoreMinimal.h"
+#include "Math/Color.h"
 #include "GameFramework/GameModeBase.h"
 #include "PaperGameMode.generated.h"
 
@@ -15,7 +12,6 @@ class PAPER_API APaperGameMode : public AGameModeBase
 	GENERATED_BODY()
 public:
 	APaperGameMode();
-	virtual void PostLogin(APlayerController*) override;
 	virtual void BeginPlay() override;
 
 protected:
@@ -23,20 +19,20 @@ protected:
 	bool ColorsNearlyEqual(FColor a, FColor b);
 	
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<AUnit> GroundBP;
+	TSubclassOf<class AUnit> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<AUnit> WallBP;
+	TSubclassOf<class AUnit> WallBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<AUnit> MineBP;
+	TSubclassOf<class AUnit> MineBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-		TSubclassOf<AUnit> SpawnBP;
+	TSubclassOf<class AUnit> SpawnBP;
 
 	UPROPERTY(EditAnywhere)
-		UTexture2D* BoardLayoutTexture;
+	class UTexture2D* BoardLayoutTexture;
 	UPROPERTY(EditAnywhere, Category = "Misc")
-		float ColorsNearlyEqualThreshold;
+	float ColorsNearlyEqualThreshold;
 	
-	APaperGameState* GameState;
+	class APaperGameState* GameState;
 
 	int Count;
 };

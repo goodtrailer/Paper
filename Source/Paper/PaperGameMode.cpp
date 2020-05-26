@@ -2,13 +2,12 @@
 
 
 #include "PaperGameMode.h"
-#include "CameraPawn.h"
+#include "Unit.h"
+#include "PaperGameState.h"
 #include "PaperPlayerState.h"
-#include "PaperPlayerController.h"
-
+#include "PaperEnums.h"
+#include "Engine/Texture2D.h"
 #include "EngineUtils.h"
-#include "GameFramework/GameState.h"
-#include "GameFramework/PlayerState.h"
 
 APaperGameMode::APaperGameMode()
 {
@@ -21,15 +20,6 @@ void APaperGameMode::BeginPlay()
 	GameState = GetGameState<APaperGameState>();
 	GenerateBoard();
 	GameState->Turn = static_cast<uint8>(ETeam::TeamGreen);
-}
-
-void APaperGameMode::PostLogin(APlayerController* NewPlayer)
-{
-	Super::PostLogin(NewPlayer);
-
-	GLog->Logf(TEXT("Count before: %d"), Count);
-	NewPlayer->GetPlayerState<APaperPlayerState>()->Team = static_cast<ETeam>(Count++);
-	GLog->Logf(TEXT("Count after: %d"), Count);
 }
 
 void APaperGameMode::GenerateBoard()

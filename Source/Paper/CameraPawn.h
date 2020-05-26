@@ -1,9 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-#include "Cardinal.h"
-#include "Unit.h"
-#include "GameFramework/SpringArmComponent.h"
+
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "CameraPawn.generated.h"
@@ -24,7 +22,7 @@ protected:
 	void ZoomOut();
 
 	UPROPERTY(BlueprintReadWrite)
-		USpringArmComponent* SpringArm;
+		class USpringArmComponent* SpringArm;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
 		float RotateSensitivity;
 	UPROPERTY(EditAnywhere, Category = "Sensitivity")
@@ -39,8 +37,6 @@ protected:
 		float MouseDeltaX;
 	UPROPERTY(VisibleAnywhere, Category = "Controls State")
 		float MouseDeltaY;
-	//APaperPlayerState* PlayerState;
-	//APaperPlayerController* PlayerController;
 
 	friend class APaperPlayerController;
 };
