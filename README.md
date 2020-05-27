@@ -1,6 +1,6 @@
 # Paper v0.3.3
 UE4 videogame based on paper board games from my childhood. Multiplayer through IP connections like Minecraft. It works over LAN and can work over the internet either through port forwarding or direct-linking P2P VPNs like Hamachi or Wippien. <br />
-Maybe a matchmaking and lobby system using the new Epic Online Services? (will be in a different repository)
+Maybe possibly be replaced by a lobby system using the new free Epic Online Services (not using Epic Account Services or OAuth).
 
 # Screenshots
 In Game: <br />
