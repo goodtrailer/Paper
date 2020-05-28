@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -20,6 +18,9 @@ class PAPER_API UPaperGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 public:
-	FBoardInfo BoardInfo = {20, 28, 2};
+	UPaperGameInstance();
+
+	FBoardInfo BoardInfo;
+	UPROPERTY(BlueprintReadOnly)
 	ETeam Team;
 };

@@ -1,5 +1,8 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "PaperGameInstance.h"
+#include "PaperEnums.h"
 
+UPaperGameInstance::UPaperGameInstance()
+{
+	BoardInfo = { 20, 28, 2 };
+	Team = ETeam::TeamGreen;
+}

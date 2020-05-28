@@ -1,6 +1,7 @@
 #include "PaperPlayerController.h"
 
 #include "Unit.h"
+#include "PaperGameInstance.h"
 #include "PaperPlayerState.h"
 #include "CameraPawn.h"
 #include "PaperGameState.h"
@@ -114,9 +115,12 @@ void APaperPlayerController::MovableOverlayOff()
 	}
 }
 
-APaperPlayerState* APaperPlayerController::GetPaperPlayerState() const
+APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
 {
-	return GetPlayerState<APaperPlayerState>();
+	if (UnsafePlayerState)
+		return UnsafePlayerState;
+	else
+		return (UnsafePlayerState = GetPlayerState<APaperPlayerState>());
 }
 
 void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
@@ -202,7 +206,9 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
-	GLog->Logf(TEXT("Team: %d, IsTurn: %s"), GetPaperPlayerState()->Team, GetPaperPlayerState()->IsTurn()?*FString("true"):*FString("false"));
+	GetGameInstance<UPaperGameInstance>()->Team = static_cast<ETeam>(static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team) + 1);
+	GLog->Logf(TEXT("UPaperGameInstance.Team: %d"), GetGameInstance<UPaperGameInstance>()->Team);
+	GLog->Logf(TEXT("APaperPlayerController.Team: %d"), GetPaperPlayerState()->Team);
 }
 
 void APaperPlayerController::SelectUnit()
@@ -343,7 +349,7 @@ void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Dest
 	GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
 	GameState->UnitBoard[Origin] = nullptr;
 	GameState->UnitBoard[Destination]->Coordinates = Destination;
-	GameState->UnitBoard[Destination]->OnRep_Coordinates();
+	GameState->UnitBoard[Destination]->OnRep_Coordinates();					// this moves the unit's location on the server too, since onrep calls on clients only (weird)
 	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
 }
 

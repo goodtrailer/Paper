@@ -33,6 +33,7 @@ void AUnit::OnRep_Team()
 void AUnit::OnRep_Coordinates()
 {
 	SetActorLocation(FVector(Coordinates % GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, Coordinates / GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, GetActorLocation().Z));
+	GLog->Log(TEXT("OnRep_Coordinates"));
 }
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

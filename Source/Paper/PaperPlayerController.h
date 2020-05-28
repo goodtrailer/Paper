@@ -13,7 +13,7 @@ class PAPER_API APaperPlayerController : public APlayerController
 public:
 	APaperPlayerController();
 	UFUNCTION(BlueprintCallable)
-	class APaperPlayerState* GetPaperPlayerState() const;
+	class APaperPlayerState* GetPaperPlayerState();
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
@@ -73,5 +73,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 		TSubclassOf<AActor> MoveJointBP;
 
+private:
+	class APaperPlayerState* UnsafePlayerState;
 	friend class ACameraPawn;
 };
