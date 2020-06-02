@@ -45,6 +45,9 @@ protected:
 	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
+	void AttackableOverlayOn();
+	void AttackableOverlayOff();
+	void ToggleAttackableOverlay();
 
 	class ACameraPawn* CameraPawn;
 	class AUnit* SelectedUnit;
@@ -52,13 +55,17 @@ protected:
 	class AUnit* LastHoveredForMoveUnit;
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
-	//int : Coords, uint8 : EnergyLeft
+	// int is Coords
 	TMap<int, MovableTileInfo> MovableTiles;
+	TArray<AActor*> AttackableOverlayArray;
+	// int is Coords
+	TSet<int> AttackableTiles;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
 	class APaperGameState* GameState;
 
 	bool bMoveOverlayOn;
+	bool bAttackableOverlayOn;
 
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 		TSubclassOf<AActor> MovableOverlayBP;

@@ -8,10 +8,16 @@
 #include "PaperEnums.h"
 #include "Engine/Texture2D.h"
 #include "EngineUtils.h"
+#include "Misc/ScopeLock.h"
 
 APaperGameMode::APaperGameMode()
 {
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+APaperGameMode::~APaperGameMode()
+{
+	BoardLayoutMipmap->BulkData.Unlock();
 }
 
 void APaperGameMode::BeginPlay()
@@ -30,8 +36,8 @@ void APaperGameMode::GenerateBoard()
 	TArray<AUnit*>& GroundBoard = GameState->GroundBoard;
 
 
-	auto* BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];
-	auto* BoardLayoutColorArray = reinterpret_cast<FColor*>(BoardLayoutMipmap->BulkData.Lock(LOCK_READ_ONLY));
+	BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];
+	auto* BoardLayoutColorArray = reinterpret_cast<const FColor*>(BoardLayoutMipmap->BulkData.LockReadOnly());
 	int BoardLayoutBounds[2][2];
 
 	int BoardLayoutWidth = BoardLayoutMipmap->SizeX;
@@ -152,7 +158,6 @@ void APaperGameMode::GenerateBoard()
 				GroundBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
 			}
 		}
-	BoardLayoutMipmap->BulkData.Unlock();
 	UE_LOG(LogTemp, Display, TEXT("BoardLayoutBounds are (%d, %d), (%d, %d)"), BoardLayoutBounds[0][0], BoardLayoutBounds[0][1], BoardLayoutBounds[1][0], BoardLayoutBounds[1][1]);
 }
 

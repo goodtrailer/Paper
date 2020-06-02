@@ -95,24 +95,20 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
 	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
-	//InputComponent->BindAction("Move Unit", IE_Pressed, this, &APaperPlayerController::MovableOverlayOn);
-	//InputComponent->BindAction("Move Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
+	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
+	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::MovableOverlayOn);
 }
 
 void APaperPlayerController::MovableOverlayOff()
 {
 	bMoveOverlayOn = false;
-	if (SelectedUnit != nullptr && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
-	{
-		bMoveOverlayOn = false;
-		for (auto MovableOverlay : MovableOverlayArray)
-			MovableOverlay->Destroy();
-		MovableOverlayArray.Empty();
-		MovableTiles.Empty();
-		for (auto MoveOverlay : MoveOverlayArray)
-			MoveOverlay->Destroy();
-		MoveOverlayArray.Empty();
-	}
+	for (auto MovableOverlay : MovableOverlayArray)
+		MovableOverlay->Destroy();
+	for (auto MoveOverlay : MoveOverlayArray)
+		MoveOverlay->Destroy();
+	MovableOverlayArray.Empty();
+	MovableTiles.Empty();
+	MoveOverlayArray.Empty();
 }
 
 APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
@@ -168,7 +164,7 @@ void APaperPlayerController::RotateStop()
 
 void APaperPlayerController::PanStart()
 {
-	if (CameraPawn/* && !(GetPaperPlayerState()->IsTurn() && SelectedUnit && SelectedUnit->Energy && SelectedUnit->Team == GetPaperPlayerState()->Team)*/)
+	if (CameraPawn)
 		CameraPawn->bIsPanning = true;
 }
 
@@ -213,24 +209,36 @@ void APaperPlayerController::Debug()
 
 void APaperPlayerController::SelectUnit()
 {
-	if (HoveredUnit)
-		if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
-			SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
-		else if (HoveredUnit->bIsTargetable)
-			SelectedUnit = HoveredUnit;
-		else
-			SelectedUnit = nullptr;
-	else
-		SelectedUnit = nullptr;
+	if (bMoveOverlayOn)
+	{
+		MoveUnit();
+	}
+	else if (bAttackableOverlayOn)
+	{
 
-	// Show/hide select overlay
-	if (!SelectedUnit)
-		SelectOverlay->GetRootComponent()->SetVisibility(false);
+	}
 	else
 	{
-		SelectOverlay->GetRootComponent()->SetVisibility(true);
-		SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
-		MovableOverlayOn();
+		// Assign SelectedUnit
+		if (HoveredUnit)
+			if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
+				SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
+			else if (HoveredUnit->bIsTargetable)
+				SelectedUnit = HoveredUnit;
+			else
+				SelectedUnit = nullptr;
+		else
+			SelectedUnit = nullptr;
+
+		// Show/hide select overlay
+		if (!SelectedUnit)
+			SelectOverlay->GetRootComponent()->SetVisibility(false);
+		else
+		{
+			SelectOverlay->GetRootComponent()->SetVisibility(true);
+			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
+			MovableOverlayOn();
+		}
 	}
 }
 
@@ -332,6 +340,7 @@ void APaperPlayerController::MoveUnit()
 	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates, MovableTiles[HoveredUnit->Coordinates].EnergyLeft);
+		SelectOverlay->SetActorLocation(FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth() * 200, HoveredUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
 	}
 	MovableOverlayOff();
 }
@@ -351,6 +360,24 @@ void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Dest
 	GameState->UnitBoard[Destination]->Coordinates = Destination;
 	GameState->UnitBoard[Destination]->OnRep_Coordinates();					// this moves the unit's location on the server too, since onrep calls on clients only (weird)
 	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
+}
+
+void APaperPlayerController::ToggleAttackableOverlay()
+{
+	if (bAttackableOverlayOn)
+		AttackableOverlayOff();
+	else
+		AttackableOverlayOn();
+}
+
+void APaperPlayerController::AttackableOverlayOn()
+{
+
+}
+
+void APaperPlayerController::AttackableOverlayOff()
+{
+
 }
 
 void APaperPlayerController::Server_EndTurn_Implementation()
