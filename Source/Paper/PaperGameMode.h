@@ -12,7 +12,6 @@ class PAPER_API APaperGameMode : public AGameModeBase
 	GENERATED_BODY()
 public:
 	APaperGameMode();
-	~APaperGameMode();
 	virtual void BeginPlay() override;
 
 protected:
@@ -36,8 +35,6 @@ protected:
 	class APaperGameState* GameState;
 
 	int Count;
-
-	struct FTexture2DMipMap* BoardLayoutMipmap;
 };
 
 namespace ColorCode

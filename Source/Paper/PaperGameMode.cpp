@@ -15,11 +15,6 @@ APaperGameMode::APaperGameMode()
 	PrimaryActorTick.bCanEverTick = false;
 }
 
-APaperGameMode::~APaperGameMode()
-{
-	BoardLayoutMipmap->BulkData.Unlock();
-}
-
 void APaperGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -36,17 +31,53 @@ void APaperGameMode::GenerateBoard()
 	TArray<AUnit*>& GroundBoard = GameState->GroundBoard;
 
 
-	BoardLayoutMipmap = &BoardLayoutTexture->PlatformData->Mips[0];
-	auto* BoardLayoutColorArray = reinterpret_cast<const FColor*>(BoardLayoutMipmap->BulkData.LockReadOnly());
+	struct ManagedMipMap
+	{
+	public:
+		ManagedMipMap(FTexture2DMipMap* Source)
+		{
+			MipMap = Source;
+			ColorArray = reinterpret_cast<const FColor*>(MipMap->BulkData.LockReadOnly());
+		}
+
+		~ManagedMipMap()
+		{
+			MipMap->BulkData.Unlock();
+		}
+
+		inline const FColor* GetColorArray() const
+		{
+			return ColorArray;
+		}
+
+		inline const FTexture2DMipMap* GetMipMap() const
+		{
+			return MipMap;
+		}
+
+		FTexture2DMipMap* operator->()
+		{
+			return MipMap;
+		}
+
+		FTexture2DMipMap& operator*()
+		{
+			return *MipMap;
+		}
+	private:
+		FTexture2DMipMap* MipMap;
+		const FColor* ColorArray;
+	} ManagedBoardLayoutMipMap(&BoardLayoutTexture->PlatformData->Mips[0]);
+
 	int BoardLayoutBounds[2][2];
 
-	int BoardLayoutWidth = BoardLayoutMipmap->SizeX;
+	int BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
 
 	{
 		int i = 0;
 		for (int x = 0; x < BoardLayoutWidth; x++)
-			for (int y = 0; y < BoardLayoutMipmap->SizeY; y++)
-				if (ColorsNearlyEqual(ColorCode::Bounds, BoardLayoutColorArray[x + y * BoardLayoutWidth]))
+			for (int y = 0; y < ManagedBoardLayoutMipMap->SizeY; y++)
+				if (ColorsNearlyEqual(ColorCode::Bounds, ManagedBoardLayoutMipMap.GetColorArray()[x + y * BoardLayoutWidth]))
 				{
 					BoardLayoutBounds[i][0] = x; BoardLayoutBounds[i][1] = y;
 					i++;
@@ -65,7 +96,7 @@ void APaperGameMode::GenerateBoard()
 		for (int y = BoardLayoutBounds[0][1]; y <= BoardLayoutBounds[1][1]; y++)
 		{
 			FVector SpawnLocation((x - BoardLayoutBounds[0][0]) * 200, (y - BoardLayoutBounds[0][1]) * 200, 0);
-			FColor CurrentColor = BoardLayoutColorArray[x + y * BoardLayoutWidth];
+			FColor CurrentColor = ManagedBoardLayoutMipMap.GetColorArray()[x + y * BoardLayoutWidth];
 			int CurrentBoardCoordinates = x - BoardLayoutBounds[0][0] + (y - BoardLayoutBounds[0][1]) * BoardWidth;
 			int CurrentBoardLayoutCoordinates = x + y * BoardLayoutWidth;
 
