@@ -196,4 +196,3 @@ bool APaperGameMode::ColorsNearlyEqual(FColor a, FColor b)
 {
 	return ((FMath::Abs(a.R - b.R) + FMath::Abs(a.G - b.G) + FMath::Abs(a.B - b.B)) / 255.f < ColorsNearlyEqualThreshold) ? true : false;
 }
-
