@@ -221,9 +221,7 @@ void APaperPlayerController::SelectUnit()
 	if (bMovableOverlayOn)
 		MoveUnit();
 	else if (bAttackableOverlayOn)
-	{
-
-	}
+		AttackUnit();
 	else
 	{
 		// Assign SelectedUnit
@@ -242,6 +240,9 @@ void APaperPlayerController::SelectUnit()
 			SelectOverlay->GetRootComponent()->SetVisibility(false);
 		else
 		{
+			GLog->Logf(TEXT("SelectedUnit->HP: %d/%d"), SelectedUnit->GetHP(), SelectedUnit->GetHPMax());
+			GLog->Logf(TEXT("SelectedUnit->HasOwner: %s"), *FString(SelectedUnit->GetOwner() ? "True" : "False"));
+			GLog->Logf(TEXT("SelectedUnit->HasNetOwner: %s"), *FString(SelectedUnit->HasNetOwner() ? "True" : "False"));
 			SelectOverlay->GetRootComponent()->SetVisibility(true);
 			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
 			MovableOverlayOn();
@@ -350,6 +351,37 @@ void APaperPlayerController::MoveUnit()
 		SelectOverlay->SetActorLocation(FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth() * 200, HoveredUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
 	}
 	MovableOverlayOff();
+}
+
+void APaperPlayerController::AttackUnit()
+{
+	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
+	{
+		Server_AttackUnit(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
+	}
+	AttackableOverlayOff();
+}
+
+bool APaperPlayerController::Server_AttackUnit_Validate(AUnit* Attacker, AUnit* Victim)
+{
+	if (Attacker && Victim && Attacker->Energy > 1 && Victim->Team != Attacker->Team)
+		return true;
+	else
+		return false;
+}
+
+void APaperPlayerController::Server_AttackUnit_Implementation(AUnit* Attacker, AUnit* Victim)
+{
+	Attacker->Energy -= 2;
+	if (Attacker->Attack < Victim->GetHP())
+		Victim->SetHP(Victim->GetHP() - Attacker->Attack);
+	else
+	{
+		Victim->Destroy();
+		GameState->UnitBoard[Victim->Coordinates] = nullptr;
+	}
+		
+
 }
 
 bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)

@@ -5,6 +5,7 @@
 #include "PaperGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "GenericPlatform/GenericPlatformMath.h"
+#include "Engine/Engine.h"
 
 void AUnit::Passive_Implementation()
 {
@@ -17,6 +18,12 @@ AUnit::AUnit()
 	Type = EType::TypeUnit;
 	bReplicates = true;
 	bAlwaysRelevant = true;
+}
+
+void AUnit::BeginPlay()
+{
+	Super::BeginPlay();
+	//SetOwner(GEngine->GetFirstLocalPlayerController(GetWorld()));
 }
 
 TSet<int> AUnit::DetermineAttackableTiles() const
@@ -38,11 +45,29 @@ TSet<int> AUnit::DetermineAttackableTiles() const
 	return AttackableTiles;
 }
 
-void AUnit::SetHP(uint8 a) { HP = a; }
+bool AUnit::Server_Attack_Validate(AUnit* UnitToAttack)
+{
+	return true;
+}
 
-uint8 AUnit::GetHP() { return HP; }
+void AUnit::Server_Attack_Implementation(AUnit* UnitToAttack)
+{
+	if (Attack >= UnitToAttack->GetHP())
+	{
+		GLog->Log(TEXT("Killed"));
+		UnitToAttack->Destroy();
+	}
+	UnitToAttack->SetHP(UnitToAttack->GetHP()- Attack);
+}
 
-uint8 AUnit::GetHPMax() { return HPMax; }
+void AUnit::SetHP(uint8 a)
+{
+	HP = a;
+}
+
+uint8 AUnit::GetHP() const { return HP; }
+
+uint8 AUnit::GetHPMax() const { return HPMax; }
 
 void AUnit::OnRep_Team()
 {
@@ -57,6 +82,7 @@ void AUnit::OnRep_Coordinates()
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AUnit, Team)
 	DOREPLIFETIME(AUnit, bIsCollidable)
 	DOREPLIFETIME(AUnit, bIsTargetable)

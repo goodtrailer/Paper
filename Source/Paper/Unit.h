@@ -23,11 +23,14 @@ public:
 	void Passive();
 	UFUNCTION()
 	void OnRep_Coordinates();
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Attack(AUnit* UnitToAttack);
 	virtual TSet<int> DetermineAttackableTiles() const;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
-	uint8 GetHPMax();
-	uint8 GetHP();
-	void SetHP(uint8 a);
+	uint8 GetHPMax() const;
+	uint8 GetHP() const;
+	void SetHP(uint8);
+	void BeginPlay() override;
 
 	UPROPERTY(ReplicatedUsing=OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
