@@ -23,6 +23,7 @@ public:
 	void Passive();
 	UFUNCTION()
 	void OnRep_Coordinates();
+	virtual TSet<int> DetermineAttackableTiles() const;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	uint8 GetHPMax();
 	uint8 GetHP();

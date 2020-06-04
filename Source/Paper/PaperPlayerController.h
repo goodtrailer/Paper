@@ -45,6 +45,7 @@ protected:
 	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
+	void ToggleMovableOverlay();
 	void AttackableOverlayOn();
 	void AttackableOverlayOff();
 	void ToggleAttackableOverlay();
@@ -53,32 +54,34 @@ protected:
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
 	class AUnit* LastHoveredForMoveUnit;
+	// int is Coords
+	TMap<int, MovableTileInfo> MovableTiles;
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
 	// int is Coords
-	TMap<int, MovableTileInfo> MovableTiles;
-	TArray<AActor*> AttackableOverlayArray;
-	// int is Coords
 	TSet<int> AttackableTiles;
+	TArray<AActor*> AttackableOverlayArray;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
 	class APaperGameState* GameState;
 
-	bool bMoveOverlayOn;
+	bool bMovableOverlayOn;
 	bool bAttackableOverlayOn;
 
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> MovableOverlayBP;
+	TSubclassOf<AActor> MovableOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> HoverOverlayBP;
+	TSubclassOf<AActor> HoverOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> SelectOverlayBP;
+	TSubclassOf<AActor> SelectOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> MoveArrowBP;
+	TSubclassOf<AActor> MoveArrowBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> MoveLineBP;
+	TSubclassOf<AActor> MoveLineBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
-		TSubclassOf<AActor> MoveJointBP;
+	TSubclassOf<AActor> MoveJointBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+	TSubclassOf<AActor> AttackableOverlayBP;
 
 private:
 	class APaperPlayerState* UnsafePlayerState;

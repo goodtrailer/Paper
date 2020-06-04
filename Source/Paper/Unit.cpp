@@ -4,10 +4,11 @@
 #include "PaperGameInstance.h"
 #include "PaperGameState.h"
 #include "Net/UnrealNetwork.h"
+#include "GenericPlatform/GenericPlatformMath.h"
 
 void AUnit::Passive_Implementation()
 {
-	Energy = EnergyMax;
+	Energy = FGenericPlatformMath::Max(EnergyMax, Energy);
 }
 
 AUnit::AUnit()
@@ -16,6 +17,25 @@ AUnit::AUnit()
 	Type = EType::TypeUnit;
 	bReplicates = true;
 	bAlwaysRelevant = true;
+}
+
+TSet<int> AUnit::DetermineAttackableTiles() const
+{
+	const int BoardWidth = GetWorld()->GetGameState<APaperGameState>()->GetBoardWidth();
+	const int BoardHeight = GetWorld()->GetGameState<APaperGameState>()->GetBoardHeight();
+	TSet<int> AttackableTiles;
+
+	for (int i = 0; i <= Range; i++)
+		for (int j = i - Range; j <= Range - i; j++)
+			if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
+			{
+				if (Coordinates % BoardWidth + i < BoardWidth)
+					AttackableTiles.Add(Coordinates + i + j * BoardWidth);
+				if (Coordinates % BoardWidth - i >= 0)
+					AttackableTiles.Add(Coordinates - i + j * BoardWidth);
+			}
+
+	return AttackableTiles;
 }
 
 void AUnit::SetHP(uint8 a) { HP = a; }

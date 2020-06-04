@@ -52,7 +52,7 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 	}
 
 	// (Re)generate movement arrow
-	if (bMoveOverlayOn && LastHoveredForMoveUnit != HoveredUnit)
+	if (bMovableOverlayOn && LastHoveredForMoveUnit != HoveredUnit)
 	{
 		for (auto MoveOverlay : MoveOverlayArray)
 			MoveOverlay->Destroy();
@@ -96,20 +96,37 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
 	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
 	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
-	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::MovableOverlayOn);
+	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
 }
 
 void APaperPlayerController::MovableOverlayOff()
 {
-	bMoveOverlayOn = false;
-	for (auto MovableOverlay : MovableOverlayArray)
+	bMovableOverlayOn = false;
+	for (auto& MovableOverlay : MovableOverlayArray)
 		MovableOverlay->Destroy();
-	for (auto MoveOverlay : MoveOverlayArray)
+	for (auto& MoveOverlay : MoveOverlayArray)
 		MoveOverlay->Destroy();
 	MovableOverlayArray.Empty();
 	MovableTiles.Empty();
 	MoveOverlayArray.Empty();
 }
+
+void APaperPlayerController::ToggleMovableOverlay()
+{
+	if (bMovableOverlayOn)
+		MovableOverlayOff();
+	else if (!bAttackableOverlayOn)
+		MovableOverlayOn();
+}
+
+void APaperPlayerController::ToggleAttackableOverlay()
+{
+	if (bAttackableOverlayOn)
+		AttackableOverlayOff();
+	else if (!bMovableOverlayOn)
+		AttackableOverlayOn();
+}
+
 
 APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
 {
@@ -141,14 +158,6 @@ bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
 {
 	return true;
 }
-
-
-
-
-
-
-
-#pragma region Input Functions
 
 void APaperPlayerController::RotateStart()
 {
@@ -209,10 +218,8 @@ void APaperPlayerController::Debug()
 
 void APaperPlayerController::SelectUnit()
 {
-	if (bMoveOverlayOn)
-	{
+	if (bMovableOverlayOn)
 		MoveUnit();
-	}
 	else if (bAttackableOverlayOn)
 	{
 
@@ -247,7 +254,7 @@ void APaperPlayerController::MovableOverlayOn()
 	if (SelectedUnit && SelectedUnit->Energy > 0 && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		LastHoveredForMoveUnit = nullptr;
-		bMoveOverlayOn = true;
+		bMovableOverlayOn = true;
 
 		TSet<int> TilesForNextPass;
 		TSet<int> TilesForCurrentPass;
@@ -362,22 +369,24 @@ void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Dest
 	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
 }
 
-void APaperPlayerController::ToggleAttackableOverlay()
-{
-	if (bAttackableOverlayOn)
-		AttackableOverlayOff();
-	else
-		AttackableOverlayOn();
-}
-
 void APaperPlayerController::AttackableOverlayOn()
 {
-
+	if (SelectedUnit && SelectedUnit->Energy > 1 && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
+	{
+		bAttackableOverlayOn = true;
+		AttackableTiles = SelectedUnit->DetermineAttackableTiles();
+		for (auto& Coord : AttackableTiles)
+			AttackableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(AttackableOverlayBP, FVector(Coord % GameState->GetBoardWidth() * 200.f, Coord / GameState->GetBoardWidth() * 200.f, 200.f), FRotator::ZeroRotator));
+	}
 }
 
 void APaperPlayerController::AttackableOverlayOff()
 {
-
+	bAttackableOverlayOn = false;
+	for (auto& AttackableOverlay : AttackableOverlayArray)
+		AttackableOverlay->Destroy();
+	AttackableOverlayArray.Empty();
+	AttackableTiles.Empty();
 }
 
 void APaperPlayerController::Server_EndTurn_Implementation()
@@ -392,5 +401,3 @@ bool APaperPlayerController::Server_EndTurn_Validate()
 {
 	return true;
 }
-
-#pragma endregion
