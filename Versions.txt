@@ -40,9 +40,13 @@ Format: Major.Minor.Patch.Revision
 	4. Unit attacking
 		0. Attack graphics
 			+ Attackable overlays
-			- Attack overlay (target/crosshair?)
-			- Generate attack range using range and []/<>
-		1.
+			+ Attack overlay (target/crosshair?)
+		1. Attack functions
+			+ Dealing damage
+			+ Unit deaths
+		2. Overriding reachable range
+			+ Overridable attack ranges using virtual
+			- <>/[] default range types
 	5. Bases and win conditions
 		0.
 	6. Units part 2

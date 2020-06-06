@@ -100,6 +100,8 @@ void APaperGameMode::GenerateBoard()
 			int CurrentBoardCoordinates = x - BoardLayoutBounds[0][0] + (y - BoardLayoutBounds[0][1]) * BoardWidth;
 			int CurrentBoardLayoutCoordinates = x + y * BoardLayoutWidth;
 
+			GLog->Logf(TEXT("Processing: %d"), CurrentBoardCoordinates);
+
 			//if not hole, then process, otherwise just skip and never generate
 			if (!ColorsNearlyEqual(CurrentColor, ColorCode::Hole))
 			{
