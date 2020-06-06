@@ -8,6 +8,7 @@ public class PaperEditorTarget : TargetRules
     public PaperEditorTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Editor;
+        DefaultBuildSettings = BuildSettingsVersion.V2;
 		ExtraModuleNames.Add("Paper");
 	}
 }
