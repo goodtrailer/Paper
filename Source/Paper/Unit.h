@@ -25,7 +25,7 @@ public:
 	void OnRep_Coordinates();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Attack(AUnit* UnitToAttack);
-	virtual TSet<int> DetermineAttackableTiles() const;
+	virtual void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	uint8 GetHPMax() const;
 	uint8 GetHP() const;

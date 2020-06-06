@@ -28,7 +28,9 @@ void APaperPlayerController::BeginPlay()
 	UWorld* World = GetWorld();
 	SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
 	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
-	LastHoveredForMoveUnit = nullptr;
+	AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+	MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+	LastHoveredUnit = nullptr;
 }
 
 void APaperPlayerController::PlayerTick(float DeltaTime)
@@ -39,45 +41,72 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 	GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
 	HoveredUnit = Cast<AUnit>(Hit.GetActor());
 
-	// Show/hide hover overlay
-	if (HoverOverlay)
+	
+	if (LastHoveredUnit != HoveredUnit)
 	{
-		if (!HoveredUnit)
-			HoverOverlay->GetRootComponent()->SetVisibility(false);
-		else
+		// Show/hide/switch hover, attack, and move overlays
+		if (HoverOverlay)
 		{
-			HoverOverlay->GetRootComponent()->SetVisibility(true);
-			HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
-		}
-	}
-
-	// (Re)generate movement arrow
-	if (bMovableOverlayOn && LastHoveredForMoveUnit != HoveredUnit)
-	{
-		for (auto MoveOverlay : MoveOverlayArray)
-			MoveOverlay->Destroy();
-		MoveOverlayArray.Empty();
-		if (HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates))
-		{
-			UWorld* World = GetWorld();
-
-			int16 yRotation = 90 * static_cast<int>(MovableTiles[HoveredUnit->Coordinates].DirectionToSourceTile);
-			MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveArrowBP, 200 * FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth(), HoveredUnit->Coordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
-			int CurrentTileCoordinates = MovableTiles[HoveredUnit->Coordinates].SourceTileCoordinates;
-			MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, 180 + yRotation, 0)));
-
-			for (int i = 1; i < SelectedUnit->Energy - MovableTiles[HoveredUnit->Coordinates].EnergyLeft; i++)
+			if (!HoveredUnit)
 			{
-				yRotation = 90 * static_cast<int>(MovableTiles[CurrentTileCoordinates].DirectionToSourceTile);
-				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
-				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveJointBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator::ZeroRotator));
-				CurrentTileCoordinates = MovableTiles[CurrentTileCoordinates].SourceTileCoordinates;
-				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, 180 + yRotation, 0)));
+				AttackOverlay->GetRootComponent()->SetVisibility(false);
+				HoverOverlay->GetRootComponent()->SetVisibility(false);
+				MoveOverlay->GetRootComponent()->SetVisibility(false);
+			}
+			else if (AttackableTiles.Contains(HoveredUnit->Coordinates))
+			{
+				AttackOverlay->GetRootComponent()->SetVisibility(true);
+				HoverOverlay->GetRootComponent()->SetVisibility(false);
+				MoveOverlay->GetRootComponent()->SetVisibility(false);
+				AttackOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+			}
+			else if (MovableTiles.Contains(HoveredUnit->Coordinates))
+			{
+				AttackOverlay->GetRootComponent()->SetVisibility(false);
+				HoverOverlay->GetRootComponent()->SetVisibility(false);
+				MoveOverlay->GetRootComponent()->SetVisibility(true);
+				MoveOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+			}
+			else
+			{
+				AttackOverlay->GetRootComponent()->SetVisibility(false);
+				HoverOverlay->GetRootComponent()->SetVisibility(true);
+				MoveOverlay->GetRootComponent()->SetVisibility(false);
+				HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 			}
 		}
-		// to check for next tick
-		LastHoveredForMoveUnit = HoveredUnit;
+
+		// (Re)generate movement arrow
+		if (bMovableOverlayOn)
+		{
+			for (auto& MoveOverlaySegment : MoveOverlayArray)
+				MoveOverlaySegment->Destroy();
+			MoveOverlayArray.Empty();
+			if (HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates))
+			{
+				UWorld* World = GetWorld();
+
+				int16 yRotation = 90 * static_cast<int>(MovableTiles[HoveredUnit->Coordinates].DirectionToSourceTile);
+				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveArrowBP, 200 * FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth(), HoveredUnit->Coordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
+				int CurrentTileCoordinates = MovableTiles[HoveredUnit->Coordinates].SourceTileCoordinates;
+				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, 180 + yRotation, 0)));
+
+				for (int i = 1; i < SelectedUnit->Energy - MovableTiles[HoveredUnit->Coordinates].EnergyLeft; i++)
+				{
+					yRotation = 90 * static_cast<int>(MovableTiles[CurrentTileCoordinates].DirectionToSourceTile);
+					MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
+					MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveJointBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator::ZeroRotator));
+					CurrentTileCoordinates = MovableTiles[CurrentTileCoordinates].SourceTileCoordinates;
+					MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, 180 + yRotation, 0)));
+				}
+			}
+		}
 	}
+
+
+	
+	// to check for next tick
+	LastHoveredUnit = HoveredUnit;
 }
 
 void APaperPlayerController::SetupInputComponent()
@@ -102,10 +131,11 @@ void APaperPlayerController::SetupInputComponent()
 void APaperPlayerController::MovableOverlayOff()
 {
 	bMovableOverlayOn = false;
+	LastHoveredUnit = nullptr;		// update overlays on next tick
 	for (auto& MovableOverlay : MovableOverlayArray)
 		MovableOverlay->Destroy();
-	for (auto& MoveOverlay : MoveOverlayArray)
-		MoveOverlay->Destroy();
+	for (auto& MoveOverlaySegment : MoveOverlayArray)
+		MoveOverlaySegment->Destroy();
 	MovableOverlayArray.Empty();
 	MovableTiles.Empty();
 	MoveOverlayArray.Empty();
@@ -211,9 +241,10 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
-	GetGameInstance<UPaperGameInstance>()->Team = static_cast<ETeam>(static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team) + 1);
-	GLog->Logf(TEXT("UPaperGameInstance.Team: %d"), GetGameInstance<UPaperGameInstance>()->Team);
-	GLog->Logf(TEXT("APaperPlayerController.Team: %d"), GetPaperPlayerState()->Team);
+	if (GetGameInstance<UPaperGameInstance>()->Team == ETeam::TeamNeutral)
+		GetGameInstance<UPaperGameInstance>()->Team = ETeam::TeamGreen;
+	else
+		GetGameInstance<UPaperGameInstance>()->Team = static_cast<ETeam>(static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team) + 1);
 }
 
 void APaperPlayerController::SelectUnit()
@@ -241,8 +272,6 @@ void APaperPlayerController::SelectUnit()
 		else
 		{
 			GLog->Logf(TEXT("SelectedUnit->HP: %d/%d"), SelectedUnit->GetHP(), SelectedUnit->GetHPMax());
-			GLog->Logf(TEXT("SelectedUnit->HasOwner: %s"), *FString(SelectedUnit->GetOwner() ? "True" : "False"));
-			GLog->Logf(TEXT("SelectedUnit->HasNetOwner: %s"), *FString(SelectedUnit->HasNetOwner() ? "True" : "False"));
 			SelectOverlay->GetRootComponent()->SetVisibility(true);
 			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
 			MovableOverlayOn();
@@ -254,7 +283,7 @@ void APaperPlayerController::MovableOverlayOn()
 {
 	if (SelectedUnit && SelectedUnit->Energy > 0 && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
-		LastHoveredForMoveUnit = nullptr;
+		LastHoveredUnit = nullptr;
 		bMovableOverlayOn = true;
 
 		TSet<int> TilesForNextPass;
@@ -270,6 +299,8 @@ void APaperPlayerController::MovableOverlayOn()
 			&& !GameState->UnitBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]
 			// Prevent repeating passing on tiles, since that would result in using up all your energy for any move, even one space moves
 			&& !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - GameState->GetBoardWidth())
+			// Check if ground tile exists upwards, since there could be holes
+			&& GameState->GroundBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]
 			// Check if passable upwards, since there are ground tiles that block one direction
 			&& !GameState->GroundBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
 		{
@@ -279,7 +310,7 @@ void APaperPlayerController::MovableOverlayOn()
 		}
 
 		// Same calculations, but right
-		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + 1) && !GameState->GroundBoard[SelectedUnit->Coordinates + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
+		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + 1) && GameState->GroundBoard[SelectedUnit->Coordinates + 1] && !GameState->GroundBoard[SelectedUnit->Coordinates + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + 1);
@@ -287,7 +318,7 @@ void APaperPlayerController::MovableOverlayOn()
 		}
 
 		// Same calculations, but down
-		if (SelectedUnit->Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + GameState->GetBoardWidth()) && !GameState->GroundBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
+		if (SelectedUnit->Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + GameState->GetBoardWidth()) && GameState->GroundBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()] && !GameState->GroundBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates + GameState->GetBoardWidth());
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + GameState->GetBoardWidth());
@@ -295,7 +326,7 @@ void APaperPlayerController::MovableOverlayOn()
 		}
 
 		// Same calculations, but left
-		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[SelectedUnit->Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - 1) && !GameState->GroundBoard[SelectedUnit->Coordinates - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
+		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[SelectedUnit->Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - 1) && GameState->GroundBoard[SelectedUnit->Coordinates - 1] && !GameState->GroundBoard[SelectedUnit->Coordinates - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
 		{
 			TilesForNextPass.Add(SelectedUnit->Coordinates - 1);
 			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - 1);
@@ -306,31 +337,31 @@ void APaperPlayerController::MovableOverlayOn()
 		{
 			TilesForCurrentPass = TilesForNextPass;
 			TilesForNextPass.Empty();
-			for (auto coord : TilesForCurrentPass)
+			for (auto& coord : TilesForCurrentPass)
 			{
 				MovableTiles[coord].EnergyLeft = EnergyLeft;
-				if (coord / GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord - GameState->GetBoardWidth()) && !GameState->GroundBoard[coord - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
+				if (coord / GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord - GameState->GetBoardWidth()) && GameState->GroundBoard[coord - GameState->GetBoardWidth()] && !GameState->GroundBoard[coord - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
 				{
 					TilesForNextPass.Add(coord - GameState->GetBoardWidth());
 					TilesPreviouslyQueuedForPassing.Add(coord - GameState->GetBoardWidth());
 					MovableTiles.Add(coord - GameState->GetBoardWidth(), { 0, coord, EDirection::Down });
 				}
 
-				if (coord % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && !GameState->GroundBoard[coord + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
+				if (coord % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && GameState->GroundBoard[coord + 1] && !GameState->GroundBoard[coord + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
 				{
 					TilesForNextPass.Add(coord + 1);
 					TilesPreviouslyQueuedForPassing.Add(coord + 1);
 					MovableTiles.Add(coord + 1, { 0, coord, EDirection::Left });
 				}
 
-				if (coord / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[coord + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord + GameState->GetBoardWidth()) && !GameState->GroundBoard[coord + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
+				if (coord / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[coord + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord + GameState->GetBoardWidth()) && GameState->GroundBoard[coord + GameState->GetBoardWidth()] && !GameState->GroundBoard[coord + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
 				{
 					TilesForNextPass.Add(coord + GameState->GetBoardWidth());
 					TilesPreviouslyQueuedForPassing.Add(coord + GameState->GetBoardWidth());
 					MovableTiles.Add(coord + GameState->GetBoardWidth(), { 0, coord, EDirection::Up });
 				}
 
-				if (coord % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && !GameState->GroundBoard[coord - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
+				if (coord % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && GameState->GroundBoard[coord - 1] && !GameState->GroundBoard[coord - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
 				{
 					TilesForNextPass.Add(coord - 1);
 					TilesPreviouslyQueuedForPassing.Add(coord - 1);
@@ -406,19 +437,23 @@ void APaperPlayerController::AttackableOverlayOn()
 	if (SelectedUnit && SelectedUnit->Energy > 1 && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
 	{
 		bAttackableOverlayOn = true;
-		AttackableTiles = SelectedUnit->DetermineAttackableTiles();
-		for (auto& Coord : AttackableTiles)
-			AttackableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(AttackableOverlayBP, FVector(Coord % GameState->GetBoardWidth() * 200.f, Coord / GameState->GetBoardWidth() * 200.f, 200.f), FRotator::ZeroRotator));
+		LastHoveredUnit = nullptr;		//update overlays on next tick
+		SelectedUnit->DetermineAttackableTiles(ReachableTiles, AttackableTiles);
+		for (auto& Coord : ReachableTiles)
+			if (GameState->UnitBoard[Coord] == nullptr || AttackableTiles.Contains(Coord))
+				AttackableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(AttackableOverlayBP, FVector(Coord % GameState->GetBoardWidth() * 200.f, Coord / GameState->GetBoardWidth() * 200.f, 200.f), FRotator::ZeroRotator));
 	}
 }
 
 void APaperPlayerController::AttackableOverlayOff()
 {
 	bAttackableOverlayOn = false;
+	LastHoveredUnit = nullptr;		//update overlays on next tick
 	for (auto& AttackableOverlay : AttackableOverlayArray)
 		AttackableOverlay->Destroy();
 	AttackableOverlayArray.Empty();
 	AttackableTiles.Empty();
+	ReachableTiles.Empty();
 }
 
 void APaperPlayerController::Server_EndTurn_Implementation()

@@ -56,16 +56,20 @@ protected:
 	class ACameraPawn* CameraPawn;
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
-	class AUnit* LastHoveredForMoveUnit;
+	class AUnit* LastHoveredUnit;
 	// int is Coords
 	TMap<int, MovableTileInfo> MovableTiles;
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
 	// int is Coords
 	TSet<int> AttackableTiles;
+	// int is Coords
+	TSet<int> ReachableTiles;
 	TArray<AActor*> AttackableOverlayArray;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
+	AActor* AttackOverlay;
+	AActor* MoveOverlay;
 	class APaperGameState* GameState;
 
 	bool bMovableOverlayOn;
@@ -77,6 +81,10 @@ protected:
 	TSubclassOf<AActor> HoverOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> SelectOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+	TSubclassOf<AActor> AttackOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+	TSubclassOf<AActor> MoveOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> MoveArrowBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
