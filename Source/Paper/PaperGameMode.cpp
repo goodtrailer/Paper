@@ -37,7 +37,7 @@ void APaperGameMode::GenerateBoard()
 		ManagedMipMap(FTexture2DMipMap* Source)
 		{
 			MipMap = Source;
-			ColorArray = reinterpret_cast<const FColor*>(MipMap->BulkData.LockReadOnly());
+			ColorArray = reinterpret_cast<FColor*>(MipMap->BulkData.Lock(LOCK_READ_ONLY));
 		}
 
 		~ManagedMipMap()
@@ -45,7 +45,7 @@ void APaperGameMode::GenerateBoard()
 			MipMap->BulkData.Unlock();
 		}
 
-		inline const FColor* GetColorArray() const
+		inline FColor* GetColorArray() const
 		{
 			return ColorArray;
 		}
@@ -66,7 +66,7 @@ void APaperGameMode::GenerateBoard()
 		}
 	private:
 		FTexture2DMipMap* MipMap;
-		const FColor* ColorArray;
+		FColor* ColorArray;
 	} ManagedBoardLayoutMipMap(&BoardLayoutTexture->PlatformData->Mips[0]);
 
 	int BoardLayoutBounds[2][2];
