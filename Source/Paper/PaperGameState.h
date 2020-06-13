@@ -26,6 +26,7 @@ class PAPER_API APaperGameState : public AGameStateBase
 
 public:
 	APaperGameState();
+	void BeginPlay() override;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	UFUNCTION(BlueprintCallable)
 	int GetBoardWidth() const;
@@ -35,18 +36,34 @@ public:
 	class AUnit* GetBoardSpawn(ETeam team, int index) const;
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
+	UFUNCTION()
+	void OnRep_Turn();
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_SetGold(ETeam Team, int NewAmount);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_ChangeGold(ETeam Team, int DeltaGold);
+	UFUNCTION(BlueprintCallable)
+	int GetGold(ETeam Team) const;
+	
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	TArray<FTeamSpawns> BoardSpawns;
-	UPROPERTY(BlueprintReadWrite, Replicated)
-	int32 Turn;
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Turn)
+	int32 Turn = -1;			// force replication when players connect
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> UnitBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> GroundBoard;
+	UPROPERTY(BlueprintReadWrite, Replicated)
+	int PassiveIncome;
 	uint8 Count;
 
 protected:
+	UFUNCTION()
+	void OnRep_Gold();
+
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Gold)
+	TArray<int> Gold;		// stored on game state and not player state: easily accessible by game mode, and it must be remembered if players reconnect
 	UPROPERTY(Replicated)
 	int BoardWidth;
 	UPROPERTY(Replicated)

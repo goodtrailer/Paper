@@ -3,6 +3,7 @@
 #include "Unit.h"
 #include "PaperGameInstance.h"
 #include "PaperPlayerState.h"
+#include "PaperUserInterface.h"
 #include "CameraPawn.h"
 #include "PaperGameState.h"
 #include "PaperEnums.h"
@@ -20,7 +21,13 @@ APaperPlayerController::APaperPlayerController()
 void APaperPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	GameInstance = GetGameInstance<UPaperGameInstance>();
 	GameState = GetWorld()->GetGameState<APaperGameState>();
+	if (IsLocalPlayerController())
+	{
+		UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
+		UserInterface->AddToViewport();
+	}
 
 	CameraPawn = GetPawn<ACameraPawn>();
 	SetViewTargetWithBlend(CameraPawn, 1.f);
@@ -168,17 +175,31 @@ APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
 
 void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
 {
-	ETeam Team = GetPaperPlayerState()->Team;
-	int BoardWidth = GameState->GetBoardWidth();
-	for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
-		if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
-		{			
-			AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
-			GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
-			SpawnedUnit->Build(Team);
-			SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
-			return;
-		}
+	ETeam& Team = GetPaperPlayerState()->Team;
+
+	if (GameState->Turn % GameState->BoardSpawns.Num() == static_cast<uint8>(Team)
+		&& GameState->GetGold(Team) >= Type.GetDefaultObject()->GetCost())
+	{
+		int BoardWidth = GameState->GetBoardWidth();
+		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
+			if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
+			{
+
+#if UE_BUILD_SHIPPING
+				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+#else
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.bHideFromSceneOutliner = false;
+				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
+#endif
+
+				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
+				GameState->Server_ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
+				SpawnedUnit->Build(Team);
+				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
+				break;
+			}
+	}
 }
 
 bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
@@ -238,10 +259,6 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
-	if (GetGameInstance<UPaperGameInstance>()->Team == ETeam::TeamNeutral)
-		GetGameInstance<UPaperGameInstance>()->Team = ETeam::TeamGreen;
-	else
-		GetGameInstance<UPaperGameInstance>()->Team = static_cast<ETeam>(static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team) + 1);
 }
 
 void APaperPlayerController::SelectUnit()
@@ -455,10 +472,7 @@ void APaperPlayerController::AttackableOverlayOff()
 
 void APaperPlayerController::Server_EndTurn_Implementation()
 {
-	GameState->Turn++;
-	for (auto Unit : GameState->UnitBoard)
-		if (Unit && GameState->Turn % GameState->BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
-			Unit->Passive();
+	GameState->Server_EndTurn();
 }
 
 bool APaperPlayerController::Server_EndTurn_Validate()

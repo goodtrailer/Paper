@@ -8,14 +8,11 @@
 
 bool APaperPlayerState::IsTurn()
 {
-	//GLog->Logf(TEXT("GameState: %s"), *FString(GameState ? "Valid" : "INVALID"));
-	return (GameState->Turn % GameState->BoardSpawns.Num() == static_cast<uint8>(Team)) ? true : false;
+	return (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
 }
 
 void APaperPlayerState::BeginPlay()
 {
-	GameState = GetWorld()->GetGameState<APaperGameState>();
-	GLog->Logf(TEXT("GameInstance Team: %d"), GetGameInstance<UPaperGameInstance>()->Team);
 	Server_SetTeam(GetGameInstance<UPaperGameInstance>()->Team);
 }
 
@@ -33,7 +30,6 @@ APaperPlayerState::APaperPlayerState()
 
 void APaperPlayerState::Server_SetTeam_Implementation(ETeam TeamToSet)
 {
-	GLog->Logf(TEXT("SetTeam Team: %d"), TeamToSet);
 	Team = TeamToSet;
 }
 

@@ -22,6 +22,4 @@ public:
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
-private:
-	class APaperGameState* GameState;
 };

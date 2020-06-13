@@ -18,6 +18,9 @@ public:
 	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
+
+	UPROPERTY(BlueprintReadWrite)
+	class UPaperUserInterface* UserInterface;
 	
 protected:
 	struct MovableTileInfo
@@ -71,6 +74,7 @@ protected:
 	AActor* AttackOverlay;
 	AActor* MoveOverlay;
 	class APaperGameState* GameState;
+	class UPaperGameInstance* GameInstance;
 
 	bool bMovableOverlayOn;
 	bool bAttackableOverlayOn;
@@ -93,6 +97,8 @@ protected:
 	TSubclassOf<AActor> MoveJointBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> AttackableOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
+	TSubclassOf<class UPaperUserInterface> UserInterfaceBP;	
 
 private:
 	class APaperPlayerState* UnsafePlayerState;

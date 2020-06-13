@@ -46,13 +46,29 @@ Format: Major.Minor.Patch.Revision
 			+ Unit deaths
 		2. Overriding reachable range
 			+ Overridable attack ranges using virtual
-			- <>/[] default range types
-	5. Bases and win conditions
+			+ <>/[] default range types
+	5. UI and miscellaneous
+		0. Gold
+			+ .
+			+ Easily modifiable starting/passive income and starting gold
+		1. Basic UI
+			+ Colored based on team
+			+ Shows gold
+			+ No longer updates per tick
+			+ Button styles
+		2. More UI functionality
+			- Selected unit icon
+			- Selected unit stats
+			- Selected unit action buttons
+		3. Miscellaneous
+			+ localhost a valid alias for 127.0.0.1
+			+ FPS counter
+			- Can press ENTER to join instead of clicking join
+	6. Bases and win conditions
 		0.
-	6. Units part 2
+	7. Units part 2
 		0. Miners
-		1. Money system
-	7. Polish, bug fixes, and housekeeping
+	8. Polish, bug fixes, and housekeeping
 		0.
 1. Release
 	0.

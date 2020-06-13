@@ -20,6 +20,11 @@ AUnit::AUnit()
 	bAlwaysRelevant = true;
 }
 
+int AUnit::GetCost_Implementation()
+{
+	return 0;
+}
+
 void AUnit::BeginPlay()
 {
 	Super::BeginPlay();
@@ -32,28 +37,61 @@ void AUnit::DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& Ou
 	const int BoardWidth = GameState->GetBoardWidth();
 	const int BoardHeight = GameState->GetBoardHeight();
 
-	for (int i = 0; i <= Range; i++)
-		for (int j = i - Range; j <= Range - i; j++)
-			if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
-			{
-				if (Coordinates % BoardWidth + i < BoardWidth)
+	switch (RangeType)
+	{
+	case ERangeType::RangeTypeNormal:
+		GLog->Log(TEXT("RangeTypeNormal"));
+		for (int i = 0; i <= Range; i++)
+			for (int j = i - Range; j <= Range - i; j++)
+				if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
 				{
-					int ReachableCoord = Coordinates + i + j * BoardWidth;
-					AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
-					OutReachableTiles.Add(ReachableCoord);
-					if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
-						OutAttackableTiles.Add(ReachableCoord);
+					if (Coordinates % BoardWidth + i < BoardWidth)
+					{
+						int ReachableCoord = Coordinates + i + j * BoardWidth;
+						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
+						OutReachableTiles.Add(ReachableCoord);
+						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
+							OutAttackableTiles.Add(ReachableCoord);
+					}
+					if (Coordinates % BoardWidth - i >= 0)
+					{
+						int ReachableCoord = Coordinates - i + j * BoardWidth;
+						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
+						OutReachableTiles.Add(ReachableCoord);
+						OutReachableTiles.Add(ReachableCoord);
+						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
+							OutAttackableTiles.Add(ReachableCoord);
+					}
 				}
-				if (Coordinates % BoardWidth - i >= 0)
+		break;
+
+	case ERangeType::RangeTypeSquare:
+		GLog->Log(TEXT("RangeTypeSquare"));
+		for (int i = 0; i <= Range; i++)
+			for (int j = -Range; j <= Range; j++)
+				if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
 				{
-					int ReachableCoord = Coordinates - i + j * BoardWidth;
-					AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
-					OutReachableTiles.Add(ReachableCoord);
-					OutReachableTiles.Add(ReachableCoord);
-					if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
-						OutAttackableTiles.Add(ReachableCoord);
+					if (Coordinates % BoardWidth + i < BoardWidth)
+					{
+						int ReachableCoord = Coordinates + i + j * BoardWidth;
+						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
+						OutReachableTiles.Add(ReachableCoord);
+						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
+							OutAttackableTiles.Add(ReachableCoord);
+					}
+					if (Coordinates % BoardWidth - i >= 0)
+					{
+						int ReachableCoord = Coordinates - i + j * BoardWidth;
+						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
+						OutReachableTiles.Add(ReachableCoord);
+						OutReachableTiles.Add(ReachableCoord);
+						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
+							OutAttackableTiles.Add(ReachableCoord);
+					}
 				}
-			}
+		break;
+	}
+	
 }
 
 bool AUnit::Server_Attack_Validate(AUnit* UnitToAttack)

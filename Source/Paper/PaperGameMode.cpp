@@ -21,6 +21,9 @@ void APaperGameMode::BeginPlay()
 	GameState = GetGameState<APaperGameState>();
 	GenerateBoard();
 	GameState->Turn = static_cast<uint8>(ETeam::TeamGreen);
+	for (int i = 0; i < GameState->BoardSpawns.Num(); i++)
+		GameState->Gold.Add(StartingGold);
+	GameState->PassiveIncome = StartingPassiveIncome;
 }
 
 void APaperGameMode::GenerateBoard()

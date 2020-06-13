@@ -27,14 +27,16 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> SpawnBP;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Misc")
 	class UTexture2D* BoardLayoutTexture;
 	UPROPERTY(EditAnywhere, Category = "Misc")
 	float ColorsNearlyEqualThreshold;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	int StartingGold;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	int StartingPassiveIncome;
 	
 	class APaperGameState* GameState;
-
-	int Count;
 };
 
 namespace ColorCode

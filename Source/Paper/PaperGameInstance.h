@@ -21,6 +21,6 @@ public:
 	UPaperGameInstance();
 
 	FBoardInfo BoardInfo;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	ETeam Team;
 };
