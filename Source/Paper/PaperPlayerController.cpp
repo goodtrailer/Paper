@@ -280,17 +280,34 @@ void APaperPlayerController::SelectUnit()
 		else
 			SelectedUnit = nullptr;
 
+		UserInterface->UpdateSelectedUnit(SelectedUnit);
+
 		// Show/hide select overlay
 		if (!SelectedUnit)
 			SelectOverlay->GetRootComponent()->SetVisibility(false);
 		else
 		{
-			GLog->Logf(TEXT("SelectedUnit->HP: %d/%d"), SelectedUnit->GetHP(), SelectedUnit->GetHPMax());
 			SelectOverlay->GetRootComponent()->SetVisibility(true);
 			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
 			MovableOverlayOn();
 		}
 	}
+}
+
+void APaperPlayerController::CheckDeadUnit(AUnit* Unit)
+{
+	if (SelectedUnit == Unit)
+	{
+		SelectedUnit = nullptr;
+		UserInterface->UpdateSelectedUnit(nullptr);
+		SelectOverlay->GetRootComponent()->SetVisibility(false);
+	}
+}
+
+void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit)
+{
+	if (SelectedUnit == Unit && UserInterface)
+		UserInterface->UpdateSelectedUnit(SelectedUnit);
 }
 
 void APaperPlayerController::MovableOverlayOn()
@@ -396,6 +413,7 @@ void APaperPlayerController::MoveUnit()
 		SelectOverlay->SetActorLocation(FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth() * 200, HoveredUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
 	}
 	MovableOverlayOff();
+	UserInterface->UpdateSelectedUnit(SelectedUnit);
 }
 
 void APaperPlayerController::AttackUnit()
@@ -405,11 +423,12 @@ void APaperPlayerController::AttackUnit()
 		Server_AttackUnit(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
 	}
 	AttackableOverlayOff();
+	UserInterface->UpdateSelectedUnit(SelectedUnit);
 }
 
 bool APaperPlayerController::Server_AttackUnit_Validate(AUnit* Attacker, AUnit* Victim)
 {
-	if (Attacker && Victim && Attacker->Energy > 1 && Victim->Team != Attacker->Team)
+	if (Attacker && Victim)
 		return true;
 	else
 		return false;
@@ -422,11 +441,10 @@ void APaperPlayerController::Server_AttackUnit_Implementation(AUnit* Attacker, A
 		Victim->SetHP(Victim->GetHP() - Attacker->Attack);
 	else
 	{
+		GameState->Multicast_CheckDeadUnitForLocalPlayerController(Victim);
 		Victim->Destroy();
 		GameState->UnitBoard[Victim->Coordinates] = nullptr;
 	}
-		
-
 }
 
 bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)

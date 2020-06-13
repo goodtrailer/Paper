@@ -10,6 +10,20 @@
 #include "PaperPlayerState.h"
 #include "PaperGameInstance.h"
 
+void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementation(AUnit* Unit)
+{
+	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
+	if (LocalPlayerController)
+		LocalPlayerController->CheckDeadUnit(Unit);
+}
+
+void APaperGameState::Multicast_CheckUpdatedUnitForLocalPlayerController_Implementation(AUnit* Unit)
+{
+	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
+	if (LocalPlayerController)
+		LocalPlayerController->CheckUpdatedUnit(Unit);
+}
+
 int APaperGameState::GetGold(ETeam Team) const
 {
 	if (static_cast<int>(Team) < Gold.Num())

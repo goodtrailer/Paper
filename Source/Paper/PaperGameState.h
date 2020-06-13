@@ -44,6 +44,10 @@ public:
 	void Server_ChangeGold(ETeam Team, int DeltaGold);
 	UFUNCTION(BlueprintCallable)
 	int GetGold(ETeam Team) const;
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_CheckDeadUnitForLocalPlayerController(AUnit* Unit);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
 	
 
 	UPROPERTY(BlueprintReadOnly, Replicated)

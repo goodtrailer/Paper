@@ -6,6 +6,7 @@
 #include "Net/UnrealNetwork.h"
 #include "GenericPlatform/GenericPlatformMath.h"
 #include "Engine/Engine.h"
+#include "Engine/World.h"
 
 void AUnit::Passive_Implementation()
 {
@@ -40,7 +41,6 @@ void AUnit::DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& Ou
 	switch (RangeType)
 	{
 	case ERangeType::RangeTypeNormal:
-		GLog->Log(TEXT("RangeTypeNormal"));
 		for (int i = 0; i <= Range; i++)
 			for (int j = i - Range; j <= Range - i; j++)
 				if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
@@ -66,7 +66,6 @@ void AUnit::DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& Ou
 		break;
 
 	case ERangeType::RangeTypeSquare:
-		GLog->Log(TEXT("RangeTypeSquare"));
 		for (int i = 0; i <= Range; i++)
 			for (int j = -Range; j <= Range; j++)
 				if (Coordinates / BoardWidth + j < BoardHeight && Coordinates / BoardWidth + j >= 0)
@@ -121,12 +120,22 @@ uint8 AUnit::GetHPMax() const { return HPMax; }
 void AUnit::OnRep_Team()
 {
 	if (UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(GetRootComponent()->GetChildComponent(0)))
-		Mesh->SetMaterial(0, TeamMaterials[static_cast<int>(Team)]);
+		Mesh->SetMaterial(0, GetMaterial());
 }
 
 void AUnit::OnRep_Coordinates()
 {
 	SetActorLocation(FVector(Coordinates % GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, Coordinates / GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, GetActorLocation().Z));
+}
+
+void AUnit::OnRep_RecordedStat()
+{
+	if (GetWorld())
+	{
+		APaperGameState* const GameState = GetWorld()->GetGameState<APaperGameState>();
+		if (GameState)
+			GameState->Multicast_CheckUpdatedUnitForLocalPlayerController(this);
+	}
 }
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -56,14 +56,14 @@ Format: Major.Minor.Patch.Revision
 			+ Shows gold
 			+ No longer updates per tick
 			+ Button styles
-		2. More UI functionality
+		2. Miscellaneous
+			+ localhost a valid alias for 127.0.0.1
+			+ FPS counter
+			+ Can press ENTER to join instead of clicking join
+		3. More UI functionality
 			- Selected unit icon
 			- Selected unit stats
 			- Selected unit action buttons
-		3. Miscellaneous
-			+ localhost a valid alias for 127.0.0.1
-			+ FPS counter
-			- Can press ENTER to join instead of clicking join
 	6. Bases and win conditions
 		0.
 	7. Units part 2

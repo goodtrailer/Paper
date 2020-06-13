@@ -27,6 +27,10 @@ public:
 	void Server_Attack(AUnit* UnitToAttack);
 	UFUNCTION(BlueprintNativeEvent)
 	int GetCost();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	class UTexture2D* GetIcon();
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	class UMaterialInterface* GetMaterial();
 	virtual void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	uint8 GetHPMax() const;
@@ -40,29 +44,29 @@ public:
 	FCardinal bIsCollidable;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	bool bIsTargetable;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	EType Type;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Attack")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Attack")
 	uint8 Attack;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range")
 	uint8 Range;
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
 	ERangeType RangeType;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
 	UPROPERTY(ReplicatedUsing=OnRep_Coordinates, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Meta")
-	TArray<class UMaterialInterface*> TeamMaterials;
 
 protected:
 	UFUNCTION()
 	void OnRep_Team();
+	UFUNCTION()
+	void OnRep_RecordedStat();
 	
-	UPROPERTY(Replicated, EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BLueprintReadWrite, Category = "Stats", DisplayName = "Max Energy")
 	uint8 EnergyMax;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting HP")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting HP")
 	uint8 HP;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Max HP")
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Max HP")
 	uint8 HPMax;
 };
