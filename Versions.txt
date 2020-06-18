@@ -61,15 +61,16 @@ Format: Major.Minor.Patch.Revision
 			+ FPS counter
 			+ Can press ENTER to join instead of clicking join
 		3. More UI functionality
-			- Selected unit icon
-			- Selected unit stats
-			- Selected unit action buttons
+			+ Selected unit icon
+			+ Selected unit stats
+			+ Selected unit action buttons
+			+ Info buttons in shop and selected unit panel
 	6. Bases and win conditions
 		0.
 	7. Units part 2
 		0. Miners
 	8. Polish, bug fixes, and housekeeping
-		0.
+		0. ESCAPE menu for settings
 1. Release
-	0.
+	0. 
 		0.

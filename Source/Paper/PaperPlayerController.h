@@ -20,6 +20,10 @@ public:
 	void Server_EndTurn();
 	void CheckDeadUnit(AUnit* Unit);
 	void CheckUpdatedUnit(AUnit* Unit);
+	UFUNCTION(BlueprintCallable)
+	void ToggleMovableOverlay();
+	UFUNCTION(BlueprintCallable)
+	void ToggleAttackableOverlay();
 
 	UPROPERTY(BlueprintReadWrite)
 	class UPaperUserInterface* UserInterface;
@@ -53,10 +57,8 @@ protected:
 	void Server_AttackUnit(AUnit* Attacker, AUnit* Victim);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
-	void ToggleMovableOverlay();
 	void AttackableOverlayOn();
 	void AttackableOverlayOff();
-	void ToggleAttackableOverlay();
 
 	class ACameraPawn* CameraPawn;
 	class AUnit* SelectedUnit;

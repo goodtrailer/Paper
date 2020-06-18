@@ -153,4 +153,5 @@ void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AUnit, EnergyMax)
 	DOREPLIFETIME(AUnit, HP)
 	DOREPLIFETIME(AUnit, HPMax)
+	DOREPLIFETIME(AUnit, PassiveString)
 }

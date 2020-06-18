@@ -56,6 +56,8 @@ public:
 	uint8 Energy;
 	UPROPERTY(ReplicatedUsing=OnRep_Coordinates, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
+	UPROPERTY(ReplicatedUsing=OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	FString PassiveString;
 
 protected:
 	UFUNCTION()
