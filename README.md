@@ -11,5 +11,5 @@ Moving: <br />
 ![Screenshot_02](https://raw.githubusercontent.com/goodtrailer/Paper/master/Screenshots/Screenshot_02.png)
 Attacking: <br />
 ![Screenshot_03](https://raw.githubusercontent.com/goodtrailer/Paper/master/Screenshots/Screenshot_03.png)
-Board "Editor" (a .jpg in the source files that you can edit using any paint program before building the project): <br />
+Board "Editor" (a .png in the source files that you can edit using any paint program before building the project): <br />
 ![T_Board_BC.jpg](https://raw.githubusercontent.com/goodtrailer/Paper/master/Content/Textures/T_Board_BC.png)
