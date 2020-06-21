@@ -17,12 +17,13 @@ enum class ETeam : uint8
 UENUM(BlueprintType)
 enum class EType : uint8
 {
-	TypeUnit		UMETA(DisplayName = "Unit"),
+	TypeUnit		UMETA(DisplayName = "Unit"),		//0
 	TypeWall		UMETA(DisplayName = "Wall"),
 	TypeSpawn		UMETA(DisplayName = "Spawn"),
 	TypeGround		UMETA(DisplayName = "Ground"),
 	TypeMine		UMETA(DisplayName = "Mine"),
-	TypeKnight		UMETA(DisplayName = "Knight")
+	TypeKnight		UMETA(DisplayName = "Knight"),		//5
+	TypeCastle		UMETA(DisplayName = "Castle")
 };
 
 UENUM(BlueprintType)

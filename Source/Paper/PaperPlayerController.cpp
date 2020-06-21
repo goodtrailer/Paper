@@ -192,7 +192,7 @@ void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> 
 				SpawnParams.bHideFromSceneOutliner = false;
 				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
 #endif
-
+				SpawnedUnit->SetOwner(this);
 				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
 				GameState->Server_ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
 				SpawnedUnit->Build(Team);
@@ -259,37 +259,47 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
+	if (SelectedUnit)
+		GLog->Logf(TEXT("SelectedUnit->GetHP: %d\nSelectedUnit->GetHPMax: %d"), SelectedUnit->GetHP(), SelectedUnit->GetHPMax());
+	for (int  i = 0; i < GameState->CastleHP.Num(); i++)
+	{
+		GLog->Logf(TEXT("CastleHP[%d]: %d"), i, GameState->CastleHP[i]);
+		GLog->Logf(TEXT("CastleHPMax[%d]: %d"), i, GameState->CastleHPMax[i]);
+	}
 }
 
 void APaperPlayerController::SelectUnit()
 {
-	if (bMovableOverlayOn)
-		MoveUnit();
-	else if (bAttackableOverlayOn)
-		AttackUnit();
-	else
+	if (GameState && GameState->UnitBoard.Num())
 	{
-		// Assign SelectedUnit
-		if (HoveredUnit)
-			if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
-				SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
-			else if (HoveredUnit->bIsTargetable)
-				SelectedUnit = HoveredUnit;
-			else
-				SelectedUnit = nullptr;
-		else
-			SelectedUnit = nullptr;
-
-		UserInterface->UpdateSelectedUnit(SelectedUnit);
-
-		// Show/hide select overlay
-		if (!SelectedUnit)
-			SelectOverlay->GetRootComponent()->SetVisibility(false);
+		if (bMovableOverlayOn)
+			MoveUnit();
+		else if (bAttackableOverlayOn)
+			AttackUnit();
 		else
 		{
-			SelectOverlay->GetRootComponent()->SetVisibility(true);
-			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
-			MovableOverlayOn();
+			// Assign SelectedUnit
+			if (HoveredUnit)
+				if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
+					SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
+				else if (HoveredUnit->bIsTargetable)
+					SelectedUnit = HoveredUnit;
+				else
+					SelectedUnit = nullptr;
+			else
+				SelectedUnit = nullptr;
+
+			UserInterface->UpdateSelectedUnit(SelectedUnit);
+
+			// Show/hide select overlay
+			if (!SelectedUnit)
+				SelectOverlay->GetRootComponent()->SetVisibility(false);
+			else
+			{
+				SelectOverlay->GetRootComponent()->SetVisibility(true);
+				SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
+				MovableOverlayOn();
+			}
 		}
 	}
 }
@@ -419,32 +429,9 @@ void APaperPlayerController::MoveUnit()
 void APaperPlayerController::AttackUnit()
 {
 	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
-	{
-		Server_AttackUnit(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
-	}
+		SelectedUnit->Server_Attack(HoveredUnit);
 	AttackableOverlayOff();
 	UserInterface->UpdateSelectedUnit(SelectedUnit);
-}
-
-bool APaperPlayerController::Server_AttackUnit_Validate(AUnit* Attacker, AUnit* Victim)
-{
-	if (Attacker && Victim)
-		return true;
-	else
-		return false;
-}
-
-void APaperPlayerController::Server_AttackUnit_Implementation(AUnit* Attacker, AUnit* Victim)
-{
-	Attacker->Energy -= 2;
-	if (Attacker->Attack < Victim->GetHP())
-		Victim->SetHP(Victim->GetHP() - Attacker->Attack);
-	else
-	{
-		GameState->Multicast_CheckDeadUnitForLocalPlayerController(Victim);
-		Victim->Destroy();
-		GameState->UnitBoard[Victim->Coordinates] = nullptr;
-	}
 }
 
 bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)

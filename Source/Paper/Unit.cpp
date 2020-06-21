@@ -8,31 +8,39 @@
 #include "Engine/Engine.h"
 #include "Engine/World.h"
 
-void AUnit::Passive_Implementation()
-{
-	Energy = FGenericPlatformMath::Max(EnergyMax, Energy);
-}
-
 AUnit::AUnit()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	Type = EType::TypeUnit;
 	bReplicates = true;
 	bAlwaysRelevant = true;
+	
+	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
+	StaticMeshComponent->SetupAttachment(RootComponent);
+	StaticMeshComponent->SetRelativeScale3D(FVector::OneVector * 100);
+	StaticMeshComponent->SetRelativeRotation(FRotator(0.f, 0.f, 90.f));
+
+	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	StaticMeshComponent->SetCollisionObjectType(ECC_WorldDynamic);
+	StaticMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	StaticMeshComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
+
+
+	NetUpdateFrequency = 60.f;
+	MinNetUpdateFrequency = 4.f;
 }
 
-int AUnit::GetCost_Implementation()
+void AUnit::Build_Implementation(ETeam DesiredTeam)
 {
-	return 0;
+	BuildMisc(true, FCardinal(true, true, true, true), DesiredTeam);
 }
 
-void AUnit::BeginPlay()
-{
-	Super::BeginPlay();
-	//SetOwner(GEngine->GetFirstLocalPlayerController(GetWorld()));
-}
-
-void AUnit::DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const
+void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const
 {
 	APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
 	const int BoardWidth = GameState->GetBoardWidth();
@@ -93,29 +101,70 @@ void AUnit::DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& Ou
 	
 }
 
-bool AUnit::Server_Attack_Validate(AUnit* UnitToAttack)
+bool AUnit::Server_Attack_Validate(AUnit* Victim)
+{
+	if (Victim)
+		return true;
+	else
+		return false;
+}
+
+void AUnit::Server_Attack_Implementation(AUnit* Victim)
+{
+	Attack(Victim);
+}
+
+void AUnit::Attack_Implementation(AUnit* Victim)
+{
+	Energy -= 2;
+	if (Damage < Victim->GetHP())
+		Victim->SetHP(Victim->GetHP() - Damage);
+	else
+	{
+		APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
+		GameState->Multicast_CheckDeadUnitForLocalPlayerController(Victim);
+		Victim->Server_Die();
+		GameState->UnitBoard[Victim->Coordinates] = nullptr;
+	}
+}
+
+bool AUnit::Server_Die_Validate()
 {
 	return true;
 }
 
-void AUnit::Server_Attack_Implementation(AUnit* UnitToAttack)
+void AUnit::Server_Die_Implementation()
 {
-	if (Attack >= UnitToAttack->GetHP())
-	{
-		GLog->Log(TEXT("Killed"));
-		UnitToAttack->Destroy();
-	}
-	UnitToAttack->SetHP(UnitToAttack->GetHP()- Attack);
+	Die();
 }
 
-void AUnit::SetHP(uint8 a)
+void AUnit::Die_Implementation()
 {
-	HP = a;
+	Destroy();
 }
 
-uint8 AUnit::GetHP() const { return HP; }
+bool AUnit::Server_Passive_Validate()
+{
+	return true;
+}
 
-uint8 AUnit::GetHPMax() const { return HPMax; }
+void AUnit::Server_Passive_Implementation()
+{	
+	Passive();
+}
+
+void AUnit::Passive_Implementation()
+{
+	Energy = FGenericPlatformMath::Max(EnergyMax, Energy);
+}
+
+void AUnit::BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam)
+{
+	bIsTargetable = bTargetable;
+	bIsCollidable = bCollidable;
+	Team = DesiredTeam;
+	StaticMeshComponent->SetMaterial(0, GetMaterial());
+}
 
 void AUnit::OnRep_Team()
 {
@@ -138,6 +187,22 @@ void AUnit::OnRep_RecordedStat()
 	}
 }
 
+int AUnit::GetCost_Implementation()
+{
+	return 0;
+}
+
+uint8 AUnit::GetHP() const { return HP; }
+
+uint8 AUnit::GetHPMax() const { return HPMax; }
+
+void AUnit::SetHP(uint8 a)
+{
+	HP = a;
+}
+
+uint8 AUnit::GetEnergyMax() const { return EnergyMax; }
+
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -145,7 +210,7 @@ void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AUnit, bIsCollidable)
 	DOREPLIFETIME(AUnit, bIsTargetable)
 	DOREPLIFETIME(AUnit, Type)
-	DOREPLIFETIME(AUnit, Attack)
+	DOREPLIFETIME(AUnit, Damage)
 	DOREPLIFETIME(AUnit, Range)
 	DOREPLIFETIME(AUnit, RangeType)
 	DOREPLIFETIME(AUnit, Energy)

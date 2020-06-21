@@ -53,8 +53,6 @@ protected:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);
 	void AttackUnit();
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_AttackUnit(AUnit* Attacker, AUnit* Victim);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
 	void AttackableOverlayOn();

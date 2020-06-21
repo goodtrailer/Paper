@@ -96,7 +96,7 @@ void APaperGameState::Server_EndTurn_Implementation()
 	Server_ChangeGold(static_cast<ETeam>((++Turn) % BoardSpawns.Num()), PassiveIncome);
 	for (auto Unit : UnitBoard)
 		if (Unit && Turn % BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
-			Unit->Passive();
+			Unit->Server_Passive();
 	OnRep_Turn();
 }
 
@@ -115,6 +115,9 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, BoardWidth);
 	DOREPLIFETIME(APaperGameState, BoardHeight);
 	DOREPLIFETIME(APaperGameState, Gold);
+	DOREPLIFETIME(APaperGameState, PassiveIncome)
+	DOREPLIFETIME(APaperGameState, CastleHP)
+	DOREPLIFETIME(APaperGameState, CastleHPMax)
 }
 
 APaperGameState::APaperGameState()

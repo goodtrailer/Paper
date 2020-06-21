@@ -60,6 +60,10 @@ public:
 	TArray<class AUnit*> GroundBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	int PassiveIncome;
+	UPROPERTY(Replicated)
+	TArray<uint8> CastleHP;
+	UPROPERTY(Replicated)
+	TArray<uint8> CastleHPMax;
 	uint8 Count;
 
 protected:

@@ -3,6 +3,7 @@
 
 #include "PaperGameMode.h"
 #include "Unit.h"
+#include "Castle.h"
 #include "PaperGameState.h"
 #include "PaperPlayerState.h"
 #include "PaperEnums.h"
@@ -17,22 +18,18 @@ APaperGameMode::APaperGameMode()
 
 void APaperGameMode::BeginPlay()
 {
+	// BoardSpawns.Num not defined yet
 	Super::BeginPlay();
 	GameState = GetGameState<APaperGameState>();
-	GenerateBoard();
 	GameState->Turn = static_cast<uint8>(ETeam::TeamGreen);
-	for (int i = 0; i < GameState->BoardSpawns.Num(); i++)
-		GameState->Gold.Add(StartingGold);
-	GameState->PassiveIncome = StartingPassiveIncome;
-}
+	//TArray<TArray<ACastle*>> Castles;
 
-void APaperGameMode::GenerateBoard()
-{
+#pragma region GenerateBoard
+
 	int& BoardWidth = GameState->BoardWidth;
 	int& BoardHeight = GameState->BoardHeight;
 	TArray<AUnit*>& UnitBoard = GameState->UnitBoard;
 	TArray<AUnit*>& GroundBoard = GameState->GroundBoard;
-
 
 	struct ManagedMipMap
 	{
@@ -73,7 +70,6 @@ void APaperGameMode::GenerateBoard()
 	} ManagedBoardLayoutMipMap(&BoardLayoutTexture->PlatformData->Mips[0]);
 
 	int BoardLayoutBounds[2][2];
-
 	int BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
 
 	{
@@ -86,9 +82,11 @@ void APaperGameMode::GenerateBoard()
 					i++;
 				}
 	}
+
 	BoardLayoutBounds[0][0]++; BoardLayoutBounds[0][1]++; BoardLayoutBounds[1][0]--; BoardLayoutBounds[1][1]--; // crop unused outline around playable board
 	BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
 	BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
+	
 	for (int i = 0; i < BoardWidth * BoardHeight; i++)
 	{
 		UnitBoard.Push(nullptr);
@@ -102,8 +100,6 @@ void APaperGameMode::GenerateBoard()
 			FColor CurrentColor = ManagedBoardLayoutMipMap.GetColorArray()[x + y * BoardLayoutWidth];
 			int CurrentBoardCoordinates = x - BoardLayoutBounds[0][0] + (y - BoardLayoutBounds[0][1]) * BoardWidth;
 			int CurrentBoardLayoutCoordinates = x + y * BoardLayoutWidth;
-
-			GLog->Logf(TEXT("Processing: %d"), CurrentBoardCoordinates);
 
 			//if not hole, then process, otherwise just skip and never generate
 			if (!ColorsNearlyEqual(CurrentColor, ColorCode::Hole))
@@ -155,9 +151,17 @@ void APaperGameMode::GenerateBoard()
 					SpawnLocation.Z += 200;
 
 					if (ColorsNearlyEqual(CurrentColor, ColorCode::Wall))
+					{
 						UnitBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<AUnit>(WallBP, SpawnLocation, FRotator::ZeroRotator);
+						UnitBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
+						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
+					}
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::Mine))
+					{
 						UnitBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<AUnit>(MineBP, SpawnLocation, FRotator::ZeroRotator);
+						UnitBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
+						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
+					}
 					else if (ColorsNearlyEqual(CurrentColor, ColorCode::SpawnGreen))
 					{
 						while (GameState->BoardSpawns.Num() <= static_cast<uint8>(ETeam::TeamGreen))
@@ -179,22 +183,52 @@ void APaperGameMode::GenerateBoard()
 						spawn->Coordinates = CurrentBoardCoordinates;
 						spawn->Team = ETeam::TeamRed;
 						spawn->Build(ETeam::TeamRed);
-						
+
 						UE_LOG(LogTemp, Display, TEXT("Red Spawn: (%d, %d)"), CurrentBoardCoordinates % BoardWidth, CurrentBoardCoordinates / BoardWidth);
 					}
-
-					//TODO: when all remaining colors are implemented, remove if statement for performance (at the moment the only remaining are bases)
-					if (UnitBoard[CurrentBoardCoordinates] != nullptr)
+					else if (ColorsNearlyEqual(CurrentColor, ColorCode::CastleGreen))
 					{
+						/*while (Castles.Num() <= static_cast<uint8>(ETeam::TeamGreen))
+							Castles.Push(TArray<ACastle*>());
+						Castles[static_cast<uint8>(ETeam::TeamGreen)].Add(GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator));
+						UnitBoard[CurrentBoardCoordinates] = Castles[static_cast<uint8>(ETeam::TeamGreen)].Last();*/
+						UnitBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 						UnitBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
-						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
+						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamGreen);
+					}
+					else if (ColorsNearlyEqual(CurrentColor, ColorCode::CastleRed))
+					{
+						/*while (Castles.Num() <= static_cast<uint8>(ETeam::TeamRed))
+							Castles.Push(TArray<ACastle*>());
+						Castles[static_cast<uint8>(ETeam::TeamRed)].Add(GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator));
+						UnitBoard[CurrentBoardCoordinates] = Castles[static_cast<uint8>(ETeam::TeamRed)].Last();*/
+						UnitBoard[CurrentBoardCoordinates] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
+						UnitBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
+						UnitBoard[CurrentBoardCoordinates]->Build(ETeam::TeamRed);
 					}
 				}
 				GroundBoard[CurrentBoardCoordinates]->Build(ETeam::TeamNeutral);
 				GroundBoard[CurrentBoardCoordinates]->Coordinates = CurrentBoardCoordinates;
 			}
 		}
-	UE_LOG(LogTemp, Display, TEXT("BoardLayoutBounds are (%d, %d), (%d, %d)"), BoardLayoutBounds[0][0], BoardLayoutBounds[0][1], BoardLayoutBounds[1][0], BoardLayoutBounds[1][1]);
+#pragma endregion
+
+	// BoardSpawns.Num is now defined
+	for (int i = 0; i < GameState->BoardSpawns.Num(); i++)
+	{
+		GameState->Gold.Add(StartingGold);
+		GameState->CastleHP.Add(StartingCastleHP);
+		GameState->CastleHPMax.Add(StartingCastleHPMax);
+	}
+
+	/*// just in case some team doesnt have a castle (not sure why that would happen, maybe you want an undefeatable player, who knows? maybe a horde style game mode, idfk)
+	for (int i = 0; i < Castles.Num(); i++)
+		for (auto& Castle : Castles[i])
+		{
+			Castle->CastleHP = &GameState->CastleHP[i];
+			Castle->CastleHPMax = &GameState->CastleHPMax[i];
+		}*/
+	GameState->PassiveIncome = StartingPassiveIncome;
 }
 
 bool APaperGameMode::ColorsNearlyEqual(FColor a, FColor b)

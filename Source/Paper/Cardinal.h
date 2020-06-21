@@ -29,10 +29,10 @@ struct FCardinal
 	*/
 	FCardinal(const bool Up, const bool Right, const bool Down, const bool Left)
 	{
-		Directions[0] = Up;
-		Directions[1] = Right;
-		Directions[2] = Down;
-		Directions[3] = Left;
+		Directions.Add(Up);
+		Directions.Add(Right);
+		Directions.Add(Down);
+		Directions.Add(Left);
 	}
 
 	/**

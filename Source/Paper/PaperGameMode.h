@@ -15,7 +15,7 @@ public:
 	virtual void BeginPlay() override;
 
 protected:
-	void GenerateBoard();
+//	void GenerateBoard();	not really needed as a separate function anyway, and definitely should never be called outside of initial world load, so might as well integrate into beginplay
 	bool ColorsNearlyEqual(FColor a, FColor b);
 	
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
@@ -24,6 +24,8 @@ protected:
 	TSubclassOf<class AUnit> WallBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> MineBP;
+	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
+	TSubclassOf<class ACastle> CastleBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> SpawnBP;
 
@@ -35,6 +37,10 @@ protected:
 	int StartingGold;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	int StartingPassiveIncome;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	uint8 StartingCastleHP;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	uint8 StartingCastleHPMax;
 	
 	class APaperGameState* GameState;
 };
@@ -43,8 +49,8 @@ namespace ColorCode
 {
 	const FColor SpawnGreen = FColor(0, 127, 14);
 	const FColor SpawnRed = FColor(127, 0, 0);
-	const FColor BaseGreen = FColor(0, 254, 33);
-	const FColor BaseRed = FColor(254, 0, 0);
+	const FColor CastleGreen = FColor(0, 254, 33);
+	const FColor CastleRed = FColor(254, 0, 0);
 	const FColor Wall = FColor(0, 148, 255);
 	const FColor Bounds = FColor(0, 0, 0);
 	const FColor Mine = FColor(255, 216, 0);
