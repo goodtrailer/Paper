@@ -1,3 +1,5 @@
+// Copyright (c) 2019–2020 Alden Wu
+
 #include "PaperPlayerState.h"
 
 #include "PaperGameState.h"
@@ -8,7 +10,19 @@
 
 bool APaperPlayerState::IsTurn()
 {
-	return (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
+	// for whatever reason, this is super problematic (even with nullptr checks) for clients during intial connection and can throw exception access violations,
+	// so here's a try catch (yucky but inevitable).
+
+	// UPDATE: try catch block works. most of the time. miraculously, if i spam click enough, it STILL FUCKING CRASHES. WHY THE FUCK DOES THIS HAPPEN?
+	// IT'S A FREAKING TRY CATCH BLOCK. HOW THE FUCK. HAS I EVER?
+	try
+	{
+		return (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
+	}
+	catch (...)
+	{
+		return false;
+	}
 }
 
 void APaperPlayerState::BeginPlay()

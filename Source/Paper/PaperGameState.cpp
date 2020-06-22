@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+// Copyright (c) 2019–2020 Alden Wu
 
 #include "PaperGameState.h"
 
@@ -14,7 +14,7 @@ void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementa
 {
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
 	if (LocalPlayerController)
-		LocalPlayerController->CheckDeadUnit(Unit);
+		LocalPlayerController->CheckUpdatedUnit(Unit, true);
 }
 
 void APaperGameState::Multicast_CheckUpdatedUnitForLocalPlayerController_Implementation(AUnit* Unit)

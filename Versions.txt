@@ -66,11 +66,26 @@ Format: Major.Minor.Patch.Revision
 			+ Selected unit action buttons
 			+ Info buttons in shop and selected unit panel
 	6. Bases and win conditions
-		0.
+		0. Castles
+			+ Synced hp
+			+ Redo attacks/deaths to be overridable by units
+		1. Victory/defeat screen
+			- .
+			- Victory/defeat image
+			- Cool blurred background
 	7. Units part 2
 		0. Miners
+		1. Castles
+			- New models (instead of flipped wall asset)
 	8. Polish, bug fixes, and housekeeping
 		0. ESCAPE menu for settings
+		1. Top bar
+			- FPS counter
+			- Ping in ms
+			- CLIENT/HOST
+			- Version number
+		2. Polish
+			- Rich text for passive text
 1. Release
 	0. 
 		0.

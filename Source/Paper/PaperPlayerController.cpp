@@ -1,3 +1,5 @@
+// Copyright (c) 2019–2020 Alden Wu
+
 #include "PaperPlayerController.h"
 
 #include "Unit.h"
@@ -259,39 +261,32 @@ void APaperPlayerController::Debug()
 {
 	if (CameraPawn)
 		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
-	if (SelectedUnit)
-		GLog->Logf(TEXT("SelectedUnit->GetHP: %d\nSelectedUnit->GetHPMax: %d"), SelectedUnit->GetHP(), SelectedUnit->GetHPMax());
-	for (int  i = 0; i < GameState->CastleHP.Num(); i++)
-	{
-		GLog->Logf(TEXT("CastleHP[%d]: %d"), i, GameState->CastleHP[i]);
-		GLog->Logf(TEXT("CastleHPMax[%d]: %d"), i, GameState->CastleHPMax[i]);
-	}
 }
 
 void APaperPlayerController::SelectUnit()
 {
-	if (GameState && GameState->UnitBoard.Num())
+	if (bMovableOverlayOn)
+		MoveUnit();
+	else if (bAttackableOverlayOn)
+		AttackUnit();
+	else
 	{
-		if (bMovableOverlayOn)
-			MoveUnit();
-		else if (bAttackableOverlayOn)
-			AttackUnit();
-		else
-		{
-			// Assign SelectedUnit
-			if (HoveredUnit)
-				if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
-					SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
-				else if (HoveredUnit->bIsTargetable)
-					SelectedUnit = HoveredUnit;
-				else
-					SelectedUnit = nullptr;
+		// Assign SelectedUnit
+		if (HoveredUnit)
+			if (GameState && (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn))
+				SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
+			else if (HoveredUnit->bIsTargetable)
+				SelectedUnit = HoveredUnit;
 			else
 				SelectedUnit = nullptr;
+		else
+			SelectedUnit = nullptr;
 
+		if (UserInterface)
 			UserInterface->UpdateSelectedUnit(SelectedUnit);
 
-			// Show/hide select overlay
+		// Show/hide select overlay
+		if (SelectOverlay)
 			if (!SelectedUnit)
 				SelectOverlay->GetRootComponent()->SetVisibility(false);
 			else
@@ -300,24 +295,28 @@ void APaperPlayerController::SelectUnit()
 				SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
 				MovableOverlayOn();
 			}
-		}
 	}
 }
 
-void APaperPlayerController::CheckDeadUnit(AUnit* Unit)
+inline void APaperPlayerController::UpdateSelectedUnit()
+{
+	if (UserInterface)
+		UserInterface->UpdateSelectedUnit(SelectedUnit);
+	if (SelectOverlay)
+		if (SelectedUnit)
+			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
+		else
+			SelectOverlay->GetRootComponent()->SetVisibility(false);
+}
+
+void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit)
 {
 	if (SelectedUnit == Unit)
 	{
-		SelectedUnit = nullptr;
-		UserInterface->UpdateSelectedUnit(nullptr);
-		SelectOverlay->GetRootComponent()->SetVisibility(false);
+		if (bUnselectUnit)
+			SelectedUnit = nullptr;
+		UpdateSelectedUnit();
 	}
-}
-
-void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit)
-{
-	if (SelectedUnit == Unit && UserInterface)
-		UserInterface->UpdateSelectedUnit(SelectedUnit);
 }
 
 void APaperPlayerController::MovableOverlayOn()
@@ -417,13 +416,10 @@ void APaperPlayerController::MovableOverlayOn()
 
 void APaperPlayerController::MoveUnit()
 {
-	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
-	{
+	if (SelectedUnit && GameState && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
 		Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates, MovableTiles[HoveredUnit->Coordinates].EnergyLeft);
-		SelectOverlay->SetActorLocation(FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth() * 200, HoveredUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
-	}
+	UpdateSelectedUnit();
 	MovableOverlayOff();
-	UserInterface->UpdateSelectedUnit(SelectedUnit);
 }
 
 void APaperPlayerController::AttackUnit()
@@ -431,7 +427,7 @@ void APaperPlayerController::AttackUnit()
 	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
 		SelectedUnit->Server_Attack(HoveredUnit);
 	AttackableOverlayOff();
-	UserInterface->UpdateSelectedUnit(SelectedUnit);
+	UpdateSelectedUnit();
 }
 
 bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)

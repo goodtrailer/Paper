@@ -1,3 +1,5 @@
+// Copyright (c) 2019–2020 Alden Wu
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -18,8 +20,7 @@ public:
 	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
-	void CheckDeadUnit(AUnit* Unit);
-	void CheckUpdatedUnit(AUnit* Unit);
+	void CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit = false);
 	UFUNCTION(BlueprintCallable)
 	void ToggleMovableOverlay();
 	UFUNCTION(BlueprintCallable)
@@ -49,6 +50,7 @@ protected:
 	void MouseY(float);
 	void Debug();
 	void SelectUnit();
+	inline void UpdateSelectedUnit();
 	void MoveUnit();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);

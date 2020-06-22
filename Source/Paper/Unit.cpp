@@ -1,3 +1,5 @@
+// Copyright (c) 2019–2020 Alden Wu
+
 #include "Unit.h"
 
 #include "PaperEnums.h"
@@ -175,6 +177,7 @@ void AUnit::OnRep_Team()
 void AUnit::OnRep_Coordinates()
 {
 	SetActorLocation(FVector(Coordinates % GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, Coordinates / GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, GetActorLocation().Z));
+	OnRep_RecordedStat();
 }
 
 void AUnit::OnRep_RecordedStat()
