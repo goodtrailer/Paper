@@ -27,27 +27,28 @@ class PAPER_API APaperGameState : public AGameStateBase
 public:
 	APaperGameState();
 	void BeginPlay() override;
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	UFUNCTION(BlueprintCallable)
 	int GetBoardWidth() const;
 	UFUNCTION(BlueprintCallable)
 	int GetBoardHeight() const;
 	UFUNCTION(BlueprintCallable)
+	int GetGold(ETeam Team) const;
+	UFUNCTION(BlueprintCallable)
 	class AUnit* GetBoardSpawn(ETeam team, int index) const;
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_Defeat(ETeam DefeatedTeam);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
-	UFUNCTION()
-	void OnRep_Turn();
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SetGold(ETeam Team, int NewAmount);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_ChangeGold(ETeam Team, int DeltaGold);
-	UFUNCTION(BlueprintCallable)
-	int GetGold(ETeam Team) const;
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_CheckDeadUnitForLocalPlayerController(AUnit* Unit);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
+	void CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
+	UFUNCTION()
+	void OnRep_Turn();
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
@@ -64,11 +65,16 @@ public:
 	TArray<uint8> CastleHP;
 	UPROPERTY(Replicated)
 	TArray<uint8> CastleHPMax;
+	TSet<ETeam> AliveTeams;			// NOT REPLICATED, ONLY USEFUL ON SERVER.
 	uint8 Count;
 
 protected:
 	UFUNCTION()
 	void OnRep_Gold();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Victory(ETeam Team);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Defeat(ETeam Team);
 
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Gold)
 	TArray<int> Gold;		// stored on game state and not player state: easily accessible by game mode, and it must be remembered if players reconnect

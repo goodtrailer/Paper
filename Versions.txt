@@ -70,9 +70,8 @@ Format: Major.Minor.Patch.Revision
 			+ Synced hp
 			+ Redo attacks/deaths to be overridable by units
 		1. Victory/defeat screen
-			- .
-			- Victory/defeat image
-			- Cool blurred background
+			+ .
+			+ Cool blurred background
 	7. Units part 2
 		0. Miners
 		1. Castles
@@ -86,6 +85,7 @@ Format: Major.Minor.Patch.Revision
 			- Version number
 		2. Polish
 			- Rich text for passive text
+			- Visuals on attacking (i.e. a little red bubble or something)
 1. Release
 	0. 
 		0.

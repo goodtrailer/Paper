@@ -213,20 +213,13 @@ void APaperGameMode::BeginPlay()
 #pragma endregion
 
 	// BoardSpawns.Num is now defined
-	for (int i = 0; i < GameState->BoardSpawns.Num(); i++)
+	for (uint8 i = 0; i < GameState->BoardSpawns.Num(); i++)
 	{
 		GameState->Gold.Add(StartingGold);
 		GameState->CastleHP.Add(StartingCastleHP);
 		GameState->CastleHPMax.Add(StartingCastleHPMax);
+		GameState->AliveTeams.Add(static_cast<ETeam>(i));
 	}
-
-	/*// just in case some team doesnt have a castle (not sure why that would happen, maybe you want an undefeatable player, who knows? maybe a horde style game mode, idfk)
-	for (int i = 0; i < Castles.Num(); i++)
-		for (auto& Castle : Castles[i])
-		{
-			Castle->CastleHP = &GameState->CastleHP[i];
-			Castle->CastleHPMax = &GameState->CastleHPMax[i];
-		}*/
 	GameState->PassiveIncome = StartingPassiveIncome;
 }
 

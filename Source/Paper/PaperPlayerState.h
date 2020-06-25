@@ -19,7 +19,7 @@ public:
 	bool IsTurn();
 	void BeginPlay() override;
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
-	UFUNCTION(Server, Reliable, WithValidation)
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SetTeam(ETeam TeamToSet);
 
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")

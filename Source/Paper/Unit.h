@@ -23,15 +23,12 @@ public:
 	void Build(ETeam DesiredTeam);
 	UFUNCTION(BlueprintNativeEvent)
 	void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
-	// This attack function is called on the server, but because server RPC can't be virtual/blueprintnative afaik, there has to be a protected attack func
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Attack(AUnit* Victim);
-	// same as Server_Attack comment
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Die();
-	// same as Server_Attack comment
-	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_Passive();
+	UFUNCTION(BlueprintNativeEvent)
+	void Attack(AUnit* Victim);
+	UFUNCTION(BlueprintNativeEvent)
+	void Die();
+	UFUNCTION(BlueprintNativeEvent)
+	void Passive();
 	UFUNCTION()
 	void OnRep_Coordinates();
 	UFUNCTION(BlueprintNativeEvent)
@@ -76,15 +73,6 @@ public:
 	class UStaticMeshComponent* StaticMeshComponent;
 
 protected:
-	// Attack should never be manually called, it should only be called on the server through Server_Attack. It's done this way because RPCs can't be virtual AFAIK.
-	UFUNCTION(BlueprintNativeEvent)
-	void Attack(AUnit* Victim);
-	// Same as Attack function comment.
-	UFUNCTION(BlueprintNativeEvent)
-	void Die();
-	// Same as Attack function comment.
-	UFUNCTION(BlueprintNativeEvent)
-	void Passive();
 	UFUNCTION(BlueprintCallable)
 	void BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam);
 	UFUNCTION()

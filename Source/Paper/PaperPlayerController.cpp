@@ -424,10 +424,23 @@ void APaperPlayerController::MoveUnit()
 
 void APaperPlayerController::AttackUnit()
 {
-	if (SelectedUnit && GetPaperPlayerState()->IsTurn() && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
-		SelectedUnit->Server_Attack(HoveredUnit);
+	if (SelectedUnit && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
+		Server_Attack(SelectedUnit, HoveredUnit);
 	AttackableOverlayOff();
 	UpdateSelectedUnit();
+}
+
+bool APaperPlayerController::Server_Attack_Validate(AUnit* Attacker, AUnit* Victim)
+{
+	if (Attacker && Victim)
+		return true;
+	else
+		return false;
+}
+
+void APaperPlayerController::Server_Attack_Implementation(AUnit* Attacker, AUnit* Victim)
+{
+	Attacker->Attack(Victim);
 }
 
 bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)

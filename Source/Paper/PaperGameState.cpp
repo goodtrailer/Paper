@@ -10,6 +10,45 @@
 #include "PaperPlayerState.h"
 #include "PaperGameInstance.h"
 
+bool APaperGameState::Server_Defeat_Validate(ETeam DefeatedTeam)
+{
+	return (DefeatedTeam == ETeam::TeamNeutral) ? false : true;
+}
+
+void APaperGameState::Server_Defeat_Implementation(ETeam DefeatedTeam)
+{
+	// destroys the team's units
+	for (auto& Unit : UnitBoard)
+		if (Unit && Unit->Team == DefeatedTeam)
+			Unit->Destroy();
+
+	// destroys the team's spawns
+	if (static_cast<uint8>(DefeatedTeam) < BoardSpawns.Num())
+	{
+		for (auto& Spawn : BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns)
+			Spawn->Destroy();
+		BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns.Empty();
+		AliveTeams.Remove(DefeatedTeam);
+
+		if (AliveTeams.Num() == 1)
+			Multicast_Victory(*AliveTeams.CreateConstIterator());
+		else
+			Multicast_Defeat(DefeatedTeam);
+	}
+}
+
+void APaperGameState::Multicast_Victory_Implementation(ETeam Team)
+{
+	if (APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		LocalPlayerController->CheckVictory(Team);
+}
+
+void APaperGameState::Multicast_Defeat_Implementation(ETeam Team)
+{
+	if (APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		LocalPlayerController->CheckDefeat(Team);
+}
+
 void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementation(AUnit* Unit)
 {
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
@@ -17,7 +56,7 @@ void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementa
 		LocalPlayerController->CheckUpdatedUnit(Unit, true);
 }
 
-void APaperGameState::Multicast_CheckUpdatedUnitForLocalPlayerController_Implementation(AUnit* Unit)
+void APaperGameState::CheckUpdatedUnitForLocalPlayerController(AUnit* Unit)
 {
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
 	if (LocalPlayerController)
@@ -93,10 +132,16 @@ int APaperGameState::GetBoardWidth() const
 
 void APaperGameState::Server_EndTurn_Implementation()
 {
-	Server_ChangeGold(static_cast<ETeam>((++Turn) % BoardSpawns.Num()), PassiveIncome);
+	// while (!AliveTeams[++Turn % BoardSpawns.Num()]) {}; not quite as readable so i'm replacing it with do/while
+	do
+	{
+		++Turn;
+	} while (!AliveTeams.Contains(static_cast<ETeam>(Turn % BoardSpawns.Num())));
+
+	Server_ChangeGold(static_cast<ETeam>((Turn) % BoardSpawns.Num()), PassiveIncome);
 	for (auto Unit : UnitBoard)
 		if (Unit && Turn % BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
-			Unit->Server_Passive();
+			Unit->Passive();
 	OnRep_Turn();
 }
 

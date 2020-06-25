@@ -103,19 +103,7 @@ void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles
 	
 }
 
-bool AUnit::Server_Attack_Validate(AUnit* Victim)
-{
-	if (Victim)
-		return true;
-	else
-		return false;
-}
-
-void AUnit::Server_Attack_Implementation(AUnit* Victim)
-{
-	Attack(Victim);
-}
-
+// should only be called by server
 void AUnit::Attack_Implementation(AUnit* Victim)
 {
 	Energy -= 2;
@@ -125,36 +113,18 @@ void AUnit::Attack_Implementation(AUnit* Victim)
 	{
 		APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
 		GameState->Multicast_CheckDeadUnitForLocalPlayerController(Victim);
-		Victim->Server_Die();
+		Victim->Die();
 		GameState->UnitBoard[Victim->Coordinates] = nullptr;
 	}
 }
 
-bool AUnit::Server_Die_Validate()
-{
-	return true;
-}
-
-void AUnit::Server_Die_Implementation()
-{
-	Die();
-}
-
+// should only be called by server
 void AUnit::Die_Implementation()
 {
 	Destroy();
 }
 
-bool AUnit::Server_Passive_Validate()
-{
-	return true;
-}
-
-void AUnit::Server_Passive_Implementation()
-{	
-	Passive();
-}
-
+// should only be called by server
 void AUnit::Passive_Implementation()
 {
 	Energy = FGenericPlatformMath::Max(EnergyMax, Energy);
@@ -186,7 +156,7 @@ void AUnit::OnRep_RecordedStat()
 	{
 		APaperGameState* const GameState = GetWorld()->GetGameState<APaperGameState>();
 		if (GameState)
-			GameState->Multicast_CheckUpdatedUnitForLocalPlayerController(this);
+			GameState->CheckUpdatedUnitForLocalPlayerController(this);
 	}
 }
 

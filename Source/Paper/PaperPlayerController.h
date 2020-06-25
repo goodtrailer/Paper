@@ -16,10 +16,19 @@ public:
 	APaperPlayerController();
 	UFUNCTION(BlueprintCallable)
 	class APaperPlayerState* GetPaperPlayerState();
+	// should be called on server only
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
+	// should be called on server only
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
+	// should be called on server only
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Attack(AUnit* Attacker, AUnit* Victim);
+	UFUNCTION(BlueprintImplementableEvent)
+	void CheckVictory(ETeam WinningTeam);
+	UFUNCTION(BlueprintImplementableEvent)
+	void CheckDefeat(ETeam DefeatedTeam);
 	void CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit = false);
 	UFUNCTION(BlueprintCallable)
 	void ToggleMovableOverlay();

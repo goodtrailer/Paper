@@ -17,7 +17,8 @@ bool APaperPlayerState::IsTurn()
 	// IT'S A FREAKING TRY CATCH BLOCK. HOW THE FUCK. HAS I EVER?
 	try
 	{
-		return (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
+		bool b = (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
+		return b;
 	}
 	catch (...)
 	{
