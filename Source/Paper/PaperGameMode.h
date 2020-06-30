@@ -13,10 +13,14 @@ class PAPER_API APaperGameMode : public AGameModeBase
 public:
 	APaperGameMode();
 	virtual void BeginPlay() override;
+	UFUNCTION(BlueprintCallable)
+	void BeginGame();
 
 protected:
-//	void GenerateBoard();	not really needed as a separate function anyway, and definitely should never be called outside of initial world load, so might as well integrate into beginplay
-	bool ColorsNearlyEqual(FColor a, FColor b);
+	struct ManagedMipMap;
+
+	bool ColorsNearlyEqual(FColor, FColor);		// Somewhat unnecessary since the switch to pngs. Was previously used due to jpg compression.
+	void ParseBoardLayout(UTexture2D*);				// Sets values in PaperGameState
 	
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> GroundBP;
@@ -30,7 +34,7 @@ protected:
 	TSubclassOf<class AUnit> SpawnBP;
 
 	UPROPERTY(EditAnywhere, Category = "Misc")
-	class UTexture2D* BoardLayoutTexture;
+	class UTexture2D* DefaultBoardLayoutTexture;
 	UPROPERTY(EditAnywhere, Category = "Misc")
 	float ColorsNearlyEqualThreshold;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
@@ -43,6 +47,20 @@ protected:
 	uint8 StartingCastleHPMax;
 	
 	class APaperGameState* GameState;
+};
+
+struct APaperGameMode::ManagedMipMap
+{
+public:
+	ManagedMipMap(FTexture2DMipMap* Source);
+	~ManagedMipMap();
+	inline FColor* GetColorArray() const;
+	inline const FTexture2DMipMap* GetMipMap() const;
+	FTexture2DMipMap* operator->();
+	FTexture2DMipMap& operator*();
+private:
+	FTexture2DMipMap* MipMap;
+	FColor* ColorArray;
 };
 
 namespace ColorCode

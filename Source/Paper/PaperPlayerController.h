@@ -16,13 +16,10 @@ public:
 	APaperPlayerController();
 	UFUNCTION(BlueprintCallable)
 	class APaperPlayerState* GetPaperPlayerState();
-	// should be called on server only
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
-	// should be called on server only
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
-	// should be called on server only
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Attack(AUnit* Attacker, AUnit* Victim);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -34,6 +31,9 @@ public:
 	void ToggleMovableOverlay();
 	UFUNCTION(BlueprintCallable)
 	void ToggleAttackableOverlay();
+	UFUNCTION(BlueprintCallable)
+	void ResetCameraPosition;
+	void StartGame();
 
 	UPROPERTY(BlueprintReadWrite)
 	class UPaperUserInterface* UserInterface;
@@ -91,6 +91,7 @@ protected:
 
 	bool bMovableOverlayOn;
 	bool bAttackableOverlayOn;
+	bool bGameStarted;
 
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> MovableOverlayBP;

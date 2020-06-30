@@ -20,9 +20,9 @@ class PAPER_API UPaperGameInstance : public UGameInstance
 	GENERATED_BODY()
 	
 public:
-	UPaperGameInstance();
+//	UPaperGameInstance();
 
-	FBoardInfo BoardInfo;
-	UPROPERTY(BlueprintReadWrite)
-	ETeam Team;
+//	FBoardInfo BoardInfo;
+//	UPROPERTY(BlueprintReadWrite)
+//	ETeam Team;
 };

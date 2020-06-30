@@ -146,7 +146,7 @@ void AUnit::OnRep_Team()
 
 void AUnit::OnRep_Coordinates()
 {
-	SetActorLocation(FVector(Coordinates % GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, Coordinates / GetGameInstance<UPaperGameInstance>()->BoardInfo.SizeX * 200, GetActorLocation().Z));
+	SetActorLocation(FVector(Coordinates % GetWorld()->GetGameState<APaperGameState>()->GetBoardWidth() * 200, Coordinates / GetWorld()->GetGameState<APaperGameState>()->GetBoardWidth() * 200, GetActorLocation().Z));
 	OnRep_RecordedStat();
 }
 

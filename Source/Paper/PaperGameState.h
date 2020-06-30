@@ -45,6 +45,8 @@ public:
 	void Server_ChangeGold(ETeam Team, int DeltaGold);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_CheckDeadUnitForLocalPlayerController(AUnit* Unit);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_StartGame();
 	void CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
 	UFUNCTION()
 	void OnRep_Turn();
@@ -54,7 +56,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	TArray<FTeamSpawns> BoardSpawns;
 	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Turn)
-	int32 Turn = -1;			// force replication when players connect
+	int32 Turn = -1;					// Initially set to -1 to force replication when players connect.
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> UnitBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
@@ -62,11 +64,14 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	int PassiveIncome;
 	UPROPERTY(Replicated)
-	TArray<uint8> CastleHP;
+	TArray<uint8> CastleHP;				// An array of the current HP value for each team's castle.
 	UPROPERTY(Replicated)
-	TArray<uint8> CastleHPMax;
-	TSet<ETeam> AliveTeams;			// NOT REPLICATED, ONLY USEFUL ON SERVER.
-	uint8 Count;
+	TArray<uint8> CastleHPMax;			// An array of the maximum HP value for each team's castle.
+	UPROPERTY(Replicated)
+	TArray<bool> TeamStatuses;			// An array of statuses for each team. If true, the team is still alive (in the game), otherwise the team is dead (out of the game).
+	UPROPERTY(Replicated)
+	uint8 TeamCount;
+
 
 protected:
 	UFUNCTION()
@@ -82,4 +87,6 @@ protected:
 	int BoardWidth;
 	UPROPERTY(Replicated)
 	int BoardHeight;
+	UPROPERTY(Replicated)
+	TArray<FColor> CroppedBoardLayout;
 };

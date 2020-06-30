@@ -17,18 +17,14 @@ bool APaperPlayerState::IsTurn()
 	// IT'S A FREAKING TRY CATCH BLOCK. HOW THE FUCK. HAS I EVER?
 	try
 	{
-		bool b = (GetWorld()->GetGameState<APaperGameState>()->Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team)) ? true : false;
+		APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
+		bool b = (GameState->Turn % GameState->TeamCount == static_cast<uint8>(Team)) ? true : false;
 		return b;
 	}
 	catch (...)
 	{
 		return false;
 	}
-}
-
-void APaperPlayerState::BeginPlay()
-{
-	Server_SetTeam(GetGameInstance<UPaperGameInstance>()->Team);
 }
 
 void APaperPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

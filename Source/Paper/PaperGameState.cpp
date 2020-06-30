@@ -17,24 +17,47 @@ bool APaperGameState::Server_Defeat_Validate(ETeam DefeatedTeam)
 
 void APaperGameState::Server_Defeat_Implementation(ETeam DefeatedTeam)
 {
-	// destroys the team's units
-	for (auto& Unit : UnitBoard)
-		if (Unit && Unit->Team == DefeatedTeam)
-			Unit->Destroy();
-
-	// destroys the team's spawns
 	if (static_cast<uint8>(DefeatedTeam) < BoardSpawns.Num())
 	{
+		// destroys the team's units
+		for (auto& Unit : UnitBoard)
+			if (Unit && Unit->Team == DefeatedTeam)
+				Unit->Destroy();
+
+		// destroys the team's spawns
 		for (auto& Spawn : BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns)
 			Spawn->Destroy();
 		BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns.Empty();
-		AliveTeams.Remove(DefeatedTeam);
 
-		if (AliveTeams.Num() == 1)
-			Multicast_Victory(*AliveTeams.CreateConstIterator());
-		else
-			Multicast_Defeat(DefeatedTeam);
+		TeamStatuses[static_cast<uint8>(DefeatedTeam)] = false;
+		{
+			int aliveCount = 0;
+			ETeam winner = static_cast<ETeam>(-1);	// same as 255 because uint8
+			for (int i = 0; i < TeamStatuses.Num(); i++)
+			{
+				if (TeamStatuses[i])
+				{
+					if (aliveCount)					// one other alive team already counted, so it's now known that multiple teams are still alive.
+					{
+						Multicast_Defeat(DefeatedTeam);
+						goto OutOfLoop;				// forgive me for the goto, it's so we skip multicast_victory. i could make an extra bool + if, but thats spaghetti af :( an alternative is an early return, and making sure all other code goes above, but frick that, im feeling rebellious
+					}
+					aliveCount++;
+					winner = static_cast<ETeam>(i);
+				}
+			}
+			Multicast_Victory(winner);				// if we get here, then no multicast_defeat, meaning either at most one player is alive, so broadcast victory screen to that living player. if there is none, the victory goes to team -1, which doesn't exist (hopefully ?).
+		}
+
+	OutOfLoop:
+		;	// CODE
 	}
+}
+
+void APaperGameState::Multicast_StartGame_Implementation()
+{
+	if (APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		LocalPlayerController->StartGame();
 }
 
 void APaperGameState::Multicast_Victory_Implementation(ETeam Team)
@@ -104,7 +127,8 @@ void APaperGameState::OnRep_Gold()
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
 	if (LocalPlayerController)
 	{
-		ETeam Team = GetGameInstance<UPaperGameInstance>()->Team;			// guaranteed to work because if local player controller exists, the so does a properly initialized game instance
+		
+		ETeam Team = LocalPlayerController->GetPaperPlayerState()->Team;		// guaranteed to work because if local player controller exists, the so does a properly initialized game instance
 		if (Team == ETeam::TeamNeutral)
 		{
 			// TODO: In spectator mode, update both player's gold amounts in the display, since spectators should be omniscient
@@ -136,7 +160,7 @@ void APaperGameState::Server_EndTurn_Implementation()
 	do
 	{
 		++Turn;
-	} while (!AliveTeams.Contains(static_cast<ETeam>(Turn % BoardSpawns.Num())));
+	} while (!TeamStatuses[Turn % BoardSpawns.Num()]);
 
 	Server_ChangeGold(static_cast<ETeam>((Turn) % BoardSpawns.Num()), PassiveIncome);
 	for (auto Unit : UnitBoard)
@@ -163,6 +187,9 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, PassiveIncome)
 	DOREPLIFETIME(APaperGameState, CastleHP)
 	DOREPLIFETIME(APaperGameState, CastleHPMax)
+	DOREPLIFETIME(APaperGameState, TeamStatuses)
+	DOREPLIFETIME(APaperGameState, TeamCount)
+	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
 }
 
 APaperGameState::APaperGameState()
@@ -179,7 +206,6 @@ AUnit* APaperGameState::GetBoardSpawn(ETeam team, int index) const
 
 void APaperGameState::OnRep_Turn()
 {
-	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
-	if (LocalPlayerController)
-		LocalPlayerController->UserInterface->UpdateTurn(Turn % GetGameInstance<UPaperGameInstance>()->BoardInfo.SpawnNumber == static_cast<uint8>(GetGameInstance<UPaperGameInstance>()->Team));
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
 }

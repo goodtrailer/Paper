@@ -25,26 +25,37 @@ void APaperPlayerController::BeginPlay()
 	Super::BeginPlay();
 	GameInstance = GetGameInstance<UPaperGameInstance>();
 	GameState = GetWorld()->GetGameState<APaperGameState>();
-	if (IsLocalPlayerController())
-	{
-		UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
-		UserInterface->AddToViewport();
-	}
 
 	CameraPawn = GetPawn<ACameraPawn>();
 	SetViewTargetWithBlend(CameraPawn, 1.f);
+	SetInputMode(FInputModeUIOnly());
 
-	UWorld* World = GetWorld();
-	SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+	LastHoveredUnit = nullptr;
+	bGameStarted = false;
+}
+
+void APaperPlayerController::StartGame()
+{
+	(SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
 	(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 	(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
-	LastHoveredUnit = nullptr;
+
+	bGameStarted = true;
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	SetInputMode(InputMode);
+	UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
+	UserInterface->AddToViewport();
 }
 
 void APaperPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
+
+	if (!bGameStarted)
+		return;
 
 	FHitResult Hit;
 	GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
@@ -54,35 +65,32 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 	if (LastHoveredUnit != HoveredUnit)
 	{
 		// Show/hide/switch hover, attack, and move overlays
-		if (HoverOverlay)
+		if (!HoveredUnit)
 		{
-			if (!HoveredUnit)
-			{
-				AttackOverlay->GetRootComponent()->SetVisibility(false);
-				HoverOverlay->GetRootComponent()->SetVisibility(false);
-				MoveOverlay->GetRootComponent()->SetVisibility(false);
-			}
-			else if (AttackableTiles.Contains(HoveredUnit->Coordinates))
-			{
-				AttackOverlay->GetRootComponent()->SetVisibility(true);
-				HoverOverlay->GetRootComponent()->SetVisibility(false);
-				MoveOverlay->GetRootComponent()->SetVisibility(false);
-				AttackOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
-			}
-			else if (MovableTiles.Contains(HoveredUnit->Coordinates))
-			{
-				AttackOverlay->GetRootComponent()->SetVisibility(false);
-				HoverOverlay->GetRootComponent()->SetVisibility(false);
-				MoveOverlay->GetRootComponent()->SetVisibility(true);
-				MoveOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
-			}
-			else
-			{
-				AttackOverlay->GetRootComponent()->SetVisibility(false);
-				HoverOverlay->GetRootComponent()->SetVisibility(true);
-				MoveOverlay->GetRootComponent()->SetVisibility(false);
-				HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
-			}
+			AttackOverlay->GetRootComponent()->SetVisibility(false);
+			HoverOverlay->GetRootComponent()->SetVisibility(false);
+			MoveOverlay->GetRootComponent()->SetVisibility(false);
+		}
+		else if (AttackableTiles.Contains(HoveredUnit->Coordinates))
+		{
+			AttackOverlay->GetRootComponent()->SetVisibility(true);
+			HoverOverlay->GetRootComponent()->SetVisibility(false);
+			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			AttackOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+		}
+		else if (MovableTiles.Contains(HoveredUnit->Coordinates))
+		{
+			AttackOverlay->GetRootComponent()->SetVisibility(false);
+			HoverOverlay->GetRootComponent()->SetVisibility(false);
+			MoveOverlay->GetRootComponent()->SetVisibility(true);
+			MoveOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+		}
+		else
+		{
+			AttackOverlay->GetRootComponent()->SetVisibility(false);
+			HoverOverlay->GetRootComponent()->SetVisibility(true);
+			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 		}
 
 		// (Re)generate movement arrow
@@ -211,56 +219,54 @@ bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
 
 void APaperPlayerController::RotateStart()
 {
-	if (CameraPawn)
-		CameraPawn->bIsRotating = true;
+	CameraPawn->bIsRotating = true;
 }
 
 void APaperPlayerController::RotateStop()
 {
-	if (CameraPawn)
-		CameraPawn->bIsRotating = false;
+	CameraPawn->bIsRotating = false;
 }
 
 void APaperPlayerController::PanStart()
 {
-	if (CameraPawn)
-		CameraPawn->bIsPanning = true;
+	CameraPawn->bIsPanning = true;
 }
 
 void APaperPlayerController::PanStop()
 {
-	if (CameraPawn)
-		CameraPawn->bIsPanning = false;
+	CameraPawn->bIsPanning = false;
 }
 
 void APaperPlayerController::ZoomIn()
 {
-	if (CameraPawn)
-		CameraPawn->ZoomIn();
+	CameraPawn->ZoomIn();
 }
 
 void APaperPlayerController::ZoomOut()
 {
-	if (CameraPawn)
-		CameraPawn->ZoomOut();
+	CameraPawn->ZoomOut();
 }
 
 void APaperPlayerController::MouseX(float f)
 {
-	if (CameraPawn)
+	if (bGameStarted)
 		CameraPawn->MouseDeltaX = f;
 }
 
 void APaperPlayerController::MouseY(float f)
 {
-	if (CameraPawn)
+	if (bGameStarted)
 		CameraPawn->MouseDeltaY = f;
 }
 
 void APaperPlayerController::Debug()
 {
-	if (CameraPawn)
-		CameraPawn->SetActorLocation(FVector(2000.f, 2800.f, 300.f));
+	ResetCameraPosition();
+}
+
+void APaperPlayerController::ResetCameraPosition()
+{
+	CameraPawn->SetActorLocation(FVector(GameState->GetBoardWidth() * 100.f, GameState->GetBoardHeight() * 100.f, 300.f));
 }
 
 void APaperPlayerController::SelectUnit()
@@ -273,7 +279,7 @@ void APaperPlayerController::SelectUnit()
 	{
 		// Assign SelectedUnit
 		if (HoveredUnit)
-			if (GameState && (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn))
+			if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
 				SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
 			else if (HoveredUnit->bIsTargetable)
 				SelectedUnit = HoveredUnit;
@@ -282,31 +288,27 @@ void APaperPlayerController::SelectUnit()
 		else
 			SelectedUnit = nullptr;
 
-		if (UserInterface)
-			UserInterface->UpdateSelectedUnit(SelectedUnit);
+		UserInterface->UpdateSelectedUnit(SelectedUnit);
 
 		// Show/hide select overlay
-		if (SelectOverlay)
-			if (!SelectedUnit)
-				SelectOverlay->GetRootComponent()->SetVisibility(false);
-			else
-			{
-				SelectOverlay->GetRootComponent()->SetVisibility(true);
-				SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
-				MovableOverlayOn();
-			}
+		if (!SelectedUnit)
+			SelectOverlay->GetRootComponent()->SetVisibility(false);
+		else
+		{
+			SelectOverlay->GetRootComponent()->SetVisibility(true);
+			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
+			MovableOverlayOn();
+		}
 	}
 }
 
 inline void APaperPlayerController::UpdateSelectedUnit()
 {
-	if (UserInterface)
-		UserInterface->UpdateSelectedUnit(SelectedUnit);
-	if (SelectOverlay)
-		if (SelectedUnit)
-			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
-		else
-			SelectOverlay->GetRootComponent()->SetVisibility(false);
+	UserInterface->UpdateSelectedUnit(SelectedUnit);
+	if (SelectedUnit)
+		SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
+	else
+		SelectOverlay->GetRootComponent()->SetVisibility(false);
 }
 
 void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit)
