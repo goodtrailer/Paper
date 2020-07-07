@@ -85,7 +85,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Joining a game that's already in progress
 			+ One player per team only
 			+ Choose team via dropdown box instead of an incremental button
-			- Text chat (all because ue4 literally has 0 functionality (actually for real, i'm not kidding) for logging in shipping builds. what the fuck.)
+			+ Text chat (all because ue4 literally has 0 functionality (actually for real, i'm not kidding) for logging in shipping builds. what the fuck.)
 		2. EOS server list
 			- Source-engine style server list showing all games online
 			- Runs on Epic Online Services sessions interface, so that online is up 24/7
