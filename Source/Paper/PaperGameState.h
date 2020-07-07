@@ -8,6 +8,7 @@
 
 
 enum class ETeam : uint8;
+enum class EStatus : uint8;
 
 USTRUCT(BlueprintType)
 struct FTeamSpawns
@@ -26,7 +27,7 @@ class PAPER_API APaperGameState : public AGameStateBase
 
 public:
 	APaperGameState();
-	void BeginPlay() override;
+	
 	UFUNCTION(BlueprintCallable)
 	int GetBoardWidth() const;
 	UFUNCTION(BlueprintCallable)
@@ -35,28 +36,31 @@ public:
 	int GetGold(ETeam Team) const;
 	UFUNCTION(BlueprintCallable)
 	class AUnit* GetBoardSpawn(ETeam team, int index) const;
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_Defeat(ETeam DefeatedTeam);
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_EndTurn();
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_SetGold(ETeam Team, int NewAmount);
-	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_ChangeGold(ETeam Team, int DeltaGold);
+	
+	UFUNCTION(BlueprintCallable)
+	void Defeat(ETeam DefeatedTeam);
+	void EndTurn();
+	
+	void SetGold(ETeam Team, int NewAmount);
+	void ChangeGold(ETeam Team, int DeltaGold);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_StartGameForLocalPlayerController();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_CheckDeadUnitForLocalPlayerController(AUnit* Unit);
 	UFUNCTION(NetMulticast, Reliable)
-	void Multicast_StartGame();
+	void Multicast_RemovePlayerForLocalLobbyUI(const FString& Name);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_Message(const FText& Message);
 	void CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
-	UFUNCTION()
-	void OnRep_Turn();
+
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	TArray<FTeamSpawns> BoardSpawns;
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Turn)
-	int32 Turn = -1;					// Initially set to -1 to force replication when players connect.
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Turn)
+	int32 Turn;							// Modulus by number of teams in game should return the team that is currently taking their turn.
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> UnitBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
@@ -67,22 +71,26 @@ public:
 	TArray<uint8> CastleHP;				// An array of the current HP value for each team's castle.
 	UPROPERTY(Replicated)
 	TArray<uint8> CastleHPMax;			// An array of the maximum HP value for each team's castle.
-	UPROPERTY(Replicated)
-	TArray<bool> TeamStatuses;			// An array of statuses for each team. If true, the team is still alive (in the game), otherwise the team is dead (out of the game).
-	UPROPERTY(Replicated)
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	TArray<EStatus> TeamStatuses;
+	UPROPERTY(Replicated, BlueprintReadOnly)
 	uint8 TeamCount;
-
-
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
+	bool bGameStarted;
+	
 protected:
 	UFUNCTION()
+	void OnRep_Turn();
+	UFUNCTION()
 	void OnRep_Gold();
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Victory(ETeam Team);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Defeat(ETeam Team);
 
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing=OnRep_Gold)
-	TArray<int> Gold;		// stored on game state and not player state: easily accessible by game mode, and it must be remembered if players reconnect
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Gold)
+	TArray<int> Gold;					// stored on game state and not player state: easily accessible by game mode, and it must be remembered if players reconnect
 	UPROPERTY(Replicated)
 	int BoardWidth;
 	UPROPERTY(Replicated)

@@ -2,12 +2,13 @@
 
 #include "PaperGameMode.h"
 #include "Unit.h"
-#include "PaperGameInstance.h"
 #include "PaperPlayerController.h"
+#include "PaperPlayerState.h"
 #include "Castle.h"
 #include "PaperGameState.h"
 #include "PaperEnums.h"
 #include "Engine/Texture2D.h"
+#include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
 
 APaperGameMode::APaperGameMode()
@@ -24,8 +25,7 @@ void APaperGameMode::BeginPlay()
 
 void APaperGameMode::BeginGame()
 {
-	GameState->Turn = static_cast<uint8>(ETeam::TeamGreen);
-	GLog->Logf(TEXT("GameState->TeamCount: %d"), GameState->TeamCount);
+	GameState->Turn = static_cast<uint8>(ETeam::Green);
 	GameState->BoardSpawns.AddDefaulted(GameState->TeamCount);
 
 
@@ -100,31 +100,31 @@ void APaperGameMode::BeginGame()
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(WallBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::TeamNeutral);
+					UnitBoard[i]->Build(ETeam::Neutral);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Mine))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(MineBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::TeamNeutral);
+					UnitBoard[i]->Build(ETeam::Neutral);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnGreen))
 				{
 					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::TeamGreen)].Spawns.Push(spawn);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::Green)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
-					spawn->Team = ETeam::TeamGreen;
-					spawn->Build(ETeam::TeamGreen);
+					spawn->Team = ETeam::Green;
+					spawn->Build(ETeam::Green);
 
 					GLog->Logf(TEXT("Green Spawn: (%d, %d)"), i % BoardWidth, i / BoardWidth);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
 				{
 					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::TeamRed)].Spawns.Push(spawn);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::Red)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
-					spawn->Team = ETeam::TeamRed;
-					spawn->Build(ETeam::TeamRed);
+					spawn->Team = ETeam::Red;
+					spawn->Build(ETeam::Red);
 
 					GLog->Logf(TEXT("Red Spawn: (%d, %d)"), i % BoardWidth, i / BoardWidth);
 				}
@@ -132,36 +132,70 @@ void APaperGameMode::BeginGame()
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::TeamGreen);
+					UnitBoard[i]->Build(ETeam::Green);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleRed))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::TeamRed);
+					UnitBoard[i]->Build(ETeam::Red);
 				}
 			}
-			GroundBoard[i]->Build(ETeam::TeamNeutral);
+			GroundBoard[i]->Build(ETeam::Neutral);
 			GroundBoard[i]->Coordinates = i;
 		}
 
 	}
 #pragma endregion
 
-	GameState->Gold.Reserve(GameState->TeamCount);
-	GameState->CastleHP.Reserve(GameState->TeamCount);
-	GameState->CastleHPMax.Reserve(GameState->TeamCount);
-	GameState->TeamStatuses.Reserve(GameState->TeamCount);
-	for (uint8 i = 0; i < GameState->TeamCount; i++)
-	{
-		GameState->Gold.Add(StartingGold);
-		GameState->CastleHP.Add(StartingCastleHP);
-		GameState->CastleHPMax.Add(StartingCastleHPMax);
-		GameState->TeamStatuses.Add(true);
-	}
-	GameState->PassiveIncome = StartingPassiveIncome;
+	GameState->bGameStarted = true;
+	GameState->Multicast_StartGameForLocalPlayerController();
+}
 
-	GameState->Multicast_StartGame();
+APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
+{
+	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
+
+	FString DesignatedName = "";
+
+	if (UGameplayStatics::HasOption(Options, "PlayerName"))
+		DesignatedName = UGameplayStatics::ParseOption(Options, "PlayerName");
+
+	if (DesignatedName == "")
+		DesignatedName = UGameplayStatics::ParseOption(Options, "Name");
+
+	GLog->Logf(TEXT("DESIGNATED NAME: %s"), *DesignatedName);
+
+	if (NameCount.Contains(DesignatedName))
+	{
+		FString Suffix = "_";
+		Suffix += FString::FromInt(NameCount[DesignatedName]++);
+		DesignatedName += Suffix;
+	}
+	else
+		NameCount.Add(DesignatedName, 1);
+
+	if (APaperPlayerState* PS = PC->GetPlayerState<APaperPlayerState>())
+		PS->SetName(DesignatedName);
+	else
+		GLog->Log(TEXT("PS does not exist!"));
+
+	if (GameState)
+		GameState->Multicast_Message(FText::FromString(DesignatedName + " entered the lobby."));
+
+	return PC;
+}
+
+void APaperGameMode::Logout(AController* Exiting)
+{
+	if (APaperPlayerController* PC = Cast<APaperPlayerController>(Exiting))
+	{
+		GameState->Multicast_RemovePlayerForLocalLobbyUI(PC->GetPaperPlayerState()->Name);
+		uint8 i = static_cast<uint8>(PC->GetPaperPlayerState()->Team);
+		if (i < GameState->TeamCount && GameState->TeamStatuses[i] != EStatus::Dead)
+			GameState->TeamStatuses[i] = EStatus::Open;
+		GameState->Multicast_Message(FText::FromString(PC->GetPaperPlayerState()->Name + " left the game."));
+	}
 }
 
 void APaperGameMode::ParseBoardLayout(UTexture2D* BoardLayout)
@@ -204,15 +238,28 @@ AfterBoundsDetermined:
 		// increment TeamCount accordingly
 		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
 		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::TeamGreen))
-				GameState->TeamCount = static_cast<uint8>(ETeam::TeamGreen) + 1;			// ETeam values start a 0, and we want the count, so add 1
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Green))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Green) + 1;			// ETeam values start a 0, and we want the count, so add 1
 		}
 		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
 		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::TeamRed))
-				GameState->TeamCount = static_cast<uint8>(ETeam::TeamRed) + 1;
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
 		}
 	}
+
+	GameState->Gold.Reserve(GameState->TeamCount);
+	GameState->CastleHP.Reserve(GameState->TeamCount);
+	GameState->CastleHPMax.Reserve(GameState->TeamCount);
+	GameState->TeamStatuses.Reserve(GameState->TeamCount);
+	for (uint8 i = 0; i < GameState->TeamCount; i++)
+	{
+		GameState->Gold.Add(StartingGold);
+		GameState->CastleHP.Add(StartingCastleHP);
+		GameState->CastleHPMax.Add(StartingCastleHPMax);
+		GameState->TeamStatuses.Add(EStatus::Open);
+	}
+	GameState->PassiveIncome = StartingPassiveIncome;
 
 }
 

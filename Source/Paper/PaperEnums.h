@@ -9,32 +9,43 @@
 UENUM(BlueprintType)
 enum class ETeam : uint8
 {
-	TeamGreen		UMETA(DisplayName = "Green"),
-	TeamRed			UMETA(DisplayName = "Red"),
-	TeamNeutral		UMETA(DisplayName = "Neutral")
+	Green,
+	Red,
+	Neutral
 };
 
 UENUM(BlueprintType)
 enum class EType : uint8
 {
-	TypeUnit		UMETA(DisplayName = "Unit"),		//0
-	TypeWall		UMETA(DisplayName = "Wall"),
-	TypeSpawn		UMETA(DisplayName = "Spawn"),
-	TypeGround		UMETA(DisplayName = "Ground"),
-	TypeMine		UMETA(DisplayName = "Mine"),
-	TypeKnight		UMETA(DisplayName = "Knight"),		//5
-	TypeCastle		UMETA(DisplayName = "Castle")
+	Unit,			//0
+	Wall,
+	Spawn,
+	Ground,
+	Mine,
+	Knight,			//5
+	Castle
 };
 
 UENUM(BlueprintType)
 enum class ERangeType : uint8
 {
-	RangeTypeNormal		UMETA(DisplayName = "Normal"),
-	RangeTypeSquare		UMETA(DisplayName = "Square")
+	Normal,
+	Square
 };
 
 UENUM(BlueprintType)
 enum class EDirection : uint8
 {
-	Up = 0, Right, Down, Left
+	Up,
+	Right,
+	Down,
+	Left
+};
+
+UENUM(BlueprintType)
+enum class EStatus : uint8
+{
+	Dead,			// Team is valid according to TeamCount, and is currently dead.
+	Alive,			// Team is valid according to TeamCount, and is currently taken.
+	Open			// Team is valid according to TeamCount, but isn't taken yet.
 };

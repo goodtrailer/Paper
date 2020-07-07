@@ -2,15 +2,17 @@
 
 #include "PaperPlayerController.h"
 
-#include "Unit.h"
-#include "PaperGameInstance.h"
-#include "PaperPlayerState.h"
-#include "PaperUserInterface.h"
-#include "CameraPawn.h"
-#include "PaperGameState.h"
 #include "PaperEnums.h"
-#include "Engine/World.h"
+#include "CameraPawn.h"
+#include "PaperPlayerState.h"
+#include "PaperGameState.h"
+#include "PaperUserInterface.h"
+#include "LobbyUserInterface.h"
+#include "ChatUserInterface.h"
+#include "Unit.h"
 #include "GameFramework/PlayerInput.h"
+#include "Net/UnrealNetwork.h"
+#include "Engine/World.h"
 
 APaperPlayerController::APaperPlayerController()
 {
@@ -18,43 +20,93 @@ APaperPlayerController::APaperPlayerController()
 	bEnableClickEvents = true;
 	bShowMouseCursor = true;
 	DefaultMouseCursor = EMouseCursor::Default;
+	bInGame = false;
 }
 
 void APaperPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-	GameInstance = GetGameInstance<UPaperGameInstance>();
 	GameState = GetWorld()->GetGameState<APaperGameState>();
 
 	CameraPawn = GetPawn<ACameraPawn>();
 	SetViewTargetWithBlend(CameraPawn, 1.f);
-	SetInputMode(FInputModeUIOnly());
+
+	if (IsLocalPlayerController())
+	{
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+		SetInputMode(InputMode);
+
+		(LobbyInterface = CreateWidget<ULobbyUserInterface>(this, LobbyInterfaceBP))->AddToViewport();
+		(ChatInterface = CreateWidget<UChatUserInterface>(this, ChatInterfaceBP))->AddToViewport();
+		UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
+
+		(SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+		HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+		(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+		(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+
+	}
 
 	LastHoveredUnit = nullptr;
-	bGameStarted = false;
+	bInGame = false;
 }
 
 void APaperPlayerController::StartGame()
 {
-	(SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
-	HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
-	(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
-	(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+	if (!GameState || !GetPlayerState<APlayerState>())
+	{
+		GLog->Log(TEXT("Loading..."));
+		return;
+	}
 
-	bGameStarted = true;
-	FInputModeGameAndUI InputMode;
-	InputMode.SetHideCursorDuringCapture(false);
-	InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
-	SetInputMode(InputMode);
-	UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
+	Server_SetInGame(true);
+	LobbyInterface->RemoveFromViewport();
 	UserInterface->AddToViewport();
+	UserInterface->UpdateTurn(GetPaperPlayerState()->IsTurn());
+	UserInterface->UpdateGold(GameState->GetGold(GetPaperPlayerState()->Team));
+	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
+	
+	// thanks legacy wiki :)
+	FString TeamString;
+	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("ETeam"), true);
+	if (!EnumPtr)
+		TeamString = "INVALID";
+	else
+		TeamString = EnumPtr->GetNameByValue(static_cast<int64>(GetPaperPlayerState()->Team)).ToString();
+	TeamString.RemoveFromStart("ETeam::");
+	TeamString.ToUpperInline();
+	GameState->Multicast_Message(FText::FromString(GetPaperPlayerState()->Name + " joined the game as " + TeamString + "."));
 }
+
+void APaperPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	check(InputComponent)
+	InputComponent->BindAction("Rotate Button", IE_Pressed, this, &APaperPlayerController::RotateStart);
+	InputComponent->BindAction("Rotate Button", IE_Released, this, &APaperPlayerController::RotateStop);
+	InputComponent->BindAction("Pan Button", IE_Pressed, this, &APaperPlayerController::PanStart);
+	InputComponent->BindAction("Pan Button", IE_Released, this, &APaperPlayerController::PanStop);
+	InputComponent->BindAction("Zoom In", IE_Pressed, this, &APaperPlayerController::ZoomIn);
+	InputComponent->BindAction("Zoom Out", IE_Pressed, this, &APaperPlayerController::ZoomOut);
+	InputComponent->BindAxis("Mouse X", this, &APaperPlayerController::MouseX);
+	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
+	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
+	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
+	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::SelectUnit);		// wonder if this works lol
+	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
+	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
+	InputComponent->BindAction("Chat", IE_Pressed, this, &APaperPlayerController::FocusChatbox);
+}
+
+
 
 void APaperPlayerController::PlayerTick(float DeltaTime)
 {
 	Super::PlayerTick(DeltaTime);
 
-	if (!bGameStarted)
+	if (!bInGame)
 		return;
 
 	FHitResult Hit;
@@ -119,60 +171,10 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 			}
 		}
 	}
-
-
-	
 	// to check for next tick
 	LastHoveredUnit = HoveredUnit;
 }
 
-void APaperPlayerController::SetupInputComponent()
-{
-	Super::SetupInputComponent();
-	check(InputComponent)
-	InputComponent->BindAction("Rotate Button", IE_Pressed, this, &APaperPlayerController::RotateStart);
-	InputComponent->BindAction("Rotate Button", IE_Released, this, &APaperPlayerController::RotateStop);
-	InputComponent->BindAction("Pan Button", IE_Pressed, this, &APaperPlayerController::PanStart);
-	InputComponent->BindAction("Pan Button", IE_Released, this, &APaperPlayerController::PanStop);
-	InputComponent->BindAction("Zoom In", IE_Pressed, this, &APaperPlayerController::ZoomIn);
-	InputComponent->BindAction("Zoom Out", IE_Pressed, this, &APaperPlayerController::ZoomOut);
-	InputComponent->BindAxis("Mouse X", this, &APaperPlayerController::MouseX);
-	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
-	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
-	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
-	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::MoveUnit);
-	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
-	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
-}
-
-void APaperPlayerController::MovableOverlayOff()
-{
-	bMovableOverlayOn = false;
-	LastHoveredUnit = nullptr;		// update overlays on next tick
-	for (auto& MovableOverlay : MovableOverlayArray)
-		MovableOverlay->Destroy();
-	for (auto& MoveOverlaySegment : MoveOverlayArray)
-		MoveOverlaySegment->Destroy();
-	MovableOverlayArray.Empty();
-	MovableTiles.Empty();
-	MoveOverlayArray.Empty();
-}
-
-void APaperPlayerController::ToggleMovableOverlay()
-{
-	if (bMovableOverlayOn)
-		MovableOverlayOff();
-	else if (!bAttackableOverlayOn)
-		MovableOverlayOn();
-}
-
-void APaperPlayerController::ToggleAttackableOverlay()
-{
-	if (bAttackableOverlayOn)
-		AttackableOverlayOff();
-	else if (!bMovableOverlayOn)
-		AttackableOverlayOn();
-}
 
 
 APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
@@ -183,80 +185,60 @@ APaperPlayerState* APaperPlayerController::GetPaperPlayerState()
 		return (UnsafePlayerState = GetPlayerState<APaperPlayerState>());
 }
 
-void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
-{
-	ETeam& Team = GetPaperPlayerState()->Team;
 
-	if (GameState->Turn % GameState->BoardSpawns.Num() == static_cast<uint8>(Team)
-		&& GameState->GetGold(Team) >= Type.GetDefaultObject()->GetCost())
-	{
-		int BoardWidth = GameState->GetBoardWidth();
-		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
-			if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
-			{
-
-#if UE_BUILD_SHIPPING
-				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
-#else
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.bHideFromSceneOutliner = false;
-				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
-#endif
-				SpawnedUnit->SetOwner(this);
-				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
-				GameState->Server_ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
-				SpawnedUnit->Build(Team);
-				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
-				break;
-			}
-	}
-}
-
-bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
-{
-	return true;
-}
 
 void APaperPlayerController::RotateStart()
 {
-	CameraPawn->bIsRotating = true;
+	if (bInGame)
+		CameraPawn->bIsRotating = true;
 }
 
 void APaperPlayerController::RotateStop()
 {
-	CameraPawn->bIsRotating = false;
+	if (bInGame)
+		CameraPawn->bIsRotating = false;
 }
 
 void APaperPlayerController::PanStart()
 {
-	CameraPawn->bIsPanning = true;
+	if (bInGame)
+		CameraPawn->bIsPanning = true;
 }
 
 void APaperPlayerController::PanStop()
 {
-	CameraPawn->bIsPanning = false;
+	if (bInGame)
+		CameraPawn->bIsPanning = false;
 }
 
 void APaperPlayerController::ZoomIn()
 {
-	CameraPawn->ZoomIn();
+	if (bInGame)
+		CameraPawn->ZoomIn();
 }
 
 void APaperPlayerController::ZoomOut()
 {
-	CameraPawn->ZoomOut();
+	if (bInGame)
+		CameraPawn->ZoomOut();
 }
 
 void APaperPlayerController::MouseX(float f)
 {
-	if (bGameStarted)
+	if (bInGame)
 		CameraPawn->MouseDeltaX = f;
 }
 
 void APaperPlayerController::MouseY(float f)
 {
-	if (bGameStarted)
+	if (bInGame)
 		CameraPawn->MouseDeltaY = f;
+}
+
+void APaperPlayerController::ResetCameraPosition()
+{
+	if (bInGame)
+		CameraPawn->ResetPosition();
 }
 
 void APaperPlayerController::Debug()
@@ -264,22 +246,38 @@ void APaperPlayerController::Debug()
 	ResetCameraPosition();
 }
 
-void APaperPlayerController::ResetCameraPosition()
+void APaperPlayerController::FocusChatbox()
 {
-	CameraPawn->SetActorLocation(FVector(GameState->GetBoardWidth() * 100.f, GameState->GetBoardHeight() * 100.f, 300.f));
+	ChatInterface->FocusChatbox();
 }
+
+
 
 void APaperPlayerController::SelectUnit()
 {
+	if (!bInGame)
+		return;
+
 	if (bMovableOverlayOn)
-		MoveUnit();
+	{
+		if (SelectedUnit && HoveredUnit)
+		{
+			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
+		}
+		MovableOverlayOff();
+		UpdateSelectedUnit();
+	}
 	else if (bAttackableOverlayOn)
-		AttackUnit();
+	{
+		Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
+		AttackableOverlayOff();
+		UpdateSelectedUnit();
+	}
 	else
 	{
 		// Assign SelectedUnit
 		if (HoveredUnit)
-			if (HoveredUnit->Type == EType::TypeGround || HoveredUnit->Type == EType::TypeSpawn)
+			if (HoveredUnit->Type == EType::Ground || HoveredUnit->Type == EType::Spawn)
 				SelectedUnit = GameState->UnitBoard[HoveredUnit->Coordinates];
 			else if (HoveredUnit->bIsTargetable)
 				SelectedUnit = HoveredUnit;
@@ -304,6 +302,9 @@ void APaperPlayerController::SelectUnit()
 
 inline void APaperPlayerController::UpdateSelectedUnit()
 {
+	if (!bInGame)
+		return;
+
 	UserInterface->UpdateSelectedUnit(SelectedUnit);
 	if (SelectedUnit)
 		SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
@@ -313,12 +314,61 @@ inline void APaperPlayerController::UpdateSelectedUnit()
 
 void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit)
 {
+	if (!bInGame)
+		return;
+
 	if (SelectedUnit == Unit)
 	{
 		if (bUnselectUnit)
 			SelectedUnit = nullptr;
 		UpdateSelectedUnit();
 	}
+}
+
+
+
+bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
+{
+	return true;
+}
+
+void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
+{
+	ETeam& Team = GetPaperPlayerState()->Team;
+
+	if (GetPaperPlayerState()->IsTurn()
+		&& GameState->GetGold(Team) >= Type.GetDefaultObject()->GetCost())
+	{
+		int BoardWidth = GameState->GetBoardWidth();
+		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
+			if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
+			{
+
+#if UE_BUILD_SHIPPING
+				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+#else
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.bHideFromSceneOutliner = false;
+				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
+#endif
+				SpawnedUnit->SetOwner(this);
+				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
+				GameState->ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
+				SpawnedUnit->Build(Team);
+				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
+				break;
+			}
+	}
+}			// done
+
+
+
+void APaperPlayerController::ToggleMovableOverlay()
+{
+	if (bMovableOverlayOn)
+		MovableOverlayOff();
+	else if (!bAttackableOverlayOn)
+		MovableOverlayOn();
 }
 
 void APaperPlayerController::MovableOverlayOn()
@@ -328,138 +378,64 @@ void APaperPlayerController::MovableOverlayOn()
 		LastHoveredUnit = nullptr;
 		bMovableOverlayOn = true;
 
-		TSet<int> TilesForNextPass;
-		TSet<int> TilesForCurrentPass;
-		TSet<int> TilesPreviouslyQueuedForPassing;
-
-		//TODO: add support for holes in the ground, not with another if statement, but by modifying ground blueprint so that it has no mesh and collision on all sides for the color orange
-
-		// Check above tile
-		if (// Make sure the tile above is within board bounds
-			SelectedUnit->Coordinates / GameState->GetBoardWidth() > 0
-			// Can't move to tile above if already occupied by another unit. Also, no weird maths, because we are never dealing with edge cases, due to the above condition. im so dam smart.
-			&& !GameState->UnitBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]
-			// Prevent repeating passing on tiles, since that would result in using up all your energy for any move, even one space moves
-			&& !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - GameState->GetBoardWidth())
-			// Check if ground tile exists upwards, since there could be holes
-			&& GameState->GroundBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]
-			// Check if passable upwards, since there are ground tiles that block one direction
-			&& !GameState->GroundBoard[SelectedUnit->Coordinates - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
-		{
-			TilesForNextPass.Add(SelectedUnit->Coordinates - GameState->GetBoardWidth());
-			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - GameState->GetBoardWidth());
-			MovableTiles.Add(SelectedUnit->Coordinates - GameState->GetBoardWidth(), { 0, SelectedUnit->Coordinates, EDirection::Down });
-		}
-
-		// Same calculations, but right
-		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + 1) && GameState->GroundBoard[SelectedUnit->Coordinates + 1] && !GameState->GroundBoard[SelectedUnit->Coordinates + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
-		{
-			TilesForNextPass.Add(SelectedUnit->Coordinates + 1);
-			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + 1);
-			MovableTiles.Add(SelectedUnit->Coordinates + 1, { 0, SelectedUnit->Coordinates, EDirection::Left });
-		}
-
-		// Same calculations, but down
-		if (SelectedUnit->Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates + GameState->GetBoardWidth()) && GameState->GroundBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()] && !GameState->GroundBoard[SelectedUnit->Coordinates + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
-		{
-			TilesForNextPass.Add(SelectedUnit->Coordinates + GameState->GetBoardWidth());
-			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates + GameState->GetBoardWidth());
-			MovableTiles.Add(SelectedUnit->Coordinates + GameState->GetBoardWidth(), { 0, SelectedUnit->Coordinates, EDirection::Up });
-		}
-
-		// Same calculations, but left
-		if (SelectedUnit->Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[SelectedUnit->Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(SelectedUnit->Coordinates - 1) && GameState->GroundBoard[SelectedUnit->Coordinates - 1] && !GameState->GroundBoard[SelectedUnit->Coordinates - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
-		{
-			TilesForNextPass.Add(SelectedUnit->Coordinates - 1);
-			TilesPreviouslyQueuedForPassing.Add(SelectedUnit->Coordinates - 1);
-			MovableTiles.Add(SelectedUnit->Coordinates - 1, { 0, SelectedUnit->Coordinates, EDirection::Right });
-		}
-
-		for (int16 EnergyLeft = SelectedUnit->Energy - 1; EnergyLeft > 0; EnergyLeft--)
-		{
-			TilesForCurrentPass = TilesForNextPass;
-			TilesForNextPass.Empty();
-			for (auto& coord : TilesForCurrentPass)
-			{
-				MovableTiles[coord].EnergyLeft = EnergyLeft;
-				if (coord / GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord - GameState->GetBoardWidth()) && GameState->GroundBoard[coord - GameState->GetBoardWidth()] && !GameState->GroundBoard[coord - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
-				{
-					TilesForNextPass.Add(coord - GameState->GetBoardWidth());
-					TilesPreviouslyQueuedForPassing.Add(coord - GameState->GetBoardWidth());
-					MovableTiles.Add(coord - GameState->GetBoardWidth(), { 0, coord, EDirection::Down });
-				}
-
-				if (coord % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && GameState->GroundBoard[coord + 1] && !GameState->GroundBoard[coord + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
-				{
-					TilesForNextPass.Add(coord + 1);
-					TilesPreviouslyQueuedForPassing.Add(coord + 1);
-					MovableTiles.Add(coord + 1, { 0, coord, EDirection::Left });
-				}
-
-				if (coord / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[coord + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord + GameState->GetBoardWidth()) && GameState->GroundBoard[coord + GameState->GetBoardWidth()] && !GameState->GroundBoard[coord + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
-				{
-					TilesForNextPass.Add(coord + GameState->GetBoardWidth());
-					TilesPreviouslyQueuedForPassing.Add(coord + GameState->GetBoardWidth());
-					MovableTiles.Add(coord + GameState->GetBoardWidth(), { 0, coord, EDirection::Up });
-				}
-
-				if (coord % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && GameState->GroundBoard[coord - 1] && !GameState->GroundBoard[coord - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
-				{
-					TilesForNextPass.Add(coord - 1);
-					TilesPreviouslyQueuedForPassing.Add(coord - 1);
-					MovableTiles.Add(coord - 1, { 0, coord, EDirection::Right });
-				}
-			}
-		}
-		for (auto& MovableTile : MovableTiles)
+		// determine movable tiles
+		SelectedUnit->DetermineMovableTiles(MovableTiles);
+		
+		for (auto& MovableTile : MovableTiles)				// instantiate movable overlays for each determined movable tile
 			MovableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(MovableOverlayBP, FVector((MovableTile.Key % GameState->GetBoardWidth()) * 200.f, (MovableTile.Key / GameState->GetBoardWidth()) * 200.f, 200.f), FRotator::ZeroRotator));
 	}
 }
 
-void APaperPlayerController::MoveUnit()
+void APaperPlayerController::MovableOverlayOff()
 {
-	if (SelectedUnit && GameState && GetPaperPlayerState()->IsTurn() && HoveredUnit && MovableTiles.Contains(HoveredUnit->Coordinates) && SelectedUnit->Team == GetPaperPlayerState()->Team)
-		Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates, MovableTiles[HoveredUnit->Coordinates].EnergyLeft);
-	UpdateSelectedUnit();
-	MovableOverlayOff();
+	bMovableOverlayOn = false;
+	LastHoveredUnit = nullptr;		// update overlays on next tick
+	for (auto& MovableOverlay : MovableOverlayArray)
+		MovableOverlay->Destroy();
+	for (auto& MoveOverlaySegment : MoveOverlayArray)
+		MoveOverlaySegment->Destroy();
+	MovableOverlayArray.Empty();
+	MovableTiles.Empty();
+	MoveOverlayArray.Empty();
 }
 
-void APaperPlayerController::AttackUnit()
+bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination)
 {
-	if (SelectedUnit && HoveredUnit && AttackableTiles.Contains(HoveredUnit->Coordinates) && GetPaperPlayerState()->IsTurn() && SelectedUnit->Team == GetPaperPlayerState()->Team)
-		Server_Attack(SelectedUnit, HoveredUnit);
-	AttackableOverlayOff();
-	UpdateSelectedUnit();
-}
-
-bool APaperPlayerController::Server_Attack_Validate(AUnit* Attacker, AUnit* Victim)
-{
-	if (Attacker && Victim)
+	if (Origin < GameState->UnitBoard.Num() && Destination < GameState->UnitBoard.Num())			// kick because player is SUS AS HELL if they manage to break this
 		return true;
 	else
 		return false;
 }
 
-void APaperPlayerController::Server_Attack_Implementation(AUnit* Attacker, AUnit* Victim)
+void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Destination)
 {
-	Attacker->Attack(Victim);
+
+	if (GameState->UnitBoard[Origin]			// the unit exists
+		&& GameState->UnitBoard[Origin]->Team == GetPaperPlayerState()->Team			// it's your own unit
+		&& GetPaperPlayerState()->IsTurn()
+		&& Destination != Origin)					// it's your turn
+	{
+		GameState->UnitBoard[Origin]->DetermineMovableTiles(MovableTiles);
+		if (MovableTiles.Contains(Destination))				// the destination is valid (i.e. within reach) for the unit
+		{
+			GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
+			GameState->UnitBoard[Origin] = nullptr;
+			GameState->UnitBoard[Destination]->Coordinates = Destination;
+			GameState->UnitBoard[Destination]->OnRep_RecordedStat();					// this updates ui stats on the server too, since onrep calls on clients only (weird)
+			GameState->UnitBoard[Destination]->Energy = MovableTiles[Destination].EnergyLeft;
+			GameState->UnitBoard[Destination]->SetActorLocation(FVector(Destination % GameState->GetBoardWidth() * 200, Destination / GameState->GetBoardWidth() * 200, GameState->UnitBoard[Destination]->GetActorLocation().Z));
+		}
+	}
 }
 
-bool APaperPlayerController::Server_MoveUnit_Validate(int Origin, int Destination, uint8 EnergyLeft)
-{
-	if (Origin < GameState->UnitBoard.Num() && Destination < GameState->UnitBoard.Num() && Destination != Origin)
-		return true;
-	else
-		return false;
-}
 
-void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Destination, uint8 EnergyLeft)
+
+void APaperPlayerController::ToggleAttackableOverlay()
 {
-	GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
-	GameState->UnitBoard[Origin] = nullptr;
-	GameState->UnitBoard[Destination]->Coordinates = Destination;
-	GameState->UnitBoard[Destination]->OnRep_Coordinates();					// this moves the unit's location on the server too, since onrep calls on clients only (weird)
-	GameState->UnitBoard[Destination]->Energy = EnergyLeft;
+	if (bAttackableOverlayOn)
+		AttackableOverlayOff();
+	else if (!bMovableOverlayOn)
+		AttackableOverlayOn();
 }
 
 void APaperPlayerController::AttackableOverlayOn()
@@ -468,14 +444,15 @@ void APaperPlayerController::AttackableOverlayOn()
 	{
 		bAttackableOverlayOn = true;
 		LastHoveredUnit = nullptr;		//update overlays on next tick
-		SelectedUnit->DetermineAttackableTiles(ReachableTiles, AttackableTiles);
+		
+		SelectedUnit->DetermineAttackableTiles(ReachableTiles, AttackableTiles);					// COSMETIC CALCULATIONS
 		for (auto& Coord : ReachableTiles)
 			if (GameState->UnitBoard[Coord] == nullptr || AttackableTiles.Contains(Coord))
 				AttackableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(AttackableOverlayBP, FVector(Coord % GameState->GetBoardWidth() * 200.f, Coord / GameState->GetBoardWidth() * 200.f, 200.f), FRotator::ZeroRotator));
 	}
 }
 
-void APaperPlayerController::AttackableOverlayOff()
+void APaperPlayerController::AttackableOverlayOff()													// COSMETIC
 {
 	bAttackableOverlayOn = false;
 	LastHoveredUnit = nullptr;		//update overlays on next tick
@@ -486,12 +463,99 @@ void APaperPlayerController::AttackableOverlayOff()
 	ReachableTiles.Empty();
 }
 
-void APaperPlayerController::Server_EndTurn_Implementation()
+bool APaperPlayerController::Server_Attack_Validate(AUnit* Attacker, AUnit* Victim)
 {
-	GameState->Server_EndTurn();
+	return true;
 }
+
+void APaperPlayerController::Server_Attack_Implementation(AUnit* Attacker, AUnit* Victim)
+{
+	if (Attacker
+		&& Victim
+		&& Attacker->Energy > 1
+		&& GetPaperPlayerState()->IsTurn()
+		&& Attacker->Team == GetPaperPlayerState()->Team)
+	{
+		Attacker->DetermineAttackableTiles(ReachableTiles, AttackableTiles);		// doing this last because it's taxing, use as final barrier.
+		if (AttackableTiles.Contains(Victim->Coordinates))
+			Attacker->Attack(Victim);
+	}
+}
+
+
 
 bool APaperPlayerController::Server_EndTurn_Validate()
 {
 	return true;
+}
+
+void APaperPlayerController::Server_EndTurn_Implementation()
+{
+	if (GetPaperPlayerState()->IsTurn())															// GAMEPLAY CALCULATIONS
+		GameState->EndTurn();
+}
+
+
+
+bool APaperPlayerController::Server_ChangeTeam_Validate(ETeam Team)
+{
+	if ((static_cast<uint8>(Team) < GameState->TeamCount || Team == ETeam::Neutral) && !bInGame)				// this should never happen, so kick because you're sus
+		return true;
+	else
+		return false;
+}
+
+void APaperPlayerController::Server_ChangeTeam_Implementation(ETeam Team)			// checks are to prevent clients from setting ingame to false and hijacking someone else's team.
+{
+	 if (Team == ETeam::Neutral || GameState->TeamStatuses[static_cast<uint8>(Team)] == EStatus::Open)			// if team is open
+	{
+		// mark current team as open if alive. note: current team can't be open, because you're currently occupying it, and if it's already dead, leave it as dead.
+		if (GetPaperPlayerState()->Team != ETeam::Neutral && GameState->TeamStatuses[static_cast<uint8>(GetPaperPlayerState()->Team)] == EStatus::Alive)
+			GameState->TeamStatuses[static_cast<uint8>(GetPaperPlayerState()->Team)] = EStatus::Open;
+
+		// then switch to new team and mark it as taken
+		GetPaperPlayerState()->SetTeam(Team);
+		if (Team != ETeam::Neutral)
+			GameState->TeamStatuses[static_cast<uint8>(Team)] = EStatus::Alive;
+	}
+}
+
+
+
+bool APaperPlayerController::Server_SetInGame_Validate(bool b)
+{
+	return true;
+}
+
+void APaperPlayerController::Server_SetInGame_Implementation(bool b)
+{
+	bInGame = b;
+}
+
+
+bool APaperPlayerController::Server_SendMessage_Validate(const FText& Message)
+{
+	return true;
+}
+
+void APaperPlayerController::Server_SendMessage_Implementation(const FText& Message)
+{
+	// no checks because it's just a message, no real harm possible
+	constexpr int MAX_SIGNATURE_LENGTH = 16;
+	FText Signature;
+
+	if (GetPaperPlayerState()->Name.Len() > MAX_SIGNATURE_LENGTH)
+		Signature = FText::FromString(GetPaperPlayerState()->Name.Left(MAX_SIGNATURE_LENGTH) + "...");
+	else
+		Signature = FText::FromString(GetPaperPlayerState()->Name);
+
+	FText SignedMessage = FText::Format<FText, FText>(FText::FromString("{0}: {1}"), Signature, Message);
+	GameState->Multicast_Message(SignedMessage);
+}
+
+
+void APaperPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(APaperPlayerController, bInGame);
 }

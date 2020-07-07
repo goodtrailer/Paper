@@ -4,6 +4,8 @@
 
 #include "Unit.h"
 #include "Cardinal.h"
+#include "PaperGameState.h"
+#include "Engine/World.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "Components/InputComponent.h"
@@ -18,6 +20,8 @@ ACameraPawn::ACameraPawn()
 void ACameraPawn::BeginPlay()
 {
 	Super::BeginPlay();
+	ResetPosition();
+	SetActorRotation(FRotator(-90.f, -90.f, 0.f));
 }
 
 void ACameraPawn::Tick(float DeltaTime)
@@ -41,4 +45,10 @@ void ACameraPawn::ZoomIn()
 void ACameraPawn::ZoomOut()
 {
 	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength / 10;
+}
+
+void ACameraPawn::ResetPosition()
+{
+	if (APaperGameState* GS = GetWorld()->GetGameState<APaperGameState>())
+		SetActorLocation(FVector(GS->GetBoardWidth() * 100.f, GS->GetBoardHeight() * 100.f, 300.f));
 }

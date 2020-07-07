@@ -17,9 +17,9 @@ public:
 	void BeginPlay() override;
 
 protected:
-	//void SpawnUnit(ETeam, TSubclassOf<AUnit>);
 	void ZoomIn();
 	void ZoomOut();
+	void ResetPosition();
 
 	UPROPERTY(BlueprintReadWrite)
 		class USpringArmComponent* SpringArm;

@@ -18,4 +18,6 @@ public:
 	void UpdateSelectedUnit(class AUnit* SelectedUnit);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateGold(int Gold);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void UpdateTeam(ETeam Team);
 };

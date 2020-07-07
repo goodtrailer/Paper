@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MovableTileInfo.h"
 #include "GameFramework/PlayerController.h"
 #include "PaperPlayerController.generated.h"
 
-enum class EDirection : uint8;
+enum class ETeam : uint8;
 
 UCLASS()
 class PAPER_API APaperPlayerController : public APlayerController
@@ -22,6 +23,10 @@ public:
 	void Server_EndTurn();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Attack(AUnit* Attacker, AUnit* Victim);
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_ChangeTeam(ETeam Team); 
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_SendMessage(const FText& Message);
 	UFUNCTION(BlueprintImplementableEvent)
 	void CheckVictory(ETeam WinningTeam);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -32,20 +37,20 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ToggleAttackableOverlay();
 	UFUNCTION(BlueprintCallable)
-	void ResetCameraPosition;
+	void ResetCameraPosition();
+	UFUNCTION(BlueprintCallable)
 	void StartGame();
 
 	UPROPERTY(BlueprintReadWrite)
 	class UPaperUserInterface* UserInterface;
+	UPROPERTY(BlueprintReadWrite)
+	class ULobbyUserInterface* LobbyInterface;
+	UPROPERTY(BlueprintReadWrite)
+	class UChatUserInterface* ChatInterface;
+	UPROPERTY(Replicated)
+	bool bInGame;				// can't be put in PaperPlayerState because it needs to be used immediately. Also, no other player needs to know this value, only the server does.
 	
 protected:
-	struct MovableTileInfo
-	{
-		uint8 EnergyLeft;
-		int SourceTileCoordinates;
-		EDirection DirectionToSourceTile;
-	};
-
 	void BeginPlay() override;
 	void PlayerTick(float) override;
 	void SetupInputComponent() override;
@@ -60,21 +65,23 @@ protected:
 	void Debug();
 	void SelectUnit();
 	inline void UpdateSelectedUnit();
-	void MoveUnit();
 	UFUNCTION(Server, Reliable, WithValidation)
-	void Server_MoveUnit(int Origin, int Destination, uint8 EnergyLeft);
-	void AttackUnit();
+	void Server_MoveUnit(int Origin, int Destination);
 	void MovableOverlayOn();
 	void MovableOverlayOff();
 	void AttackableOverlayOn();
 	void AttackableOverlayOff();
+	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
+	void Server_SetInGame(bool b);
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
+	void FocusChatbox();
 
 	class ACameraPawn* CameraPawn;
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
 	class AUnit* LastHoveredUnit;
 	// int is Coords
-	TMap<int, MovableTileInfo> MovableTiles;
+	TMap<int, FMovableTileInfo> MovableTiles;
 	TArray<AActor*> MovableOverlayArray;
 	TArray<AActor*> MoveOverlayArray;
 	// int is Coords
@@ -91,7 +98,6 @@ protected:
 
 	bool bMovableOverlayOn;
 	bool bAttackableOverlayOn;
-	bool bGameStarted;
 
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> MovableOverlayBP;
@@ -113,6 +119,10 @@ protected:
 	TSubclassOf<AActor> AttackableOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
 	TSubclassOf<class UPaperUserInterface> UserInterfaceBP;	
+	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
+	TSubclassOf<class ULobbyUserInterface> LobbyInterfaceBP;
+	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
+	TSubclassOf<class UChatUserInterface> ChatInterfaceBP;
 
 private:
 	class APaperPlayerState* UnsafePlayerState;

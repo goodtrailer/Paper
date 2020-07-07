@@ -3,6 +3,8 @@ Format: Major.Minor.Patch.Revision
 + : Done
 - : Planned
 
+Note: this document is more of a todo-list than a changelog, because my commits are extremely inconsistent. This is a reference for the tags on the GitHub repository.
+
 0. Alpha
 	0. Board generation
 		Unrecorded
@@ -40,7 +42,7 @@ Format: Major.Minor.Patch.Revision
 	4. Unit attacking
 		0. Attack graphics
 			+ Attackable overlays
-			+ Attack overlay (target/crosshair?)
+			+ Attack overlay (target/crosshair)
 		1. Attack functions
 			+ Dealing damage
 			+ Unit deaths
@@ -72,11 +74,31 @@ Format: Major.Minor.Patch.Revision
 		1. Victory/defeat screen
 			+ .
 			+ Cool blurred background
-	7. Units part 2
+			+ Allow changing team to spectator
+	7. Online
+		0. Anti-client-side-cheating/modding (not anti-cheating/modding for hosts, because they're hosts)
+			+ Make a lot of server functions into normal functions, so that only the server can call it with any meaningful impact
+			+ Do calculations and verifications in server RPCs, such that it is impossible to hack the calculations as a client
+			+ Remove server RPCs from GameState/PlayerState and add server RPCs to PlayerController
+		1. Lobby screen
+			+ Lobby screen before game starts showing players and teams
+			+ Joining a game that's already in progress
+			+ One player per team only
+			+ Choose team via dropdown box instead of an incremental button
+			- Text chat (all because ue4 literally has 0 functionality (actually for real, i'm not kidding) for logging in shipping builds. what the fuck.)
+		2. EOS server list
+			- Source-engine style server list showing all games online
+			- Runs on Epic Online Services sessions interface, so that online is up 24/7
+			- No more direct IP connections needed (but the option is still available)
+			- Shows map preview in PNG form
+		3. Choosing map as host (using stb_image because ue4 doesn't have an image reading library ?????)
+			.
+	8. Units part 2
 		0. Miners
 		1. Castles
 			- New models (instead of flipped wall asset)
-	8. Polish, bug fixes, and housekeeping
+1. Release
+	0. Polish, bug fixes, and housekeeping
 		0. ESCAPE menu for settings
 		1. Top bar
 			- FPS counter
@@ -86,6 +108,5 @@ Format: Major.Minor.Patch.Revision
 		2. Polish
 			- Rich text for passive text
 			- Visuals on attacking (i.e. a little red bubble or something)
-1. Release
-	0. 
-		0.
+			- Move GameState functions and local variables to GameMode
+			- Rebindable hotkeys + optional WASD and RTS movement styles

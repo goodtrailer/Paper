@@ -19,9 +19,11 @@ public:
 protected:
 	struct ManagedMipMap;
 
-	bool ColorsNearlyEqual(FColor, FColor);		// Somewhat unnecessary since the switch to pngs. Was previously used due to jpg compression.
+	bool ColorsNearlyEqual(FColor, FColor);			// Somewhat unnecessary since the switch to pngs. Was previously used due to jpg compression.
 	void ParseBoardLayout(UTexture2D*);				// Sets values in PaperGameState
-	
+	APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
+	void Logout(AController* Exiting) override;
+
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
@@ -45,6 +47,8 @@ protected:
 	uint8 StartingCastleHP;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	uint8 StartingCastleHPMax;
+	UPROPERTY(VisibleAnywhere, Category = "Misc")
+	TMap<FString, uint8> NameCount;
 	
 	class APaperGameState* GameState;
 };

@@ -5,19 +5,16 @@
 #include "Unit.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "LobbyUserInterface.h"
+#include "ChatUserInterface.h"
 #include "PaperPlayerController.h"
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
 #include "PaperGameInstance.h"
 
-bool APaperGameState::Server_Defeat_Validate(ETeam DefeatedTeam)
+void APaperGameState::Defeat(ETeam DefeatedTeam)
 {
-	return (DefeatedTeam == ETeam::TeamNeutral) ? false : true;
-}
-
-void APaperGameState::Server_Defeat_Implementation(ETeam DefeatedTeam)
-{
-	if (static_cast<uint8>(DefeatedTeam) < BoardSpawns.Num())
+	if (static_cast<uint8>(DefeatedTeam) < TeamCount)
 	{
 		// destroys the team's units
 		for (auto& Unit : UnitBoard)
@@ -29,13 +26,13 @@ void APaperGameState::Server_Defeat_Implementation(ETeam DefeatedTeam)
 			Spawn->Destroy();
 		BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns.Empty();
 
-		TeamStatuses[static_cast<uint8>(DefeatedTeam)] = false;
+		TeamStatuses[static_cast<uint8>(DefeatedTeam)] = EStatus::Dead;
 		{
 			int aliveCount = 0;
 			ETeam winner = static_cast<ETeam>(-1);	// same as 255 because uint8
 			for (int i = 0; i < TeamStatuses.Num(); i++)
 			{
-				if (TeamStatuses[i])
+				if (TeamStatuses[i] == EStatus::Alive)
 				{
 					if (aliveCount)					// one other alive team already counted, so it's now known that multiple teams are still alive.
 					{
@@ -54,12 +51,6 @@ void APaperGameState::Server_Defeat_Implementation(ETeam DefeatedTeam)
 	}
 }
 
-void APaperGameState::Multicast_StartGame_Implementation()
-{
-	if (APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-		LocalPlayerController->StartGame();
-}
-
 void APaperGameState::Multicast_Victory_Implementation(ETeam Team)
 {
 	if (APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
@@ -72,11 +63,33 @@ void APaperGameState::Multicast_Defeat_Implementation(ETeam Team)
 		LocalPlayerController->CheckDefeat(Team);
 }
 
+void APaperGameState::Multicast_Message_Implementation(const FText& Message)
+{
+	if (APaperPlayerController* PC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (PC->ChatInterface)
+			PC->ChatInterface->AddMessage(Message);
+}
+
 void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementation(AUnit* Unit)
 {
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
 	if (LocalPlayerController)
 		LocalPlayerController->CheckUpdatedUnit(Unit, true);
+}
+
+void APaperGameState::Multicast_StartGameForLocalPlayerController_Implementation()
+{
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		LocalPC->StartGame();
+}
+
+void APaperGameState::Multicast_RemovePlayerForLocalLobbyUI_Implementation(const FString& Name)
+{
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (ULobbyUserInterface* UI = LocalPC->LobbyInterface)
+			UI->RemoveLobbySlot(Name);
+		else
+			GLog->Log(TEXT("Remove failed!"));
 }
 
 void APaperGameState::CheckUpdatedUnitForLocalPlayerController(AUnit* Unit)
@@ -94,54 +107,41 @@ int APaperGameState::GetGold(ETeam Team) const
 		return -1;
 }
 
-void APaperGameState::Server_SetGold_Implementation(ETeam Team, int NewAmount)
-{
-	Gold[static_cast<int>(Team)] = NewAmount;
-	OnRep_Gold();
-}
-
-bool APaperGameState::Server_SetGold_Validate(ETeam Team, int NewAmount)
+void APaperGameState::SetGold(ETeam Team, int NewAmount)
 {
 	if (static_cast<int>(Team) < Gold.Num())
-		return true;
+	{
+		Gold[static_cast<int>(Team)] = NewAmount;
+		OnRep_Gold();
+	}
 	else
-		return false;
+		GLog->Logf(TEXT("Attempted to set gold for team %d; invalid operation!"), Team);
 }
 
-void APaperGameState::Server_ChangeGold_Implementation(ETeam Team, int DeltaGold)
-{
-	Gold[static_cast<int>(Team)] += DeltaGold;
-	OnRep_Gold();
-}
-
-bool APaperGameState::Server_ChangeGold_Validate(ETeam Team, int DeltaGold)
+void APaperGameState::ChangeGold(ETeam Team, int DeltaGold)
 {
 	if (static_cast<int>(Team) < Gold.Num())
-		return true;
+	{
+		Gold[static_cast<int>(Team)] += DeltaGold;
+		OnRep_Gold();
+	}
 	else
-		return false;
+		GLog->Logf(TEXT("Attempted to change gold for team %d; invalid operation!"), Team);
 }
 
 void APaperGameState::OnRep_Gold()
 {
-	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
-	if (LocalPlayerController)
-	{
-		
-		ETeam Team = LocalPlayerController->GetPaperPlayerState()->Team;		// guaranteed to work because if local player controller exists, the so does a properly initialized game instance
-		if (Team == ETeam::TeamNeutral)
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (LocalPC->bInGame)
 		{
-			// TODO: In spectator mode, update both player's gold amounts in the display, since spectators should be omniscient
+			ETeam Team = LocalPC->GetPaperPlayerState()->Team;		// guaranteed to work because if local player controller exists, the so does a properly initialized game instance
+			if (Team == ETeam::Neutral)
+			{
+				// TODO: In spectator mode, update both player's gold amounts in the display, since spectators should be omniscient
+			}
+			else if (static_cast<int>(Team) < Gold.Num())
+				LocalPC->UserInterface->UpdateGold(Gold[static_cast<int>(Team)]);
 		}
-		else if (static_cast<int>(Team) < Gold.Num())
-			LocalPlayerController->UserInterface->UpdateGold(Gold[static_cast<int>(Team)]);
-	}
-}
-
-void APaperGameState::BeginPlay()
-{
-	Super::BeginPlay();
-	//Multicast_UpdateGoldDisplay();
 }
 
 int APaperGameState::GetBoardHeight() const
@@ -154,49 +154,44 @@ int APaperGameState::GetBoardWidth() const
 	return BoardWidth;
 }
 
-void APaperGameState::Server_EndTurn_Implementation()
+void APaperGameState::EndTurn()
 {
-	// while (!AliveTeams[++Turn % BoardSpawns.Num()]) {}; not quite as readable so i'm replacing it with do/while
 	do
 	{
 		++Turn;
-	} while (!TeamStatuses[Turn % BoardSpawns.Num()]);
+	} while (TeamStatuses[Turn % TeamCount] != EStatus::Alive);
 
-	Server_ChangeGold(static_cast<ETeam>((Turn) % BoardSpawns.Num()), PassiveIncome);
+	ChangeGold(static_cast<ETeam>((Turn) % BoardSpawns.Num()), PassiveIncome);
 	for (auto Unit : UnitBoard)
 		if (Unit && Turn % BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
 			Unit->Passive();
 	OnRep_Turn();
 }
 
-bool APaperGameState::Server_EndTurn_Validate()
-{
-	return true;
-}
-
 void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(APaperGameState, BoardSpawns);
-	DOREPLIFETIME(APaperGameState, Turn);
-	DOREPLIFETIME(APaperGameState, UnitBoard);
-	DOREPLIFETIME(APaperGameState, GroundBoard);
-	DOREPLIFETIME(APaperGameState, BoardWidth);
-	DOREPLIFETIME(APaperGameState, BoardHeight);
-	DOREPLIFETIME(APaperGameState, Gold);
+	DOREPLIFETIME(APaperGameState, BoardSpawns)
+	DOREPLIFETIME(APaperGameState, Turn)
+	DOREPLIFETIME(APaperGameState, UnitBoard)
+	DOREPLIFETIME(APaperGameState, GroundBoard)
+	DOREPLIFETIME(APaperGameState, BoardWidth)
+	DOREPLIFETIME(APaperGameState, BoardHeight)
+	DOREPLIFETIME(APaperGameState, Gold)
 	DOREPLIFETIME(APaperGameState, PassiveIncome)
 	DOREPLIFETIME(APaperGameState, CastleHP)
 	DOREPLIFETIME(APaperGameState, CastleHPMax)
 	DOREPLIFETIME(APaperGameState, TeamStatuses)
 	DOREPLIFETIME(APaperGameState, TeamCount)
 	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
+	DOREPLIFETIME(APaperGameState, bGameStarted)
 }
 
 APaperGameState::APaperGameState()
 {
-	// PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
 	bAlwaysRelevant = true;
+//	Turn = -1;			// force replication whenever a client joins.
 }
 
 AUnit* APaperGameState::GetBoardSpawn(ETeam team, int index) const
@@ -207,5 +202,6 @@ AUnit* APaperGameState::GetBoardSpawn(ETeam team, int index) const
 void APaperGameState::OnRep_Turn()
 {
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-		LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
+		if (LocalPC->bInGame)
+			LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
 }

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Cardinal.h"
+#include "MovableTileInfo.h"
 #include "GameFramework/Actor.h"
 #include "Unit.generated.h"
 
@@ -24,36 +25,38 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
 	UFUNCTION(BlueprintNativeEvent)
+	void DetermineMovableTiles(TMap<int, FMovableTileInfo>& OutMovableTiles) const;
+	UFUNCTION(BlueprintNativeEvent)
 	void Attack(AUnit* Victim);
 	UFUNCTION(BlueprintNativeEvent)
 	void Die();
 	UFUNCTION(BlueprintNativeEvent)
 	void Passive();
-	UFUNCTION()
-	void OnRep_Coordinates();
 	UFUNCTION(BlueprintNativeEvent)
 	int GetCost();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	class UTexture2D* GetIcon();
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	class UMaterialInterface* GetMaterial();
+	UFUNCTION()
+	void OnRep_RecordedStat();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
+	bool IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer) override;
 	// on the bright side, blueprintcallable ufunctions can be virtual
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHP() const;
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHPMax() const;
 	UFUNCTION(BlueprintCallable)
-	virtual void SetHP(uint8 a);				// im gonna kiss myself for doing this encapsulation, amazing foresight past me, because this is perfect for overriding in base/castle class.
+	virtual void SetHP(uint8 a);
 	UFUNCTION(BlueprintCallable)
 	uint8 GetEnergyMax() const;
 
-
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
-	ETeam Team = static_cast<ETeam>(-1);		// force replication
+	ETeam Team;
 	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	bool bIsTargetable;
-	UPROPERTY(ReplicatedUsing = OnRep_Coordinates, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
+	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	EType Type;
@@ -77,8 +80,6 @@ protected:
 	void BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam);
 	UFUNCTION()
 	void OnRep_Team();
-	UFUNCTION()
-	void OnRep_RecordedStat();
 	
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Max Energy")
 	uint8 EnergyMax;
