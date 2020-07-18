@@ -1,7 +1,7 @@
 Format: Major.Minor.Patch.Revision
 . : Self-explanatory
 + : Done
-- : Planned
+- : To do
 
 Note: this document is more of a todo-list than a changelog, because my commits are extremely inconsistent. This is a reference for the tags on the GitHub repository.
 
@@ -110,3 +110,4 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Visuals on attacking (i.e. a little red bubble or something)
 			- Move GameState functions and local variables to GameMode
 			- Rebindable hotkeys + optional WASD and RTS movement styles
+			- Optional MSI (ZIP still included alongside it)

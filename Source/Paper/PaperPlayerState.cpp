@@ -6,7 +6,6 @@
 #include "LobbyUserInterface.h"
 #include "PaperGameState.h"
 #include "PaperEnums.h"
-#include "PaperGameInstance.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 

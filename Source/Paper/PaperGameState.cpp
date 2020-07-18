@@ -10,7 +10,6 @@
 #include "PaperPlayerController.h"
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
-#include "PaperGameInstance.h"
 
 void APaperGameState::Defeat(ETeam DefeatedTeam)
 {
@@ -134,7 +133,7 @@ void APaperGameState::OnRep_Gold()
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 		if (LocalPC->bInGame)
 		{
-			ETeam Team = LocalPC->GetPaperPlayerState()->Team;		// guaranteed to work because if local player controller exists, the so does a properly initialized game instance
+			ETeam Team = LocalPC->GetPaperPlayerState()->Team;
 			if (Team == ETeam::Neutral)
 			{
 				// TODO: In spectator mode, update both player's gold amounts in the display, since spectators should be omniscient

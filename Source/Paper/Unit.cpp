@@ -3,7 +3,6 @@
 #include "Unit.h"
 
 #include "PaperEnums.h"
-#include "PaperGameInstance.h"
 #include "PaperGameState.h"
 #include "PaperPlayerController.h"
 #include "Net/UnrealNetwork.h"

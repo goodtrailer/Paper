@@ -4,13 +4,11 @@ using System;
 using System.IO;
 using UnrealBuildTool;
 
-public class Paper : ModuleRules
+public class EOSEdEngine : ModuleRules
 {
-	public Paper(ReadOnlyTargetRules Target) : base(Target)
+	public EOSEdEngine(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-
-		PublicIncludePaths.Add(ModuleDirectory);
 
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core",
@@ -18,7 +16,9 @@ public class Paper : ModuleRules
 			"Engine",
 			"InputCore",
 			"HeadMountedDisplay",
-			"EpicOnlineServicesSDK"
+			"Paper",
+			"EpicOnlineServicesSDK",
+			"UnrealEd"
 		});
 	}
 }

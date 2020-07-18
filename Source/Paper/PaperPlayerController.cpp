@@ -343,14 +343,14 @@ void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> 
 		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
 			if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
 			{
+				#if WITH_EDITOR
+					FActorSpawnParameters SpawnParams;
+					SpawnParams.bHideFromSceneOutliner = false;
+					AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
+				#else
+					AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+				#endif
 
-#if UE_BUILD_SHIPPING
-				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
-#else
-				FActorSpawnParameters SpawnParams;
-				SpawnParams.bHideFromSceneOutliner = false;
-				AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
-#endif
 				SpawnedUnit->SetOwner(this);
 				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
 				GameState->ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
