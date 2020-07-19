@@ -171,9 +171,18 @@ void UPaperGameInstance::EOSConnectDeleteDeviceId()
 	});
 }
 
-void UPaperGameInstance::LogSessionName()
+void UPaperGameInstance::Debug()
 {
-	GLog->Logf(L"UPaperGameInstance::SessionName %s\nUPaperGameInstance::PlayerName %s", ANSI_TO_TCHAR(SessionName.c_str()), ANSI_TO_TCHAR(PlayerName.c_str()));
+	EOSConnectDeleteDeviceId();
+}
+
+bool UPaperGameInstance::bIsLoggedIn() const
+{
+	if (EOSConnectHandle && EOSProductUserId
+		&& EOS_Connect_GetLoginStatus(EOSConnectHandle, EOSProductUserId) == EOS_ELoginStatus::EOS_LS_LoggedIn)
+		return true;
+	else
+		return false;
 }
 
 FString UPaperGameInstance::GetPlayerName_FStr() const

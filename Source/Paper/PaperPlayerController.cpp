@@ -43,7 +43,7 @@ void APaperPlayerController::BeginPlay()
 		UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
 
 		(SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
-		HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator);
+		(HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 

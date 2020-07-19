@@ -32,9 +32,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EOSConnectDeleteDeviceId();
 	UFUNCTION(BlueprintCallable)
-	void LogSessionName();
+	void Debug();
 	UFUNCTION(BlueprintCallable)
 	FString GetPlayerName_FStr() const;
+	UFUNCTION(BlueprintCallable)
+	bool bIsLoggedIn() const;
 	bool Tick(float DeltaSeconds);									// thank you Ian Breeg from the forums
 
 	EOS_HPlatform EOSPlatHandle;
