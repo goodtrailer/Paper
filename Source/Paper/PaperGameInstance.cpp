@@ -19,6 +19,7 @@ void UPaperGameInstance::OnStart()
 {
 	Super::OnStart();
 	TickDelegateHandle = FTicker::GetCoreTicker().AddTicker(FTickerDelegate::CreateUObject(this, &UPaperGameInstance::Tick));
+	bIsInSession = false;
 	EOSPlatCreate();
 }
 
@@ -97,7 +98,12 @@ void UPaperGameInstance::EOSPlatRelease()
 		GLog->Logf(ELogVerbosity::Warning, L"EOS platform released unsuccessfully. Maybe the platform has already been released? (This function is called twice on packaged builds.)");
 }
 
-void UPaperGameInstance::EOSSessionCreate(const char* Name, uint32 MaxPlayers)
+void UPaperGameInstance::EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic)
+{
+	EOSSessionCreate(TCHAR_TO_ANSI(*Name), MaxPlayers, TeamCount, bCanJoinInProgress, bIsPublic);
+}
+
+void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic)
 {
 	if (bIsInSession)
 	{
@@ -105,13 +111,75 @@ void UPaperGameInstance::EOSSessionCreate(const char* Name, uint32 MaxPlayers)
 		return;
 	}
 
-	SessionName = Name;
-
 	EOS_Sessions_CreateSessionModificationOptions SessionModOptions;
 	SessionModOptions.ApiVersion = EOS_SESSIONS_CREATESESSIONMODIFICATION_API_LATEST;
-	SessionModOptions.SessionName = SessionName.c_str();
+	SessionModOptions.SessionName = Name;
 	SessionModOptions.BucketId = "";
 	SessionModOptions.MaxPlayers = MaxPlayers;
+	SessionModOptions.LocalUserId = EOSProductUserId;
+	SessionModOptions.bPresenceEnabled = false;
+	EOS_HSessionModification SessionModHandle;
+	EOS_EResult CreateSessionModResult = EOS_Sessions_CreateSessionModification(EOSSessionsHandle, &SessionModOptions, &SessionModHandle);
+	if (CreateSessionModResult != EOS_EResult::EOS_Success)
+	{
+		GLog->Logf(ELogVerbosity::Warning, L"EOS session modification created with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(CreateSessionModResult)));
+		return;
+	}
+	else
+	{
+		GLog->Log(L"EOS session modification created with EOS_Success.");
+
+		EOS_SessionModification_SetJoinInProgressAllowedOptions JoinInProgressOptions;
+		JoinInProgressOptions.ApiVersion = EOS_SESSIONMODIFICATION_SETJOININPROGRESSALLOWED_API_LATEST;
+		JoinInProgressOptions.bAllowJoinInProgress = bCanJoinInProgress;
+		EOS_SessionModification_SetJoinInProgressAllowed(SessionModHandle, &JoinInProgressOptions);
+
+		EOS_SessionModification_SetPermissionLevelOptions PermsOptions;
+		PermsOptions.ApiVersion = EOS_SESSIONMODIFICATION_SETPERMISSIONLEVEL_API_LATEST;
+		PermsOptions.PermissionLevel = bIsPublic ? EOS_EOnlineSessionPermissionLevel::EOS_OSPF_PublicAdvertised : EOS_EOnlineSessionPermissionLevel::EOS_OSPF_InviteOnly;
+		EOS_SessionModification_SetPermissionLevel(SessionModHandle, &PermsOptions);
+
+		EOS_Sessions_AttributeData TeamCountAttribute;
+		TeamCountAttribute.ApiVersion = EOS_SESSIONS_SESSIONATTRIBUTEDATA_API_LATEST;
+		TeamCountAttribute.Key = "TeamCount";
+		TeamCountAttribute.ValueType = EOS_ESessionAttributeType::EOS_AT_INT64;
+		TeamCountAttribute.Value.AsInt64 = TeamCount;
+
+		EOS_SessionModification_AddAttributeOptions AddAttributeOptions;
+		AddAttributeOptions.ApiVersion = EOS_SESSIONMODIFICATION_ADDATTRIBUTE_API_LATEST;
+		AddAttributeOptions.SessionAttribute = &TeamCountAttribute;
+		AddAttributeOptions.AdvertisementType = EOS_ESessionAttributeAdvertisementType::EOS_SAAT_Advertise;
+		EOS_SessionModification_AddAttribute(SessionModHandle, &AddAttributeOptions);
+
+		EOS_Sessions_UpdateSessionOptions UpdateSessionOptions;
+		UpdateSessionOptions.ApiVersion = EOS_SESSIONS_UPDATESESSION_API_LATEST;
+		UpdateSessionOptions.SessionModificationHandle = SessionModHandle;
+		EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateSessionOptions, this, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
+		{
+			GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+			if (Data->ResultCode == EOS_EResult::EOS_Success)
+			{
+				(*(UPaperGameInstance*)Data->ClientData).SessionName = Data->SessionName;
+				(*(UPaperGameInstance*)Data->ClientData).SessionId = Data->SessionId;
+			}
+		});
+	}
+}
+
+void UPaperGameInstance::EOSSessionDestroy()
+{
+	EOS_Sessions_DestroySessionOptions DestroyOptions;
+	DestroyOptions.ApiVersion = EOS_SESSIONS_DESTROYSESSION_API_LATEST;
+	DestroyOptions.SessionName = SessionName.c_str();
+	EOS_Sessions_DestroySession(EOSSessionsHandle, &DestroyOptions, nullptr, [](const EOS_Sessions_DestroySessionCallbackInfo* Data)
+	{
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+		if (Data->ResultCode == EOS_EResult::EOS_Success)
+		{
+			(*(UPaperGameInstance*)Data->ClientData).SessionName.clear();
+			(*(UPaperGameInstance*)Data->ClientData).SessionId.clear();
+		}
+	});
 }
 
 void UPaperGameInstance::EOSConnectLogin_FStr(const FString& Name)
@@ -173,7 +241,7 @@ void UPaperGameInstance::EOSConnectDeleteDeviceId()
 
 void UPaperGameInstance::Debug()
 {
-	EOSConnectDeleteDeviceId();
+	GLog->Logf(L"EOS session name %s\nEOS session id %s", ANSI_TO_TCHAR(SessionName.c_str()), ANSI_TO_TCHAR(SessionId.c_str()));
 }
 
 bool UPaperGameInstance::bIsLoggedIn() const

@@ -24,9 +24,13 @@ public:
 	void Shutdown() override;
 	void EOSPlatCreate();											// Not to be confused with EOS_Platform_Create.
 	void EOSPlatRelease();											// Not to be confused with EOS_Platform_Release
-	void EOSSessionCreate(const char*, uint32);
 	UFUNCTION(BlueprintCallable)
-	void EOSConnectLogin_FStr(const FString& Name);
+	void EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic);
+	void EOSSessionCreate(const char*, uint8, uint8, bool, bool);
+	UFUNCTION(BlueprintCallable)
+	void EOSSessionDestroy();
+	UFUNCTION(BlueprintCallable)
+	void EOSConnectLogin_FStr(const FString& Name);					// wrapper function for EOSConnectLogin that takes in FStrings
 	void EOSConnectLogin();											// STATE MACHINE FUNC: Set PlayerName AND PlayerName_FStr before calling.
 	void EOSConnectCreateDeviceId();								// Only call after deleting old DeviceId account
 	UFUNCTION(BlueprintCallable)
@@ -43,10 +47,11 @@ public:
 	EOS_HSessions EOSSessionsHandle;
 	EOS_HConnect EOSConnectHandle;
 	EOS_ProductUserId EOSProductUserId;
+	std::string SessionName;
+	std::string SessionId;
 
 protected:
 	FDelegateHandle TickDelegateHandle;
-	std::string SessionName;
 	std::string DeviceModel;
 	bool bIsInSession;
 	std::string PlayerName;

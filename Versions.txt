@@ -109,5 +109,5 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Rich text for passive text
 			- Visuals on attacking (i.e. a little red bubble or something)
 			- Move GameState functions and local variables to GameMode
-			- Rebindable hotkeys + optional WASD and RTS movement styles
+			- Rebindable hotkeys + optional RTS movement styles
 			- Optional MSI (ZIP still included alongside it)
