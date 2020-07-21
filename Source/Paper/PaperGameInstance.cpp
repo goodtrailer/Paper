@@ -2,11 +2,14 @@
 
 #include "PaperGameInstance.h"
 
+#include "PaperEnums.h"
+
 #include "eos_sdk.h"
 #include "eos_sessions.h"
 #include "eos_common.h"
 
 #include "Misc/FileHelper.h"
+#include "Engine/Texture2D.h"
 #include "Windows/WindowsPlatformMisc.h"
 
 void UPaperGameInstance::Shutdown()
@@ -98,12 +101,12 @@ void UPaperGameInstance::EOSPlatRelease()
 		GLog->Logf(ELogVerbosity::Warning, L"EOS platform released unsuccessfully. Maybe the platform has already been released? (This function is called twice on packaged builds.)");
 }
 
-void UPaperGameInstance::EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic)
+void UPaperGameInstance::EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, bool bCanJoinInProgress, bool bIsPublic)
 {
-	EOSSessionCreate(TCHAR_TO_ANSI(*Name), MaxPlayers, TeamCount, bCanJoinInProgress, bIsPublic);
+	EOSSessionCreate(TCHAR_TO_ANSI(*Name), MaxPlayers, bCanJoinInProgress, bIsPublic);
 }
 
-void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic)
+void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, bool bCanJoinInProgress, bool bIsPublic)
 {
 	if (bIsInSession)
 	{
@@ -139,18 +142,6 @@ void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, ui
 		PermsOptions.PermissionLevel = bIsPublic ? EOS_EOnlineSessionPermissionLevel::EOS_OSPF_PublicAdvertised : EOS_EOnlineSessionPermissionLevel::EOS_OSPF_InviteOnly;
 		EOS_SessionModification_SetPermissionLevel(SessionModHandle, &PermsOptions);
 
-		EOS_Sessions_AttributeData TeamCountAttribute;
-		TeamCountAttribute.ApiVersion = EOS_SESSIONS_SESSIONATTRIBUTEDATA_API_LATEST;
-		TeamCountAttribute.Key = "TeamCount";
-		TeamCountAttribute.ValueType = EOS_ESessionAttributeType::EOS_AT_INT64;
-		TeamCountAttribute.Value.AsInt64 = TeamCount;
-
-		EOS_SessionModification_AddAttributeOptions AddAttributeOptions;
-		AddAttributeOptions.ApiVersion = EOS_SESSIONMODIFICATION_ADDATTRIBUTE_API_LATEST;
-		AddAttributeOptions.SessionAttribute = &TeamCountAttribute;
-		AddAttributeOptions.AdvertisementType = EOS_ESessionAttributeAdvertisementType::EOS_SAAT_Advertise;
-		EOS_SessionModification_AddAttribute(SessionModHandle, &AddAttributeOptions);
-
 		EOS_Sessions_UpdateSessionOptions UpdateSessionOptions;
 		UpdateSessionOptions.ApiVersion = EOS_SESSIONS_UPDATESESSION_API_LATEST;
 		UpdateSessionOptions.SessionModificationHandle = SessionModHandle;
@@ -161,6 +152,7 @@ void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, ui
 			{
 				(*(UPaperGameInstance*)Data->ClientData).SessionName = Data->SessionName;
 				(*(UPaperGameInstance*)Data->ClientData).SessionId = Data->SessionId;
+				(*(UPaperGameInstance*)Data->ClientData).bIsInSession = true;
 			}
 		});
 	}
@@ -171,13 +163,14 @@ void UPaperGameInstance::EOSSessionDestroy()
 	EOS_Sessions_DestroySessionOptions DestroyOptions;
 	DestroyOptions.ApiVersion = EOS_SESSIONS_DESTROYSESSION_API_LATEST;
 	DestroyOptions.SessionName = SessionName.c_str();
-	EOS_Sessions_DestroySession(EOSSessionsHandle, &DestroyOptions, nullptr, [](const EOS_Sessions_DestroySessionCallbackInfo* Data)
+	EOS_Sessions_DestroySession(EOSSessionsHandle, &DestroyOptions, this, [](const EOS_Sessions_DestroySessionCallbackInfo* Data)
 	{
 		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
 		if (Data->ResultCode == EOS_EResult::EOS_Success)
 		{
 			(*(UPaperGameInstance*)Data->ClientData).SessionName.clear();
 			(*(UPaperGameInstance*)Data->ClientData).SessionId.clear();
+			(*(UPaperGameInstance*)Data->ClientData).bIsInSession = false;
 		}
 	});
 }
@@ -242,6 +235,7 @@ void UPaperGameInstance::EOSConnectDeleteDeviceId()
 void UPaperGameInstance::Debug()
 {
 	GLog->Logf(L"EOS session name %s\nEOS session id %s", ANSI_TO_TCHAR(SessionName.c_str()), ANSI_TO_TCHAR(SessionId.c_str()));
+	
 }
 
 bool UPaperGameInstance::bIsLoggedIn() const
@@ -256,4 +250,110 @@ bool UPaperGameInstance::bIsLoggedIn() const
 FString UPaperGameInstance::GetPlayerName_FStr() const
 {
 	return FString(ANSI_TO_TCHAR(PlayerName.c_str()));
+}
+
+void UPaperGameInstance::AddSessionAttributeString(const FString& Name, const FString& Value)
+{
+	if (!bIsInSession)
+	{
+		GLog->Logf(ELogVerbosity::Warning, L"EOS session attribute added unsuccessfully: not in session.");
+		return;
+	}
+	std::string TempName = TCHAR_TO_UTF8(*Name);
+	std::string TempValue = TCHAR_TO_UTF8(*Value);
+	EOS_Sessions_AttributeData Attribute;
+	Attribute.ApiVersion = EOS_SESSIONS_SESSIONATTRIBUTEDATA_API_LATEST;
+	Attribute.Key = TempName.c_str();
+	Attribute.ValueType = EOS_ESessionAttributeType::EOS_AT_STRING;
+	Attribute.Value.AsUtf8 = TempValue.c_str();
+
+	EOS_HSessionModification SessionModHandle;
+	EOS_Sessions_UpdateSessionModificationOptions UpdateModOptions;
+	UpdateModOptions.ApiVersion = EOS_SESSIONS_UPDATESESSIONMODIFICATION_API_LATEST;
+	UpdateModOptions.SessionName = SessionName.c_str();
+	EOS_Sessions_UpdateSessionModification(EOSSessionsHandle, &UpdateModOptions, &SessionModHandle);
+
+	EOS_SessionModification_AddAttributeOptions AddAttributeOptions;
+	AddAttributeOptions.ApiVersion = EOS_SESSIONMODIFICATION_ADDATTRIBUTE_API_LATEST;
+	AddAttributeOptions.SessionAttribute = &Attribute;
+	AddAttributeOptions.AdvertisementType = EOS_ESessionAttributeAdvertisementType::EOS_SAAT_Advertise;
+	EOS_SessionModification_AddAttribute(SessionModHandle, &AddAttributeOptions);
+
+	EOS_Sessions_UpdateSessionOptions UpdateOptions;
+	UpdateOptions.ApiVersion = EOS_SESSIONS_UPDATESESSION_API_LATEST;
+	UpdateOptions.SessionModificationHandle = SessionModHandle;
+	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
+	{
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+	});
+}
+
+void UPaperGameInstance::AddSessionAttributeInt64(const FString& Name, int64 Value)
+{
+	if (!bIsInSession)
+	{
+		GLog->Logf(ELogVerbosity::Warning, L"EOS session attribute added unsuccessfully: not in session.");
+		return;
+	}
+	std::string TempName = TCHAR_TO_UTF8(*Name);
+	EOS_Sessions_AttributeData Attribute;
+	Attribute.ApiVersion = EOS_SESSIONS_SESSIONATTRIBUTEDATA_API_LATEST;
+	Attribute.Key = TempName.c_str();
+	Attribute.ValueType = EOS_ESessionAttributeType::EOS_AT_INT64;
+	Attribute.Value.AsInt64 = Value;
+
+	EOS_HSessionModification SessionModHandle;
+	EOS_Sessions_UpdateSessionModificationOptions UpdateModOptions;
+	UpdateModOptions.ApiVersion = EOS_SESSIONS_UPDATESESSIONMODIFICATION_API_LATEST;
+	UpdateModOptions.SessionName = SessionName.c_str();
+	EOS_Sessions_UpdateSessionModification(EOSSessionsHandle, &UpdateModOptions, &SessionModHandle);
+
+	EOS_SessionModification_AddAttributeOptions AddAttributeOptions;
+	AddAttributeOptions.ApiVersion = EOS_SESSIONMODIFICATION_ADDATTRIBUTE_API_LATEST;
+	AddAttributeOptions.SessionAttribute = &Attribute;
+	AddAttributeOptions.AdvertisementType = EOS_ESessionAttributeAdvertisementType::EOS_SAAT_Advertise;
+	EOS_SessionModification_AddAttribute(SessionModHandle, &AddAttributeOptions);
+
+	EOS_Sessions_UpdateSessionOptions UpdateOptions;
+	UpdateOptions.ApiVersion = EOS_SESSIONS_UPDATESESSION_API_LATEST;
+	UpdateOptions.SessionModificationHandle = SessionModHandle;
+	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
+	{
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+	});
+}
+
+void UPaperGameInstance::AddSessionAttributeBool(const FString& Name, bool Value)
+{
+	if (!bIsInSession)
+	{
+		GLog->Logf(ELogVerbosity::Warning, L"EOS session attribute added unsuccessfully: not in session.");
+		return;
+	}
+	std::string TempName = TCHAR_TO_UTF8(*Name);
+	EOS_Sessions_AttributeData Attribute;
+	Attribute.ApiVersion = EOS_SESSIONS_SESSIONATTRIBUTEDATA_API_LATEST;
+	Attribute.Key = TempName.c_str();
+	Attribute.ValueType = EOS_ESessionAttributeType::EOS_AT_BOOLEAN;
+	Attribute.Value.AsBool = Value;
+
+	EOS_HSessionModification SessionModHandle;
+	EOS_Sessions_UpdateSessionModificationOptions UpdateModOptions;
+	UpdateModOptions.ApiVersion = EOS_SESSIONS_UPDATESESSIONMODIFICATION_API_LATEST;
+	UpdateModOptions.SessionName = SessionName.c_str();
+	EOS_Sessions_UpdateSessionModification(EOSSessionsHandle, &UpdateModOptions, &SessionModHandle);
+
+	EOS_SessionModification_AddAttributeOptions AddAttributeOptions;
+	AddAttributeOptions.ApiVersion = EOS_SESSIONMODIFICATION_ADDATTRIBUTE_API_LATEST;
+	AddAttributeOptions.SessionAttribute = &Attribute;
+	AddAttributeOptions.AdvertisementType = EOS_ESessionAttributeAdvertisementType::EOS_SAAT_Advertise;
+	EOS_SessionModification_AddAttribute(SessionModHandle, &AddAttributeOptions);
+
+	EOS_Sessions_UpdateSessionOptions UpdateOptions;
+	UpdateOptions.ApiVersion = EOS_SESSIONS_UPDATESESSION_API_LATEST;
+	UpdateOptions.SessionModificationHandle = SessionModHandle;
+	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
+	{
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+	});
 }

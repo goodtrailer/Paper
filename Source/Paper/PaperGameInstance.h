@@ -20,13 +20,15 @@ class PAPER_API UPaperGameInstance : public UGameInstance
 {
 	GENERATED_BODY()
 public:
+	struct ManagedMipMap;
+
 	void OnStart() override;
 	void Shutdown() override;
 	void EOSPlatCreate();											// Not to be confused with EOS_Platform_Create.
 	void EOSPlatRelease();											// Not to be confused with EOS_Platform_Release
 	UFUNCTION(BlueprintCallable)
-	void EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, uint8 TeamCount, bool bCanJoinInProgress, bool bIsPublic);
-	void EOSSessionCreate(const char*, uint8, uint8, bool, bool);
+	void EOSSessionCreate_FStr(const FString& Name, uint8 MaxPlayers, bool bCanJoinInProgress, bool bIsPublic);
+	void EOSSessionCreate(const char*, uint8, bool, bool);
 	UFUNCTION(BlueprintCallable)
 	void EOSSessionDestroy();
 	UFUNCTION(BlueprintCallable)
@@ -42,6 +44,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool bIsLoggedIn() const;
 	bool Tick(float DeltaSeconds);									// thank you Ian Breeg from the forums
+	UFUNCTION(BlueprintCallable)
+	void AddSessionAttributeString(const FString& Name, const FString& Value);
+	UFUNCTION(BlueprintCallable)
+	void AddSessionAttributeInt64(const FString& Name, int64 Value);
+	UFUNCTION(BlueprintCallable)
+	void AddSessionAttributeBool(const FString& Name, bool Value);
 
 	EOS_HPlatform EOSPlatHandle;
 	EOS_HSessions EOSSessionsHandle;
@@ -49,10 +57,10 @@ public:
 	EOS_ProductUserId EOSProductUserId;
 	std::string SessionName;
 	std::string SessionId;
+	bool bIsInSession;
 
 protected:
 	FDelegateHandle TickDelegateHandle;
 	std::string DeviceModel;
-	bool bIsInSession;
 	std::string PlayerName;
 };

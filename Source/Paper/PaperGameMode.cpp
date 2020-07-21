@@ -6,6 +6,7 @@
 #include "PaperPlayerState.h"
 #include "Castle.h"
 #include "PaperGameState.h"
+#include "PaperGameInstance.h"
 #include "PaperEnums.h"
 #include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
@@ -152,6 +153,7 @@ void APaperGameMode::BeginGame()
 	GameState->Multicast_StartGameForLocalPlayerController();
 }
 
+// set player name
 APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {
 	APlayerController* PC = Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
@@ -186,6 +188,7 @@ APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRo
 	return PC;
 }
 
+// open team status for that player's team
 void APaperGameMode::Logout(AController* Exiting)
 {
 	if (APaperPlayerController* PC = Cast<APaperPlayerController>(Exiting))
@@ -248,6 +251,11 @@ AfterBoundsDetermined:
 		}
 	}
 
+	UPaperGameInstance* GameInstance = GetGameInstance<UPaperGameInstance>();
+	GameInstance->AddSessionAttributeInt64({ L"TeamCount" }, (int64)GameState->TeamCount);
+	GameInstance->AddSessionAttributeString({ L"BoardName" }, { L"Default" });
+
+
 	GameState->Gold.Reserve(GameState->TeamCount);
 	GameState->CastleHP.Reserve(GameState->TeamCount);
 	GameState->CastleHPMax.Reserve(GameState->TeamCount);
@@ -287,7 +295,12 @@ inline FColor* APaperGameMode::ManagedMipMap::GetColorArray() const
 	return ColorArray;
 }
 
-inline const FTexture2DMipMap* APaperGameMode::ManagedMipMap::GetMipMap() const
+const FTexture2DMipMap* APaperGameMode::ManagedMipMap::GetMipMap() const
+{
+	return MipMap;
+}
+
+FTexture2DMipMap* APaperGameMode::ManagedMipMap::GetMipMap()
 {
 	return MipMap;
 }

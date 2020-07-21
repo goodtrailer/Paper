@@ -59,7 +59,8 @@ public:
 	ManagedMipMap(FTexture2DMipMap* Source);
 	~ManagedMipMap();
 	inline FColor* GetColorArray() const;
-	inline const FTexture2DMipMap* GetMipMap() const;
+	const FTexture2DMipMap* GetMipMap() const;
+	FTexture2DMipMap* GetMipMap();
 	FTexture2DMipMap* operator->();
 	FTexture2DMipMap& operator*();
 private:
@@ -69,22 +70,22 @@ private:
 
 namespace ColorCode
 {
-	const FColor SpawnGreen = FColor(0, 127, 14);
-	const FColor SpawnRed = FColor(127, 0, 0);
-	const FColor CastleGreen = FColor(0, 254, 33);
-	const FColor CastleRed = FColor(254, 0, 0);
-	const FColor Wall = FColor(0, 148, 255);
-	const FColor Bounds = FColor(0, 0, 0);
-	const FColor Mine = FColor(255, 216, 0);
-	const FColor Ground = FColor(255, 255, 255);
-	const FColor Hole = FColor(255, 106, 0);
+	const static FColor SpawnGreen(0, 127, 14);
+	const static FColor SpawnRed(127, 0, 0);
+	const static FColor CastleGreen(0, 254, 33);
+	const static FColor CastleRed(254, 0, 0);
+	const static FColor Wall(0, 148, 255);
+	const static FColor Bounds(0, 0, 0);
+	const static FColor Mine(255, 216, 0);
+	const static FColor Ground(255, 255, 255);
+	const static FColor Hole(255, 106, 0);
 
-	const FColor OneWayUL = FColor(72, 1, 255);
-	const FColor OneWayU = FColor(255, 0, 218);
-	const FColor OneWayUR = FColor(178, 1, 255);
-	const FColor OneWayL = FColor(128, 0, 111);
-	const FColor OneWayR = FColor(255, 0, 110);
-	const FColor OneWayDL = FColor(32, 0, 125);
-	const FColor OneWayD = FColor(127, 0, 55);
-	const FColor OneWayDR = FColor(86, 0, 127);
+	const static FColor OneWayUL(72, 1, 255);
+	const static FColor OneWayU(255, 0, 218);
+	const static FColor OneWayUR(178, 1, 255);
+	const static FColor OneWayL(128, 0, 111);
+	const static FColor OneWayR(255, 0, 110);
+	const static FColor OneWayDL(32, 0, 125);
+	const static FColor OneWayD(127, 0, 55);
+	const static FColor OneWayDR(86, 0, 127);
 }
