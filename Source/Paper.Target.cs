@@ -10,7 +10,5 @@ public class PaperTarget : TargetRules
 		Type = TargetType.Game;
 
 		ExtraModuleNames.Add("Paper");
-		if (bBuildEditor)
-			ExtraModuleNames.Add("EOSEdEngine");
 	}
 }

@@ -251,11 +251,6 @@ AfterBoundsDetermined:
 		}
 	}
 
-	UPaperGameInstance* GameInstance = GetGameInstance<UPaperGameInstance>();
-	GameInstance->AddSessionAttributeInt64({ L"TeamCount" }, (int64)GameState->TeamCount);
-	GameInstance->AddSessionAttributeString({ L"BoardName" }, { L"Default" });
-
-
 	GameState->Gold.Reserve(GameState->TeamCount);
 	GameState->CastleHP.Reserve(GameState->TeamCount);
 	GameState->CastleHPMax.Reserve(GameState->TeamCount);

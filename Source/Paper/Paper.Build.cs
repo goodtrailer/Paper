@@ -17,8 +17,7 @@ public class Paper : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
-			"HeadMountedDisplay",
-			"EpicOnlineServicesSDK"
+			"HeadMountedDisplay"
 		});
 	}
 }

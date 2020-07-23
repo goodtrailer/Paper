@@ -11,8 +11,7 @@ public class PaperEditorTarget : TargetRules
 		DefaultBuildSettings = BuildSettingsVersion.V2;
 
 		ExtraModuleNames.AddRange(new string[] {
-			"Paper",
-			"EOSEdEngine"
+			"Paper"
 		});
 	}
 }
