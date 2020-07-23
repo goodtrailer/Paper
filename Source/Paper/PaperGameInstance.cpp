@@ -10,6 +10,7 @@
 
 #include "Misc/FileHelper.h"
 #include "Engine/Texture2D.h"
+#include "Kismet/GameplayStatics.h"
 #include "Windows/WindowsPlatformMisc.h"
 
 void UPaperGameInstance::Shutdown()
@@ -117,7 +118,7 @@ void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, bo
 	EOS_Sessions_CreateSessionModificationOptions SessionModOptions;
 	SessionModOptions.ApiVersion = EOS_SESSIONS_CREATESESSIONMODIFICATION_API_LATEST;
 	SessionModOptions.SessionName = Name;
-	SessionModOptions.BucketId = "";
+	SessionModOptions.BucketId = "paper";						// there isn't a single static/coarse value or identifier for games that would fit other than that the game is paper (acts like the 'game' column in source server lists)
 	SessionModOptions.MaxPlayers = MaxPlayers;
 	SessionModOptions.LocalUserId = EOSProductUserId;
 	SessionModOptions.bPresenceEnabled = false;
@@ -148,11 +149,16 @@ void UPaperGameInstance::EOSSessionCreate(const char* Name, uint8 MaxPlayers, bo
 		EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateSessionOptions, this, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
 		{
 			GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+			GLog->Logf(L"SessionName %s\nSessionId %s", UTF8_TO_TCHAR(Data->SessionName), UTF8_TO_TCHAR(Data->SessionId));
+			// HOSTING A GAME (WITH EOS)
 			if (Data->ResultCode == EOS_EResult::EOS_Success)
 			{
 				(*(UPaperGameInstance*)Data->ClientData).SessionName = Data->SessionName;
 				(*(UPaperGameInstance*)Data->ClientData).SessionId = Data->SessionId;
 				(*(UPaperGameInstance*)Data->ClientData).bIsInSession = true;
+				(*(UPaperGameInstance*)Data->ClientData).PlayerName;
+				FString Options = L"listen?PlayerName=" + (*(UPaperGameInstance*)Data->ClientData).GetPlayerName_FStr();
+				UGameplayStatics::OpenLevel((UPaperGameInstance*)Data->ClientData, L"Episode_01", true, Options);
 			}
 		});
 	}
@@ -165,7 +171,7 @@ void UPaperGameInstance::EOSSessionDestroy()
 	DestroyOptions.SessionName = SessionName.c_str();
 	EOS_Sessions_DestroySession(EOSSessionsHandle, &DestroyOptions, this, [](const EOS_Sessions_DestroySessionCallbackInfo* Data)
 	{
-		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session destroyed with %s.", ANSI_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
 		if (Data->ResultCode == EOS_EResult::EOS_Success)
 		{
 			(*(UPaperGameInstance*)Data->ClientData).SessionName.clear();
@@ -284,7 +290,7 @@ void UPaperGameInstance::AddSessionAttributeString(const FString& Name, const FS
 	UpdateOptions.SessionModificationHandle = SessionModHandle;
 	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
 	{
-		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session attribute added with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
 	});
 }
 
@@ -319,7 +325,7 @@ void UPaperGameInstance::AddSessionAttributeInt64(const FString& Name, int64 Val
 	UpdateOptions.SessionModificationHandle = SessionModHandle;
 	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
 	{
-		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session attribute added with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
 	});
 }
 
@@ -354,6 +360,6 @@ void UPaperGameInstance::AddSessionAttributeBool(const FString& Name, bool Value
 	UpdateOptions.SessionModificationHandle = SessionModHandle;
 	EOS_Sessions_UpdateSession(EOSSessionsHandle, &UpdateOptions, nullptr, [](const EOS_Sessions_UpdateSessionCallbackInfo* Data)
 	{
-		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session updated with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
+		GLog->Logf(Data->ResultCode == EOS_EResult::EOS_Success ? ELogVerbosity::Log : ELogVerbosity::Warning, L"EOS session attribute added with %s.", UTF8_TO_TCHAR(EOS_EResult_ToString(Data->ResultCode)));
 	});
 }

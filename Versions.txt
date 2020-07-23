@@ -2,6 +2,7 @@ Format: Major.Minor.Patch.Revision
 . : Self-explanatory
 + : Done
 - : To do
+/ : Cancelled (or put on hold)
 
 Note: this document is more of a todo-list than a changelog, because my commits are extremely inconsistent. This is a reference for the tags on the GitHub repository.
 
@@ -86,12 +87,15 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ One player per team only
 			+ Choose team via dropdown box instead of an incremental button
 			+ Text chat (all because ue4 literally has 0 functionality (actually for real, i'm not kidding) for logging in shipping builds. what the fuck.)
-		2. EOS server list
-			- Source-engine style server list showing all games online
-			- Runs on Epic Online Services sessions interface, so that online is up 24/7
-			- No more direct IP connections needed (but the option is still available)
-			- Shows map preview in PNG form
-		3. Choosing map as host (using stb_image because ue4 doesn't have an image reading library ?????)
+		/ EOS server list
+			Reason for cancellation: though EOS works for getting external IP addresses of hosts online, there's no way in UE4 to connect to
+				those hosts (due to NAT) unless UE4 gets actual IPv6 support or Epic implements an EOS online subsystem like they did with 
+				Steamworks. Otherwise, Paper would need a dedicated server for UDP hole punching, or it would have to be put onto Steam to
+				gain access to Steamworks, but both of those options cost a decent sum of money.
+			/ Source-engine style server list showing all games online
+			/ Runs on Epic Online Services sessions interface, so that online is up 24/7
+			/ No more direct IP connections needed (but the option is still available)
+		2. Choosing map as host (using stb_image because ue4 doesn't have an image reading library ?????)
 			.
 	8. Units part 2
 		0. Miners

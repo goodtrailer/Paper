@@ -34,31 +34,39 @@ void UEOSEdEngine::Init(IEngineLoop* InEngineLoop)
 	EOS_Logging_SetCallback([](const EOS_LogMessage* InLogMessage)
 	{
 		FString LogLevelString;
+		ELogVerbosity::Type LogVerbosity;
 		switch (InLogMessage->Level)
 		{
 		case EOS_ELogLevel::EOS_LOG_Error:
 			LogLevelString = "Error";
+			LogVerbosity = ELogVerbosity::Warning;
 			break;
 		case EOS_ELogLevel::EOS_LOG_Fatal:
 			LogLevelString = "Fatal";
+			LogVerbosity = ELogVerbosity::Warning;
 			break;
 		case EOS_ELogLevel::EOS_LOG_Info:
 			LogLevelString = "Info";
+			LogVerbosity = ELogVerbosity::Log;
 			break;
 		case EOS_ELogLevel::EOS_LOG_Verbose:
 			LogLevelString = "Verbose";
+			LogVerbosity = ELogVerbosity::Log;
 			break;
 		case EOS_ELogLevel::EOS_LOG_VeryVerbose:
 			LogLevelString = "VeryVerbose";
+			LogVerbosity = ELogVerbosity::Log;
 			break;
 		case EOS_ELogLevel::EOS_LOG_Warning:
 			LogLevelString = "Warning";
+			LogVerbosity = ELogVerbosity::Warning;
 			break;
 		default:
 			LogLevelString = "Unknown";
+			LogVerbosity = ELogVerbosity::Warning;
 		}
 		// i.e. EOS_LOG LogEOSP2P (Verbose): Using Port Range 7777-7876 for P2P traffic
-		GLog->Logf(L"EOS_LOG %s (%s): %s", ANSI_TO_TCHAR(InLogMessage->Category), *LogLevelString, ANSI_TO_TCHAR(InLogMessage->Message));
+		GLog->Logf(LogVerbosity, L"EOS_LOG %s (%s): %s", ANSI_TO_TCHAR(InLogMessage->Category), *LogLevelString, ANSI_TO_TCHAR(InLogMessage->Message));
 	});
 	EOS_Logging_SetLogLevel(EOS_ELogCategory::EOS_LC_ALL_CATEGORIES, EOS_ELogLevel::EOS_LOG_Warning);
 }
