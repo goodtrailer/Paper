@@ -62,13 +62,17 @@ void APaperPlayerController::StartGame()
 	}
 
 	Server_SetInGame(true);
+
+	CameraPawn->ResetPosition();
+
+	// switch ui and update all the widgets
 	LobbyInterface->RemoveFromViewport();
 	UserInterface->AddToViewport();
 	UserInterface->UpdateTurn(GetPaperPlayerState()->IsTurn());
 	UserInterface->UpdateGold(GameState->GetGold(GetPaperPlayerState()->Team));
 	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
 	
-	// thanks legacy wiki :)
+	// Log to other players that player has joined the game as <team>. thanks legacy wiki :)
 	FString TeamString;
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("ETeam"), true);
 	if (!EnumPtr)

@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "LobbyUserInterface.h"
 #include "ChatUserInterface.h"
+#include "BoardPreviewUserInterface.h"
 #include "PaperPlayerController.h"
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
@@ -203,4 +204,25 @@ void APaperGameState::OnRep_Turn()
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 		if (LocalPC->bInGame)
 			LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
+}
+
+void APaperGameState::OnRep_CroppedBoardLayout()
+{
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+	{
+		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
+			if (UBoardPreviewUserInterface* BoardPreviewUI = LobbyUI->BoardPreviewInterface)
+			{
+				UTexture2D* BoardPreviewTexture = UTexture2D::CreateTransient(BoardWidth, BoardHeight);
+				FColor* BoardPreviewMip = reinterpret_cast<FColor*>(BoardPreviewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+				FMemory::Memcpy(BoardPreviewMip, CroppedBoardLayout.GetData(), BoardWidth * BoardHeight * sizeof(FColor));
+				BoardPreviewTexture->PlatformData->Mips[0].BulkData.Unlock();
+				BoardPreviewMip = nullptr;
+				BoardPreviewTexture->Filter = TF_Nearest;
+				BoardPreviewTexture->UpdateResource();
+				BoardPreviewUI->UpdateBoardPreview(BoardPreviewTexture);
+				GLog->Logf(L"BoardWidth %d\nBoardHeight %d", BoardWidth, BoardHeight);
+			}
+		LocalPC->ResetCameraPosition();
+	}
 }

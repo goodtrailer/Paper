@@ -13,11 +13,6 @@
 				"CoreUObject",
 				"UMG"
 			]
-		},
-		{
-			"Name": "EOSEdEngine",
-			"Type": "Editor",
-			"LoadingPhase": "Default"
 		}
 	]
 }

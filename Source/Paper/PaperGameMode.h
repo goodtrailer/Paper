@@ -20,7 +20,10 @@ protected:
 	struct ManagedMipMap;
 
 	bool ColorsNearlyEqual(FColor, FColor);			// Somewhat unnecessary since the switch to pngs. Was previously used due to jpg compression.
-	void ParseBoardLayout(UTexture2D*);				// Sets values in PaperGameState
+	UFUNCTION(BlueprintCallable)
+	void ParseBoardLayoutTexture(const UTexture2D* Texture);				// Sets values in PaperGameState
+	UFUNCTION(BlueprintCallable)
+	void ParseBoardLayoutFile(const FString& Filename);
 	APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	void Logout(AController* Exiting) override;
 
@@ -35,8 +38,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> SpawnBP;
 
-	UPROPERTY(EditAnywhere, Category = "Misc")
-	class UTexture2D* DefaultBoardLayoutTexture;
 	UPROPERTY(EditAnywhere, Category = "Misc")
 	float ColorsNearlyEqualThreshold;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")

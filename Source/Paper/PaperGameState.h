@@ -83,7 +83,9 @@ protected:
 	void OnRep_Turn();
 	UFUNCTION()
 	void OnRep_Gold();
-	
+	UFUNCTION()
+	void OnRep_CroppedBoardLayout();
+
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Victory(ETeam Team);
 	UFUNCTION(NetMulticast, Reliable)
@@ -95,6 +97,6 @@ protected:
 	int BoardWidth;
 	UPROPERTY(Replicated)
 	int BoardHeight;
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_CroppedBoardLayout)
 	TArray<FColor> CroppedBoardLayout;
 };

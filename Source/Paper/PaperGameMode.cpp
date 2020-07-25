@@ -21,7 +21,6 @@ void APaperGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 	GameState = GetGameState<APaperGameState>();
-	ParseBoardLayout(DefaultBoardLayoutTexture);
 }
 
 void APaperGameMode::BeginGame()
@@ -201,9 +200,9 @@ void APaperGameMode::Logout(AController* Exiting)
 	}
 }
 
-void APaperGameMode::ParseBoardLayout(UTexture2D* BoardLayout)
+void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 {
-	ManagedMipMap ManagedBoardLayoutMipMap(&BoardLayout->PlatformData->Mips[0]);
+	ManagedMipMap ManagedBoardLayoutMipMap(&Texture->PlatformData->Mips[0]);
 	int BoardLayoutBounds[2][2];
 	int& BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
 	
@@ -236,8 +235,10 @@ AfterBoundsDetermined:
 	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
 	{
 		// fill in CroppedBoardLayout values
-		GameState->CroppedBoardLayout.Add(ManagedBoardLayoutMipMap.GetColorArray()[i % GameState->BoardWidth + BoardLayoutBounds[0][0] + (i / GameState->BoardWidth + BoardLayoutBounds[0][1]) * BoardLayoutWidth]);
-		
+		FColor Color = ManagedBoardLayoutMipMap.GetColorArray()[i % GameState->BoardWidth + BoardLayoutBounds[0][0] + (i / GameState->BoardWidth + BoardLayoutBounds[0][1]) * BoardLayoutWidth];
+		Color.A = UINT8_MAX;
+		GameState->CroppedBoardLayout.Add(Color);
+
 		// increment TeamCount accordingly
 		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
 		{
@@ -251,6 +252,8 @@ AfterBoundsDetermined:
 		}
 	}
 
+	GameState->OnRep_CroppedBoardLayout();
+
 	GameState->Gold.Reserve(GameState->TeamCount);
 	GameState->CastleHP.Reserve(GameState->TeamCount);
 	GameState->CastleHPMax.Reserve(GameState->TeamCount);
@@ -263,6 +266,11 @@ AfterBoundsDetermined:
 		GameState->TeamStatuses.Add(EStatus::Open);
 	}
 	GameState->PassiveIncome = StartingPassiveIncome;
+
+}
+
+void APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
+{
 
 }
 
