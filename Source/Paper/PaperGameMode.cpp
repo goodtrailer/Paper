@@ -11,6 +11,7 @@
 #include "Engine/Texture2D.h"
 #include "Kismet/GameplayStatics.h"
 #include "EngineUtils.h"
+#include "stb_image.h"
 
 APaperGameMode::APaperGameMode()
 {
@@ -205,6 +206,13 @@ void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 	ManagedMipMap ManagedBoardLayoutMipMap(&Texture->PlatformData->Mips[0]);
 	int BoardLayoutBounds[2][2];
 	int& BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
+	// reset values in case this wasn't the first time a board was chosen
+	GameState->CroppedBoardLayout.Empty();
+	GameState->Gold.Empty();
+	GameState->CastleHP.Empty();
+	GameState->CastleHPMax.Empty();
+	GameState->TeamStatuses.Empty();
+	GameState->TeamCount = 0;
 	
 	// quickly run through texture to determine bounds
 	{
@@ -235,9 +243,7 @@ AfterBoundsDetermined:
 	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
 	{
 		// fill in CroppedBoardLayout values
-		FColor Color = ManagedBoardLayoutMipMap.GetColorArray()[i % GameState->BoardWidth + BoardLayoutBounds[0][0] + (i / GameState->BoardWidth + BoardLayoutBounds[0][1]) * BoardLayoutWidth];
-		Color.A = UINT8_MAX;
-		GameState->CroppedBoardLayout.Add(Color);
+		GameState->CroppedBoardLayout.Add(ManagedBoardLayoutMipMap.GetColorArray()[i % GameState->BoardWidth + BoardLayoutBounds[0][0] + (i / GameState->BoardWidth + BoardLayoutBounds[0][1]) * BoardLayoutWidth]);
 
 		// increment TeamCount accordingly
 		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
@@ -269,9 +275,131 @@ AfterBoundsDetermined:
 
 }
 
-void APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
+bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
 {
+	// backup game state values in case things go wrong
+	auto BackupCroppedBoardLayout = GameState->CroppedBoardLayout;
+	auto BackupGold = GameState->Gold;
+	auto BackupCastleHP = GameState->CastleHP;
+	auto BackupCastleHPMax = GameState->CastleHPMax;
+	auto BackupTeamStatuses = GameState->TeamStatuses;
+	auto BackupTeamCount = GameState->TeamCount;
 
+	// reset values in case this wasn't the first time a board was chosen
+	GameState->CroppedBoardLayout.Empty();
+	GameState->Gold.Empty();
+	GameState->CastleHP.Empty();
+	GameState->CastleHPMax.Empty();
+	GameState->TeamStatuses.Empty();
+	GameState->TeamCount = 0;
+
+
+	constexpr int PNG_CHANNEL_COUNT = 4;
+	int BoardLayoutWidth, BoardLayoutHeight, ChannelCount;
+	uint8* BoardImage = stbi_load(TCHAR_TO_UTF8(*Filename), &BoardLayoutWidth, &BoardLayoutHeight, &ChannelCount, PNG_CHANNEL_COUNT);
+	// image could not be processed or was not a 32 bit png, so invalid.
+	if (!BoardImage || ChannelCount != PNG_CHANNEL_COUNT)
+		goto RestoreGameStateValues;
+	
+
+	// quickly run through texture to determine bounds
+	int BoardLayoutBounds[2][2];
+	{
+		uint8 CurrentBound = 0;
+		for (int x = 0; x < BoardLayoutWidth; x++)
+			for (int y = 0; y < BoardLayoutHeight; y++)
+				if (ColorsNearlyEqual(ColorCode::Bounds,
+					// Use FColor constructor instead of reinterpret_casting to FColor* because FColor is BGRA not RGBA
+					{
+						BoardImage[4 * (x + y * BoardLayoutWidth)],					// R
+						BoardImage[4 * (x + y * BoardLayoutWidth) + 1],				// G
+						BoardImage[4 * (x + y * BoardLayoutWidth) + 2],				// B
+						BoardImage[4 * (x + y * BoardLayoutWidth) + 3]				// A
+					}))
+				{
+
+					BoardLayoutBounds[CurrentBound][0] = x;
+					BoardLayoutBounds[CurrentBound][1] = y;
+					if (CurrentBound)
+						goto AfterBoundsDetermined;				// breaking out of nested loops. goto is okay here says stackoverflow
+					else
+						CurrentBound++;
+				}
+
+		// not enough bounds were detected to goto AfterBoundsDetermined, so invalid.
+		goto RestoreGameStateValues;
+	}
+
+AfterBoundsDetermined:
+	BoardLayoutBounds[0][0]++; BoardLayoutBounds[0][1]++; BoardLayoutBounds[1][0]--; BoardLayoutBounds[1][1]--; // crop unused outline around playable board
+
+	GameState->BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
+	GameState->BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
+
+	// board width/height aren't positive, so invalid.
+	if (GameState->BoardWidth <= 0 || GameState->BoardHeight <= 0)
+		goto RestoreGameStateValues;
+
+	GameState->CroppedBoardLayout.Reserve(GameState->BoardWidth * GameState->BoardHeight);
+
+	// inefficient because processing texture a second time... too bad!
+	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
+	{
+		// fill in CroppedBoardLayout values
+		int x = i % GameState->BoardWidth + BoardLayoutBounds[0][0];
+		int y = (i / GameState->BoardWidth + BoardLayoutBounds[0][1]);
+		GameState->CroppedBoardLayout.Add({
+			BoardImage[4 * (x + y * BoardLayoutWidth)],
+			BoardImage[4 * (x + y * BoardLayoutWidth) + 1], 
+			BoardImage[4 * (x + y * BoardLayoutWidth) + 2],
+			BoardImage[4 * (x + y * BoardLayoutWidth) + 3]
+		});
+
+		// increment TeamCount accordingly
+		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Green))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Green) + 1;			// ETeam values start a 0, and we want the count, so add 1
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
+		}
+	}
+
+	// if there were no board spawns, then invalid.
+	if (!GameState->TeamCount)
+		goto RestoreGameStateValues;
+
+	GameState->OnRep_CroppedBoardLayout();
+
+	GameState->Gold.Reserve(GameState->TeamCount);
+	GameState->CastleHP.Reserve(GameState->TeamCount);
+	GameState->CastleHPMax.Reserve(GameState->TeamCount);
+	GameState->TeamStatuses.Reserve(GameState->TeamCount);
+	for (uint8 i = 0; i < GameState->TeamCount; i++)
+	{
+		GameState->Gold.Add(StartingGold);
+		GameState->CastleHP.Add(StartingCastleHP);
+		GameState->CastleHPMax.Add(StartingCastleHPMax);
+		GameState->TeamStatuses.Add(EStatus::Open);
+	}
+	GameState->PassiveIncome = StartingPassiveIncome;
+
+	// everything went well, so valid.
+	stbi_image_free(BoardImage);
+	return true;
+
+RestoreGameStateValues:
+	stbi_image_free(BoardImage);
+	GameState->CroppedBoardLayout = BackupCroppedBoardLayout;
+	GameState->Gold = BackupGold;
+	GameState->CastleHP = BackupCastleHP;
+	GameState->CastleHPMax = BackupCastleHPMax;
+	GameState->TeamStatuses = BackupTeamStatuses;
+	GameState->TeamCount = BackupTeamCount;
+	return false;
 }
 
 bool APaperGameMode::ColorsNearlyEqual(FColor a, FColor b)

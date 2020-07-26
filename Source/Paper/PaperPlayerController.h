@@ -40,6 +40,8 @@ public:
 	void ResetCameraPosition();
 	UFUNCTION(BlueprintCallable)
 	void StartGame();
+	UFUNCTION(BlueprintCallable)
+	const FString OpenFile(const FString& Title, const FString& DefaultPath, const TArray<FString>& FileTypes);
 
 	UPROPERTY(BlueprintReadWrite)
 	class UPaperUserInterface* UserInterface;

@@ -17,7 +17,9 @@ public class Paper : ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
-			"HeadMountedDisplay"
+			"HeadMountedDisplay",
+			"stb",
+			"pfd"
 		});
 	}
 }

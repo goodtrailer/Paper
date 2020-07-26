@@ -13,6 +13,7 @@
 #include "GameFramework/PlayerInput.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
+#include "portable-file-dialogs.h"
 
 APaperPlayerController::APaperPlayerController()
 {
@@ -555,6 +556,21 @@ void APaperPlayerController::Server_SendMessage_Implementation(const FText& Mess
 
 	FText SignedMessage = FText::Format<FText, FText>(FText::FromString("{0}: {1}"), Signature, Message);
 	GameState->Multicast_Message(SignedMessage);
+}
+
+const FString APaperPlayerController::OpenFile(const FString& Title, const FString& DefaultPath, const TArray<FString>& FileTypes)
+{
+
+	if (!FPaths::DirectoryExists(DefaultPath))
+		IFileManager::Get().MakeDirectory(*DefaultPath);
+
+	std::vector<std::string> FileTypesVec;
+	FileTypesVec.reserve(FileTypes.Num());
+	for (auto& String : FileTypes)
+		FileTypesVec.emplace_back(TCHAR_TO_ANSI(*String));
+
+	std::vector<std::string> selection = pfd::open_file::open_file(TCHAR_TO_ANSI(*Title), TCHAR_TO_ANSI(*DefaultPath), FileTypesVec).result();
+	return FString(selection.empty() ? L"" : ANSI_TO_TCHAR(selection[0].c_str()));
 }
 
 
