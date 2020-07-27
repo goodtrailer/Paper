@@ -73,8 +73,16 @@ namespace ColorCode
 {
 	const static FColor SpawnGreen(0, 127, 14);
 	const static FColor SpawnRed(127, 0, 0);
+	const static FColor SpawnPurple(107, 63, 127);
+	const static FColor SpawnBrown(127, 89, 63);
+	const static FColor SpawnWhite(160, 160, 160);
+	const static FColor SpawnBlack(48, 48, 48);
 	const static FColor CastleGreen(0, 254, 33);
 	const static FColor CastleRed(254, 0, 0);
+	const static FColor CastlePurple(161, 127, 255);
+	const static FColor CastleBrown(255, 178, 127);
+	const static FColor CastleWhite(192, 192, 192);
+	const static FColor CastleBlack(64, 64, 64);
 	const static FColor Wall(0, 148, 255);
 	const static FColor Bounds(0, 0, 0);
 	const static FColor Mine(255, 216, 0);

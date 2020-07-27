@@ -11,6 +11,10 @@ enum class ETeam : uint8
 {
 	Green,
 	Red,
+	Purple,
+	Brown,
+	White,
+	Black,
 	Neutral
 };
 

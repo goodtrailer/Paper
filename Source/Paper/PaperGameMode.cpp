@@ -116,8 +116,6 @@ void APaperGameMode::BeginGame()
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Green;
 					spawn->Build(ETeam::Green);
-
-					GLog->Logf(TEXT("Green Spawn: (%d, %d)"), i % BoardWidth, i / BoardWidth);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
 				{
@@ -126,8 +124,38 @@ void APaperGameMode::BeginGame()
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Red;
 					spawn->Build(ETeam::Red);
-
-					GLog->Logf(TEXT("Red Spawn: (%d, %d)"), i % BoardWidth, i / BoardWidth);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnPurple))
+				{
+					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::Purple)].Spawns.Push(spawn);
+					spawn->Coordinates = i;
+					spawn->Team = ETeam::Purple;
+					spawn->Build(ETeam::Purple);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBrown))
+				{
+					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::Brown)].Spawns.Push(spawn);
+					spawn->Coordinates = i;
+					spawn->Team = ETeam::Brown;
+					spawn->Build(ETeam::Brown);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnWhite))
+				{
+					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::White)].Spawns.Push(spawn);
+					spawn->Coordinates = i;
+					spawn->Team = ETeam::White;
+					spawn->Build(ETeam::White);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBlack))
+				{
+					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
+					GameState->BoardSpawns[static_cast<uint8>(ETeam::Black)].Spawns.Push(spawn);
+					spawn->Coordinates = i;
+					spawn->Team = ETeam::Black;
+					spawn->Build(ETeam::Black);
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleGreen))
 				{
@@ -140,6 +168,30 @@ void APaperGameMode::BeginGame()
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
 					UnitBoard[i]->Build(ETeam::Red);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastlePurple))
+				{
+					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
+					UnitBoard[i]->Coordinates = i;
+					UnitBoard[i]->Build(ETeam::Purple);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBrown))
+				{
+					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
+					UnitBoard[i]->Coordinates = i;
+					UnitBoard[i]->Build(ETeam::Brown);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleWhite))
+				{
+					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
+					UnitBoard[i]->Coordinates = i;
+					UnitBoard[i]->Build(ETeam::White);
+				}
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBlack))
+				{
+					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
+					UnitBoard[i]->Coordinates = i;
+					UnitBoard[i]->Build(ETeam::Black);
 				}
 			}
 			GroundBoard[i]->Build(ETeam::Neutral);
@@ -256,6 +308,26 @@ AfterBoundsDetermined:
 			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
 				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
 		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Purple))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Purple) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Brown))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Brown) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::White))
+				GameState->TeamCount = static_cast<uint8>(ETeam::White) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Black))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Black) + 1;
+		}
 	}
 
 	GameState->OnRep_CroppedBoardLayout();
@@ -272,7 +344,6 @@ AfterBoundsDetermined:
 		GameState->TeamStatuses.Add(EStatus::Open);
 	}
 	GameState->PassiveIncome = StartingPassiveIncome;
-
 }
 
 bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
@@ -350,10 +421,10 @@ AfterBoundsDetermined:
 		int y = (i / GameState->BoardWidth + BoardLayoutBounds[0][1]);
 		GameState->CroppedBoardLayout.Add({
 			BoardImage[4 * (x + y * BoardLayoutWidth)],
-			BoardImage[4 * (x + y * BoardLayoutWidth) + 1], 
+			BoardImage[4 * (x + y * BoardLayoutWidth) + 1],
 			BoardImage[4 * (x + y * BoardLayoutWidth) + 2],
 			BoardImage[4 * (x + y * BoardLayoutWidth) + 3]
-		});
+			});
 
 		// increment TeamCount accordingly
 		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
@@ -365,6 +436,26 @@ AfterBoundsDetermined:
 		{
 			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
 				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Purple))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Purple) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Brown))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Brown) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::White))
+				GameState->TeamCount = static_cast<uint8>(ETeam::White) + 1;
+		}
+		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
+		{
+			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Black))
+				GameState->TeamCount = static_cast<uint8>(ETeam::Black) + 1;
 		}
 	}
 

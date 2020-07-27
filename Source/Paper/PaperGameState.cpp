@@ -221,7 +221,6 @@ void APaperGameState::OnRep_CroppedBoardLayout()
 				BoardPreviewTexture->Filter = TF_Nearest;
 				BoardPreviewTexture->UpdateResource();
 				BoardPreviewUI->UpdateBoardPreview(BoardPreviewTexture);
-				GLog->Logf(L"BoardWidth %d\nBoardHeight %d", BoardWidth, BoardHeight);
 			}
 		LocalPC->ResetCameraPosition();
 	}
