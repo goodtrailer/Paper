@@ -101,7 +101,8 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Select file from disk (using portable-file-dialog single-header-lib)
 			+ New map 2p_koth
 			+ Support for 6 teams in custom maps (green, red, purple, brown, white, black)
-			+ New map 3p_
+			+ Map making palette menu
+			- New map 4p_grand
 	8. Units part 2
 		0. Miners
 		1. Castles
