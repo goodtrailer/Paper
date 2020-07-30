@@ -104,6 +104,9 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Map making palette menu
 			+ New map 4p_mountain
 			+ New map 4p_mountain_1
+			+ Separate mouse up and mouse down events (to prevent visual bug where selecting ally unit while attacking then causes the movement
+			overlay to reverse inputs, hard to explain)
+			+ Fix defeat screen for clients that were defeated but there are still other players in the game
 	8. Units part 2
 		0. Miners
 		1. Castles
@@ -123,12 +126,9 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Rich text for passive text
 			- Visuals on attacking (i.e. a little red bubble or something)
 			- Rebindable hotkeys + optional RTS movement styles
-			- Optional MSI (ZIP still included alongside it)
 			- Select which spawn to spawn units at
 			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
 			- Death particle effects (animation is out of scope)
-			- Separate mouse up and mouse down events (to prevent visual bug where selecting ally unit while attacking then causes the movement
-			overlay to reverse inputs, hard to explain)
 			- US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams

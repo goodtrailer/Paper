@@ -96,7 +96,7 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
 	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
-	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::SelectUnit);		// wonder if this works lol
+	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::ActUnit);
 	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
 	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
 	InputComponent->BindAction("Chat", IE_Pressed, this, &APaperPlayerController::FocusChatbox);
@@ -260,6 +260,7 @@ void APaperPlayerController::SelectUnit()
 	if (!bInGame)
 		return;
 
+	// Move unit
 	if (bMovableOverlayOn)
 	{
 		if (SelectedUnit && HoveredUnit)
@@ -269,12 +270,14 @@ void APaperPlayerController::SelectUnit()
 		MovableOverlayOff();
 		UpdateSelectedUnit();
 	}
+	// Attack unit
 	else if (bAttackableOverlayOn)
 	{
 		Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
 		AttackableOverlayOff();
 		UpdateSelectedUnit();
 	}
+	// Select unit
 	else
 	{
 		// Assign SelectedUnit
@@ -300,6 +303,31 @@ void APaperPlayerController::SelectUnit()
 			MovableOverlayOn();
 		}
 	}
+}
+
+void APaperPlayerController::ActUnit()
+{
+	if (!bInGame)
+		return;
+
+	// Move unit
+	if (bMovableOverlayOn)
+	{
+		if (SelectedUnit && HoveredUnit)
+		{
+			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
+		}
+		MovableOverlayOff();
+		UpdateSelectedUnit();
+	}
+	// Attack unit
+	else if (bAttackableOverlayOn)
+	{
+		Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
+		AttackableOverlayOff();
+		UpdateSelectedUnit();
+	}
+	// No select unit, to prevent mouse up on ally unit from making overlay flip inputs
 }
 
 inline void APaperPlayerController::UpdateSelectedUnit()

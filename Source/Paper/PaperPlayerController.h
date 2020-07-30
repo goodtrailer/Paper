@@ -66,6 +66,7 @@ protected:
 	void MouseY(float);
 	void Debug();
 	void SelectUnit();
+	void ActUnit();
 	inline void UpdateSelectedUnit();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveUnit(int Origin, int Destination);
