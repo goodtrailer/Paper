@@ -213,6 +213,7 @@ void APaperGameState::OnRep_CroppedBoardLayout()
 		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
 			if (UBoardPreviewUserInterface* BoardPreviewUI = LobbyUI->BoardPreviewInterface)
 			{
+				GLog->Logf(L"BoardWidth %d, BoardHeight %d", BoardWidth, BoardHeight);
 				UTexture2D* BoardPreviewTexture = UTexture2D::CreateTransient(BoardWidth, BoardHeight);
 				FColor* BoardPreviewMip = reinterpret_cast<FColor*>(BoardPreviewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
 				FMemory::Memcpy(BoardPreviewMip, CroppedBoardLayout.GetData(), BoardWidth * BoardHeight * sizeof(FColor));
