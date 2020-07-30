@@ -102,11 +102,14 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ New map 2p_koth
 			+ Support for 6 teams in custom maps (green, red, purple, brown, white, black)
 			+ Map making palette menu
-			- New map 4p_grand
+			+ New map 4p_mountain
+			+ New map 4p_mountain_1
 	8. Units part 2
 		0. Miners
 		1. Castles
 			- New models (instead of flipped wall asset)
+		2. Mines
+			- New icon
 		2. Knight
 			- Add animation
 1. Release
@@ -124,4 +127,12 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Select which spawn to spawn units at
 			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
 			- Death particle effects (animation is out of scope)
-			- Separate mouse up and mouse down events (to prevent visual bug where selecting ally unit while attacking then causes the movement overlay to reverse inputs, hard to explain)
+			- Separate mouse up and mouse down events (to prevent visual bug where selecting ally unit while attacking then causes the movement
+			overlay to reverse inputs, hard to explain)
+			- US delay timer that scales based off unit count:
+				let m represent the main time in seconds
+				let t represent the number of teams
+				let d represent the delay in seconds
+				let u represent the number of units a player controls
+				m = 120 + 12t
+				d = 10u + 25

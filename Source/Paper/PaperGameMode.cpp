@@ -218,8 +218,6 @@ APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRo
 	if (DesignatedName == "")
 		DesignatedName = UGameplayStatics::ParseOption(Options, "Name");
 
-	GLog->Logf(TEXT("DESIGNATED NAME: %s"), *DesignatedName);
-
 	if (NameCount.Contains(DesignatedName))
 	{
 		FString Suffix = "_";
@@ -231,8 +229,6 @@ APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRo
 
 	if (APaperPlayerState* PS = PC->GetPlayerState<APaperPlayerState>())
 		PS->SetName(DesignatedName);
-	else
-		GLog->Log(TEXT("PS does not exist!"));
 
 	if (GameState)
 		GameState->Multicast_Message(FText::FromString(DesignatedName + " entered the lobby."));

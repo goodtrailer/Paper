@@ -41,13 +41,11 @@ void ACameraPawn::Tick(float DeltaTime)
 void ACameraPawn::ZoomIn()
 {
 	SpringArm->TargetArmLength -= ZoomSensitivity * SpringArm->TargetArmLength / 10;
-//	Cast<UCameraComponent>(RootComponent->GetChildComponent(0)->GetChildComponent(0))->OrthoWidth -= ZoomSensitivity;
 }
 
 void ACameraPawn::ZoomOut()
 {
 	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength / 10;
-//	Cast<UCameraComponent>(RootComponent->GetChildComponent(0)->GetChildComponent(0))->OrthoWidth += ZoomSensitivity;
 }
 
 void ACameraPawn::ResetPosition()

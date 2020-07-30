@@ -57,10 +57,7 @@ void APaperPlayerController::BeginPlay()
 void APaperPlayerController::StartGame()
 {
 	if (!GameState || !GetPlayerState<APlayerState>())
-	{
-		GLog->Log(TEXT("Loading..."));
 		return;
-	}
 
 	Server_SetInGame(true);
 
