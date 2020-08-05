@@ -24,7 +24,7 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Attack(AUnit* Attacker, AUnit* Victim);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_ChangeTeam(ETeam Team); 
+	void Server_ChangeTeam(ETeam Team);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SendMessage(const FText& Message);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -51,7 +51,7 @@ public:
 	class UChatUserInterface* ChatInterface;
 	UPROPERTY(Replicated)
 	bool bInGame;				// can't be put in PaperPlayerState because it needs to be used immediately. Also, no other player needs to know this value, only the server does.
-	
+
 protected:
 	void BeginPlay() override;
 	void PlayerTick(float) override;
@@ -121,7 +121,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> AttackableOverlayBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
-	TSubclassOf<class UPaperUserInterface> UserInterfaceBP;	
+	TSubclassOf<class UPaperUserInterface> UserInterfaceBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
 	TSubclassOf<class ULobbyUserInterface> LobbyInterfaceBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")

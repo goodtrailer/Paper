@@ -36,12 +36,16 @@ public:
 	int GetGold(ETeam Team) const;
 	UFUNCTION(BlueprintCallable)
 	class AUnit* GetBoardSpawn(ETeam team, int index) const;
+	UFUNCTION(BlueprintCallable)
+	class AUnit* GetUnit(const FIntPoint& CoordinatesVector);
 	
 	UFUNCTION(BlueprintCallable)
 	void Defeat(ETeam DefeatedTeam);
 	void EndTurn();
 	
+	UFUNCTION(BlueprintCallable)
 	void SetGold(ETeam Team, int NewAmount);
+	UFUNCTION(BlueprintCallable)
 	void ChangeGold(ETeam Team, int DeltaGold);
 
 	UFUNCTION(NetMulticast, Reliable)

@@ -12,6 +12,18 @@
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
 
+AUnit* APaperGameState::GetUnit(const FIntPoint& CoordinatesVector)
+{
+	if (CoordinatesVector.X < 0
+		|| CoordinatesVector.X >= BoardWidth
+		|| CoordinatesVector.Y < 0
+		|| CoordinatesVector.Y >= BoardHeight)
+		return nullptr;
+
+	return UnitBoard[CoordinatesVector.X + CoordinatesVector.Y * BoardWidth];
+
+}
+
 void APaperGameState::Defeat(ETeam DefeatedTeam)
 {
 	if (static_cast<uint8>(DefeatedTeam) < TeamCount)

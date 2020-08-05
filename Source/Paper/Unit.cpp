@@ -257,6 +257,14 @@ void AUnit::SetHP(uint8 a)
 
 uint8 AUnit::GetEnergyMax() const { return EnergyMax; }
 
+FIntPoint AUnit::GetCoordinatesVector()
+{
+	if (APaperGameState* GS = GetWorld()->GetGameState<APaperGameState>())
+		return { Coordinates % GS->GetBoardWidth(), Coordinates / GS->GetBoardWidth() };
+	else
+		return { -1, -1 };
+}
+
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -273,17 +281,4 @@ void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AUnit, HP)
 	DOREPLIFETIME(AUnit, HPMax)
 	DOREPLIFETIME(AUnit, PassiveString)
-}
-
-bool AUnit::IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer)
-{
-	return false;
-	/*if (APaperPlayerController* PC = Cast<APaperPlayerController>(ConnectionOwnerNetViewer.InViewer))
-	{
-		if (PC->bInGame)
-		{
-			return false;
-		}
-	}
-	return true;*/
 }

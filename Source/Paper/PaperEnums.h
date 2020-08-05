@@ -27,7 +27,11 @@ enum class EType : uint8
 	Ground,
 	Mine,
 	Knight,			//5
-	Castle
+	Castle,
+	Miner
+
+
+					//10
 };
 
 UENUM(BlueprintType)

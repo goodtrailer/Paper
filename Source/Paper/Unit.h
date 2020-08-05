@@ -41,7 +41,6 @@ public:
 	UFUNCTION()
 	void OnRep_RecordedStat();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
-	bool IsReplicationPausedForConnection(const FNetViewer& ConnectionOwnerNetViewer) override;
 	// on the bright side, blueprintcallable ufunctions can be virtual
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHP() const;
@@ -51,6 +50,8 @@ public:
 	virtual void SetHP(uint8 a);
 	UFUNCTION(BlueprintCallable)
 	uint8 GetEnergyMax() const;
+	UFUNCTION(BlueprintCallable)
+	FIntPoint GetCoordinatesVector();			// Returns an FIntPoint, which is essentially an FIntVector2, except FIntVector2 does not exist in the API. FIntVector and FIntVector4 are, though, which is strange.
 
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;

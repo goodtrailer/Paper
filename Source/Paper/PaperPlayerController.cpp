@@ -69,7 +69,7 @@ void APaperPlayerController::StartGame()
 	UserInterface->UpdateTurn(GetPaperPlayerState()->IsTurn());
 	UserInterface->UpdateGold(GameState->GetGold(GetPaperPlayerState()->Team));
 	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
-	
+
 	// Log to other players that player has joined the game as <team>. thanks legacy wiki :)
 	FString TeamString;
 	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, TEXT("ETeam"), true);
@@ -115,7 +115,7 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 	GetHitResultUnderCursor(ECC_GameTraceChannel1, false, Hit);
 	HoveredUnit = Cast<AUnit>(Hit.GetActor());
 
-	
+
 	if (LastHoveredUnit != HoveredUnit)
 	{
 		// Show/hide/switch hover, attack, and move overlays
@@ -410,7 +410,7 @@ void APaperPlayerController::MovableOverlayOn()
 
 		// determine movable tiles
 		SelectedUnit->DetermineMovableTiles(MovableTiles);
-		
+
 		for (auto& MovableTile : MovableTiles)				// instantiate movable overlays for each determined movable tile
 			MovableOverlayArray.Add(GetWorld()->SpawnActor<AActor>(MovableOverlayBP, FVector((MovableTile.Key % GameState->GetBoardWidth()) * 200.f, (MovableTile.Key / GameState->GetBoardWidth()) * 200.f, 200.f), FRotator::ZeroRotator));
 	}
@@ -474,7 +474,7 @@ void APaperPlayerController::AttackableOverlayOn()
 	{
 		bAttackableOverlayOn = true;
 		LastHoveredUnit = nullptr;		//update overlays on next tick
-		
+
 		SelectedUnit->DetermineAttackableTiles(ReachableTiles, AttackableTiles);					// COSMETIC CALCULATIONS
 		for (auto& Coord : ReachableTiles)
 			if (GameState->UnitBoard[Coord] == nullptr || AttackableTiles.Contains(Coord))
@@ -537,7 +537,7 @@ bool APaperPlayerController::Server_ChangeTeam_Validate(ETeam Team)
 
 void APaperPlayerController::Server_ChangeTeam_Implementation(ETeam Team)			// checks are to prevent clients from setting ingame to false and hijacking someone else's team.
 {
-	 if (Team == ETeam::Neutral || GameState->TeamStatuses[static_cast<uint8>(Team)] == EStatus::Open)			// if team is open
+	if (Team == ETeam::Neutral || GameState->TeamStatuses[static_cast<uint8>(Team)] == EStatus::Open)			// if team is open
 	{
 		// mark current team as open if alive. note: current team can't be open, because you're currently occupying it, and if it's already dead, leave it as dead.
 		if (GetPaperPlayerState()->Team != ETeam::Neutral && GameState->TeamStatuses[static_cast<uint8>(GetPaperPlayerState()->Team)] == EStatus::Alive)
