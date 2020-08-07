@@ -10,7 +10,7 @@ UCLASS()
 class PAPER_API ACastle : public AUnit
 {
 	GENERATED_BODY()
-	
+
 public:
 	uint8 GetHP() const override;
 	uint8 GetHPMax() const override;

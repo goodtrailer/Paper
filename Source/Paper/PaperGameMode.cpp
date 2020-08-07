@@ -197,7 +197,6 @@ void APaperGameMode::BeginGame()
 			GroundBoard[i]->Build(ETeam::Neutral);
 			GroundBoard[i]->Coordinates = i;
 		}
-
 	}
 #pragma endregion
 
@@ -261,7 +260,7 @@ void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 	GameState->CastleHPMax.Empty();
 	GameState->TeamStatuses.Empty();
 	GameState->TeamCount = 0;
-	
+
 	// quickly run through texture to determine bounds
 	{
 		uint8 CurrentBound = 0;
@@ -269,7 +268,6 @@ void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 			for (int y = 0; y < ManagedBoardLayoutMipMap->SizeY; y++)
 				if (ColorsNearlyEqual(ColorCode::Bounds, ManagedBoardLayoutMipMap.GetColorArray()[x + y * BoardLayoutWidth]))
 				{
-				
 					BoardLayoutBounds[CurrentBound][0] = x;
 					BoardLayoutBounds[CurrentBound][1] = y;
 					if (CurrentBound)
@@ -367,7 +365,7 @@ bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
 	// image could not be processed or was not a 32 bit png, so invalid.
 	if (!BoardImage || ChannelCount != PNG_CHANNEL_COUNT)
 		goto RestoreGameStateValues;
-	
+
 
 	// quickly run through texture to determine bounds
 	int BoardLayoutBounds[2][2];
