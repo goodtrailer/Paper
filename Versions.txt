@@ -96,7 +96,6 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			/ Runs on Epic Online Services sessions interface, so that online is up 24/7
 			/ No more direct IP connections needed (but the option is still available)
 		2. Choosing map as host (using stb_image because ue4 doesn't have an image reading library ?????)
-			.
 			+ Built-in map selector
 			+ Select file from disk (using portable-file-dialog single-header-lib)
 			+ New map 2p_koth
@@ -109,6 +108,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Fix defeat screen for clients that were defeated but there are still other players in the game
 	8. Units part 2
 		0. Miners
+			+ .
 		1. Castles
 			- New models (instead of flipped wall asset)
 		2. Mines
