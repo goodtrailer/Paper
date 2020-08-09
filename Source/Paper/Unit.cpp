@@ -17,22 +17,9 @@ AUnit::AUnit()
 	Team = static_cast<ETeam>(-1);				// force replication
 	bReplicates = true;
 	bAlwaysRelevant = true;
+	SetReplicateMovement(true);
 	
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
-	StaticMeshComponent->SetupAttachment(RootComponent);
-	StaticMeshComponent->SetRelativeScale3D(FVector::OneVector * 100);
-	StaticMeshComponent->SetRelativeRotation(FRotator(0.f, 0.f, 90.f));
-
-	StaticMeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-	StaticMeshComponent->SetCollisionObjectType(ECC_WorldDynamic);
-	StaticMeshComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
-	StaticMeshComponent->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
-	StaticMeshComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Block);
-	StaticMeshComponent->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
-	StaticMeshComponent->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
-	StaticMeshComponent->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Block);
-
 
 	NetUpdateFrequency = 60.f;
 	MinNetUpdateFrequency = 4.f;
@@ -222,12 +209,12 @@ void AUnit::BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam
 	bIsTargetable = bTargetable;
 	bIsCollidable = bCollidable;
 	Team = DesiredTeam;
-	StaticMeshComponent->SetMaterial(0, GetMaterial());
+	GetMeshComponent()->SetMaterial(0, GetMaterial());
 }
 
 void AUnit::OnRep_Team()
 {
-	if (UStaticMeshComponent* Mesh = Cast<UStaticMeshComponent>(GetRootComponent()->GetChildComponent(0)))
+	if (auto Mesh = GetMeshComponent())
 		Mesh->SetMaterial(0, GetMaterial());
 }
 
@@ -263,6 +250,11 @@ FIntPoint AUnit::GetCoordinatesVector()
 		return { Coordinates % GS->GetBoardWidth(), Coordinates / GS->GetBoardWidth() };
 	else
 		return { -1, -1 };
+}
+
+UMeshComponent* AUnit::GetMeshComponent()
+{
+	return nullptr;
 }
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

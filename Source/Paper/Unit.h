@@ -52,6 +52,8 @@ public:
 	uint8 GetEnergyMax() const;
 	UFUNCTION(BlueprintCallable)
 	FIntPoint GetCoordinatesVector();			// Returns an FIntPoint, which is essentially an FIntVector2, except FIntVector2 does not exist in the API. FIntVector and FIntVector4 are, though, which is strange.
+	UFUNCTION(BlueprintCallable)
+	virtual class UMeshComponent* GetMeshComponent();
 
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
@@ -73,8 +75,6 @@ public:
 	ERangeType RangeType;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UStaticMeshComponent* StaticMeshComponent;
 
 protected:
 	UFUNCTION(BlueprintCallable)

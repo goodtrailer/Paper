@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Unit.h"
+#include "StaticUnit.h"
 #include "Castle.generated.h"
 
 UCLASS()
-class PAPER_API ACastle : public AUnit
+class PAPER_API ACastle : public AStaticUnit
 {
 	GENERATED_BODY()
 

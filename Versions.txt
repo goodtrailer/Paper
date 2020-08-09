@@ -115,6 +115,12 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- New icon
 		2. Knight
 			- Add animation
+		3. Archer
+		4. Shielder
+		5. Scout
+		6. Ninja
+		7. Catapult
+		8. Priest
 1. Release
 	0. Polish, bug fixes, and housekeeping
 		0. ESCAPE menu for settings
