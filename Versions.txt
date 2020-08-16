@@ -109,12 +109,12 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 	8. Units part 2
 		0. Miners
 			+ .
-		1. Castles
+		1. Knight
+			+ Add animation
+		2. Castles
 			- New models (instead of flipped wall asset)
-		2. Mines
+		3. Mines
 			- New icon
-		2. Knight
-			- Add animation
 		3. Archer
 		4. Shielder
 		5. Scout
