@@ -19,4 +19,4 @@ This project has nothing to do with Paper2D. It's just called paper because of t
 ### Board "Editor"
 Actually a PNG in the source files that you can edit using any paint program before building the project.
 
-![T_Board_BC.jpg](https://raw.githubusercontent.com/goodtrailer/Paper/master/Content/Textures/T_Board_BC.png)
+![T_Board_BC.png](https://raw.githubusercontent.com/goodtrailer/Paper/master/Content/Textures/T_Board_00_BC.png)

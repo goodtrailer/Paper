@@ -157,14 +157,14 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 			{
 				UWorld* World = GetWorld();
 
-				int16 yRotation = 90 * static_cast<int>(MovableTiles[HoveredUnit->Coordinates].DirectionToSourceTile);
+				int16 yRotation = EDirectionToDegrees(MovableTiles[HoveredUnit->Coordinates].DirectionToSourceTile);
 				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveArrowBP, 200 * FVector(HoveredUnit->Coordinates % GameState->GetBoardWidth(), HoveredUnit->Coordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
 				int CurrentTileCoordinates = MovableTiles[HoveredUnit->Coordinates].SourceTileCoordinates;
 				MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, 180 + yRotation, 0)));
 
 				for (int i = 1; i < SelectedUnit->Energy - MovableTiles[HoveredUnit->Coordinates].EnergyLeft; i++)
 				{
-					yRotation = 90 * static_cast<int>(MovableTiles[CurrentTileCoordinates].DirectionToSourceTile);
+					yRotation = EDirectionToDegrees(MovableTiles[CurrentTileCoordinates].DirectionToSourceTile);
 					MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveLineBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator(0, yRotation, 0)));
 					MoveOverlayArray.Add(World->SpawnActor<AActor>(MoveJointBP, 200 * FVector(CurrentTileCoordinates % GameState->GetBoardWidth(), CurrentTileCoordinates / GameState->GetBoardWidth(), 1), FRotator::ZeroRotator));
 					CurrentTileCoordinates = MovableTiles[CurrentTileCoordinates].SourceTileCoordinates;
@@ -384,7 +384,8 @@ void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> 
 				SpawnedUnit->SetOwner(this);
 				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
 				GameState->ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
-				SpawnedUnit->Build(Team);
+				SpawnedUnit->Team = Team;
+				SpawnedUnit->OnRep_Team();
 				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
 				break;
 			}

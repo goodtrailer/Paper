@@ -5,6 +5,9 @@
 #include "PaperEnums.h"
 #include "PaperGameState.h"
 #include "PaperPlayerController.h"
+#include "Ground.h"
+#include "TruncatedPrism.h"
+#include "GlobalStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "GenericPlatform/GenericPlatformMath.h"
 #include "Engine/Engine.h"
@@ -15,11 +18,16 @@ AUnit::AUnit()
 	PrimaryActorTick.bCanEverTick = false;
 	Type = EType::Unit;
 	Team = static_cast<ETeam>(-1);				// force replication
+	bIsTargetable = true;
 	bReplicates = true;
 	bAlwaysRelevant = true;
+	bHPPrismMeterAutoMat = true;
 	SetReplicateMovement(true);
 	
-	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
+	RootComponent = CreateDefaultSubobject<USceneComponent>(L"DefaultSceneRoot");
+	HPPrismMeter = CreateDefaultSubobject<UTruncatedPrism>(L"HPPrismMeter");
+	HPPrismMeter->SetupAttachment(RootComponent);
+	HPPrismMeter->SetRelativeLocation( { 0.f, 0.f, -100.f } );
 
 	NetUpdateFrequency = 60.f;
 	MinNetUpdateFrequency = 4.f;
@@ -32,88 +40,98 @@ void AUnit::DetermineMovableTiles_Implementation(TMap<int, FMovableTileInfo>& Ou
 	TSet<int> TilesForCurrentPass;
 	TSet<int> TilesPreviouslyQueuedForPassing;
 
+	TilesPreviouslyQueuedForPassing.Add(Coordinates);
+	TilesForNextPass.Add(Coordinates);
+
+	int UpCoord, RightCoord, DownCoord, LeftCoord;
+
+#if 0
 	// Check above tile
 	if (// Make sure the tile above is within board bounds
 		Coordinates / GameState->GetBoardWidth() > 0
 		// Can't move to tile above if already occupied by another unit. Also, no weird maths, because we are never dealing with edge cases, due to the above condition. im so dam smart.
-		&& !GameState->UnitBoard[Coordinates - GameState->GetBoardWidth()]
+		&& !GameState->UnitBoard[UpIndex]
 		// Prevent repeating passing on tiles, since that would result in using up all your energy for any move, even one space moves
-		&& !TilesPreviouslyQueuedForPassing.Contains(Coordinates - GameState->GetBoardWidth())
+		&& !TilesPreviouslyQueuedForPassing.Contains(UpIndex)
 		// Check if ground tile exists upwards, since there could be holes
-		&& GameState->GroundBoard[Coordinates - GameState->GetBoardWidth()]
+		&& GameState->GroundBoard[UpIndex]
 		// Check if passable upwards, since there are ground tiles that block one direction
-		&& !GameState->GroundBoard[Coordinates - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
+		&& !(GameState->GroundBoard[UpIndex]->CollidableDirections & EDirection::Down))
 	{
-		TilesForNextPass.Add(Coordinates - GameState->GetBoardWidth());
-		TilesPreviouslyQueuedForPassing.Add(Coordinates - GameState->GetBoardWidth());
-		OutMovableTiles.Add(Coordinates - GameState->GetBoardWidth(), { 0, Coordinates, EDirection::Down });
+		TilesForNextPass.Add(UpIndex);
+		TilesPreviouslyQueuedForPassing.Add(UpIndex);
+		OutMovableTiles.Add(UpIndex, { 0, Coordinates, EDirection::Down });
 	}
 
 	// Same calculations, but right
-	if (Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[Coordinates + 1] && !TilesPreviouslyQueuedForPassing.Contains(Coordinates + 1) && GameState->GroundBoard[Coordinates + 1] && !GameState->GroundBoard[Coordinates + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
+	if (Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[RightIndex] && !TilesPreviouslyQueuedForPassing.Contains(RightIndex) && GameState->GroundBoard[RightIndex] && !(GameState->GroundBoard[RightIndex]->CollidableDirections & EDirection::Left))
 	{
-		TilesForNextPass.Add(Coordinates + 1);
-		TilesPreviouslyQueuedForPassing.Add(Coordinates + 1);
-		OutMovableTiles.Add(Coordinates + 1, { 0, Coordinates, EDirection::Left });
+		TilesForNextPass.Add(RightIndex);
+		TilesPreviouslyQueuedForPassing.Add(RightIndex);
+		OutMovableTiles.Add(RightIndex, { 0, Coordinates, EDirection::Left });
 	}
 
 	// Same calculations, but down
-	if (Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[Coordinates + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(Coordinates + GameState->GetBoardWidth()) && GameState->GroundBoard[Coordinates + GameState->GetBoardWidth()] && !GameState->GroundBoard[Coordinates + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
+	if (Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[DownIndex] && !TilesPreviouslyQueuedForPassing.Contains(DownIndex) && GameState->GroundBoard[DownIndex] && !(GameState->GroundBoard[DownIndex]->CollidableDirections & EDirection::Up))
 	{
-		TilesForNextPass.Add(Coordinates + GameState->GetBoardWidth());
-		TilesPreviouslyQueuedForPassing.Add(Coordinates + GameState->GetBoardWidth());
-		OutMovableTiles.Add(Coordinates + GameState->GetBoardWidth(), { 0, Coordinates, EDirection::Up });
+		TilesForNextPass.Add(DownIndex);
+		TilesPreviouslyQueuedForPassing.Add(DownIndex);
+		OutMovableTiles.Add(DownIndex, { 0, Coordinates, EDirection::Up });
 	}
 
 	// Same calculations, but left
-	if (Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[Coordinates - 1] && !TilesPreviouslyQueuedForPassing.Contains(Coordinates - 1) && GameState->GroundBoard[Coordinates - 1] && !GameState->GroundBoard[Coordinates - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
+	if (Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[LeftIndex] && !TilesPreviouslyQueuedForPassing.Contains(LeftIndex) && GameState->GroundBoard[LeftIndex] && !(GameState->GroundBoard[LeftIndex]->CollidableDirections & EDirection::Right))
 	{
-		TilesForNextPass.Add(Coordinates - 1);
-		TilesPreviouslyQueuedForPassing.Add(Coordinates - 1);
-		OutMovableTiles.Add(Coordinates - 1, { 0, Coordinates, EDirection::Right });
+		TilesForNextPass.Add(LeftIndex);
+		TilesPreviouslyQueuedForPassing.Add(LeftIndex);
+		OutMovableTiles.Add(LeftIndex, { 0, Coordinates, EDirection::Right });
 	}
+#endif
 
-	for (int16 EnergyLeft = Energy - 1; EnergyLeft > 0; EnergyLeft--)
+	for (uint8 EnergyLeft = Energy; EnergyLeft > 0; EnergyLeft--)
 	{
 		TilesForCurrentPass = TilesForNextPass;
 		TilesForNextPass.Empty();
 		for (auto& coord : TilesForCurrentPass)
 		{
-			OutMovableTiles[coord].EnergyLeft = EnergyLeft;
-			if (coord / GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord - GameState->GetBoardWidth()) && GameState->GroundBoard[coord - GameState->GetBoardWidth()] && !GameState->GroundBoard[coord - GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Down)])
+			UpCoord = coord - GameState->GetBoardWidth();
+			RightCoord = coord + 1;
+			DownCoord = coord + GameState->GetBoardWidth();
+			LeftCoord = coord - 1;
+			
+			// check up
+			if (coord / GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[UpCoord] && !TilesPreviouslyQueuedForPassing.Contains(UpCoord) && GameState->GroundBoard[UpCoord] && !(GameState->GroundBoard[UpCoord]->CollidableDirections & EDirection::Down))
 			{
-				TilesForNextPass.Add(coord - GameState->GetBoardWidth());
-				TilesPreviouslyQueuedForPassing.Add(coord - GameState->GetBoardWidth());
-				OutMovableTiles.Add(coord - GameState->GetBoardWidth(), { 0, coord, EDirection::Down });
+				TilesForNextPass.Add(UpCoord);
+				TilesPreviouslyQueuedForPassing.Add(UpCoord);
+				OutMovableTiles.Add(UpCoord, { (uint8)(EnergyLeft - 1), coord, EDirection::Down });
 			}
 
-			if (coord % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[coord + 1] && !TilesPreviouslyQueuedForPassing.Contains(coord + 1) && GameState->GroundBoard[coord + 1] && !GameState->GroundBoard[coord + 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Left)])
+			// check right
+			if (coord % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[RightCoord] && !TilesPreviouslyQueuedForPassing.Contains(RightCoord) && GameState->GroundBoard[RightCoord] && !(GameState->GroundBoard[RightCoord]->CollidableDirections & EDirection::Left))
 			{
-				TilesForNextPass.Add(coord + 1);
-				TilesPreviouslyQueuedForPassing.Add(coord + 1);
-				OutMovableTiles.Add(coord + 1, { 0, coord, EDirection::Left });
+				TilesForNextPass.Add(RightCoord);
+				TilesPreviouslyQueuedForPassing.Add(RightCoord);
+				OutMovableTiles.Add(RightCoord, { (uint8)(EnergyLeft - 1), coord, EDirection::Left });
 			}
 
-			if (coord / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[coord + GameState->GetBoardWidth()] && !TilesPreviouslyQueuedForPassing.Contains(coord + GameState->GetBoardWidth()) && GameState->GroundBoard[coord + GameState->GetBoardWidth()] && !GameState->GroundBoard[coord + GameState->GetBoardWidth()]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Up)])
+			// check down
+			if (coord / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[DownCoord] && !TilesPreviouslyQueuedForPassing.Contains(DownCoord) && GameState->GroundBoard[DownCoord] && !(GameState->GroundBoard[DownCoord]->CollidableDirections & EDirection::Up))
 			{
-				TilesForNextPass.Add(coord + GameState->GetBoardWidth());
-				TilesPreviouslyQueuedForPassing.Add(coord + GameState->GetBoardWidth());
-				OutMovableTiles.Add(coord + GameState->GetBoardWidth(), { 0, coord, EDirection::Up });
+				TilesForNextPass.Add(DownCoord);
+				TilesPreviouslyQueuedForPassing.Add(DownCoord);
+				OutMovableTiles.Add(DownCoord, { (uint8)(EnergyLeft - 1), coord, EDirection::Up });
 			}
 
-			if (coord % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[coord - 1] && !TilesPreviouslyQueuedForPassing.Contains(coord - 1) && GameState->GroundBoard[coord - 1] && !GameState->GroundBoard[coord - 1]->bIsCollidable.Directions[static_cast<uint8>(EDirection::Right)])
+			// check left
+			if (coord % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[LeftCoord] && !TilesPreviouslyQueuedForPassing.Contains(LeftCoord) && GameState->GroundBoard[LeftCoord] && !(GameState->GroundBoard[LeftCoord]->CollidableDirections & EDirection::Right))
 			{
-				TilesForNextPass.Add(coord - 1);
-				TilesPreviouslyQueuedForPassing.Add(coord - 1);
-				OutMovableTiles.Add(coord - 1, { 0, coord, EDirection::Right });
+				TilesForNextPass.Add(LeftCoord);
+				TilesPreviouslyQueuedForPassing.Add(LeftCoord);
+				OutMovableTiles.Add(LeftCoord, { (uint8)(EnergyLeft - 1), coord, EDirection::Right });
 			}
 		}
 	}
-}
-
-void AUnit::Build_Implementation(ETeam DesiredTeam)
-{
-	BuildMisc(true, FCardinal(true, true, true, true), DesiredTeam);
 }
 
 void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const
@@ -204,18 +222,12 @@ void AUnit::Passive_Implementation()
 	Energy = FGenericPlatformMath::Max(EnergyMax, Energy);
 }
 
-void AUnit::BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam)
-{
-	bIsTargetable = bTargetable;
-	bIsCollidable = bCollidable;
-	Team = DesiredTeam;
-	GetMeshComponent()->SetMaterial(0, GetMaterial());
-}
-
 void AUnit::OnRep_Team()
 {
 	if (auto Mesh = GetMeshComponent())
 		Mesh->SetMaterial(0, GetMaterial());
+	if (HPPrismMeter && bHPPrismMeterAutoMat && Cast<UGlobalStatics>(GEngine->GameSingleton))
+		HPPrismMeter->SetMaterial(0, Cast<UGlobalStatics>(GEngine->GameSingleton)->HPPrismMeterMaterials[static_cast<uint8>(Team)]);
 }
 
 void AUnit::OnRep_RecordedStat()
@@ -226,6 +238,13 @@ void AUnit::OnRep_RecordedStat()
 		if (GameState)
 			GameState->CheckUpdatedUnitForLocalPlayerController(this);
 	}
+}
+
+void AUnit::OnRep_HP()
+{
+	if (HPPrismMeter)
+		HPPrismMeter->Truncate((float)HP / (float)HPMax);
+	OnRep_RecordedStat();
 }
 
 int AUnit::GetCost_Implementation()
@@ -240,6 +259,7 @@ uint8 AUnit::GetHPMax() const { return HPMax; }
 void AUnit::SetHP(uint8 a)
 {
 	HP = a;
+	OnRep_HP();
 }
 
 uint8 AUnit::GetEnergyMax() const { return EnergyMax; }
@@ -261,8 +281,6 @@ void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AUnit, Team)
-	DOREPLIFETIME(AUnit, bIsCollidable)
-	DOREPLIFETIME(AUnit, bIsTargetable)
 	DOREPLIFETIME(AUnit, Type)
 	DOREPLIFETIME(AUnit, Damage)
 	DOREPLIFETIME(AUnit, Range)

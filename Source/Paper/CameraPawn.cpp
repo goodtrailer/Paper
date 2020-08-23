@@ -3,7 +3,6 @@
 #include "CameraPawn.h"
 
 #include "Unit.h"
-#include "Cardinal.h"
 #include "PaperGameState.h"
 #include "Engine/World.h"
 #include "GameFramework/SpringArmComponent.h"

@@ -5,6 +5,7 @@
 #include "PaperPlayerController.h"
 #include "PaperPlayerState.h"
 #include "Castle.h"
+#include "Ground.h"
 #include "PaperGameState.h"
 #include "PaperGameInstance.h"
 #include "PaperEnums.h"
@@ -32,7 +33,7 @@ void APaperGameMode::BeginGame()
 
 #pragma region Generate Board
 	TArray<AUnit*>& UnitBoard = GameState->UnitBoard;
-	TArray<AUnit*>& GroundBoard = GameState->GroundBoard;
+	TArray<AGround*>& GroundBoard = GameState->GroundBoard;
 	int& BoardWidth = GameState->BoardWidth;
 	int& BoardHeight = GameState->BoardHeight;
 	TArray<FColor>& CroppedBoardLayout = GameState->CroppedBoardLayout;
@@ -52,62 +53,49 @@ void APaperGameMode::BeginGame()
 		if (!ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Hole))
 		{
 			// spawn ground, because the board should have ground underneath regardless
-			GroundBoard[i] = GetWorld()->SpawnActor<AUnit>(GroundBP, SpawnLocation, FRotator::ZeroRotator);
+			GroundBoard[i] = GetWorld()->SpawnActor<AGround>(GroundBP, SpawnLocation, FRotator::ZeroRotator);
 
 			if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Ground))
-				for (uint8 q = 0; q <= 3; q++)
-					GroundBoard[i]->bIsCollidable[q] = false;
-
+				GroundBoard[i]->CollidableDirections = EDirection::Zero;
 			// if directional ground
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayU))
-				GroundBoard[i]->bIsCollidable[EDirection::Up] = true;
+				GroundBoard[i]->CollidableDirections = EDirection::Up;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayR))
-				GroundBoard[i]->bIsCollidable[EDirection::Right] = true;
+				GroundBoard[i]->CollidableDirections = EDirection::Right;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayD))
-				GroundBoard[i]->bIsCollidable[EDirection::Down] = true;
+				GroundBoard[i]->CollidableDirections = EDirection::Down;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayL))
-				GroundBoard[i]->bIsCollidable[EDirection::Left] = true;
+				GroundBoard[i]->CollidableDirections = EDirection::Left;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUL))
-			{
-				GroundBoard[i]->bIsCollidable[EDirection::Up] = true;
-				GroundBoard[i]->bIsCollidable[EDirection::Left] = true;
-			}
+				GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Left;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUR))
-			{
-				GroundBoard[i]->bIsCollidable[EDirection::Up] = true;
-				GroundBoard[i]->bIsCollidable[EDirection::Right] = true;
-
-			}
+				GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Right;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDR))
-			{
-				GroundBoard[i]->bIsCollidable[EDirection::Down] = true;
-				GroundBoard[i]->bIsCollidable[EDirection::Right] = true;
-			}
+				GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Right;
 			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDL))
-			{
-				GroundBoard[i]->bIsCollidable[EDirection::Down] = true;
-				GroundBoard[i]->bIsCollidable[EDirection::Left] = true;
-			}
+				GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Left;
 
 			else
 			{
 				// if ground not explicitly normal nor directional, then the ground underneath is normal
-				for (unsigned char q = 0; i < 4; i++)
-					GroundBoard[i]->bIsCollidable[q] = false;
+				GroundBoard[i]->CollidableDirections = EDirection::Zero;
+				
 				// surface layer now, so spawn 200 units up (size of a block)
 				SpawnLocation.Z += 200;
 
-				if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Wall))
+				if		(ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Wall))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(WallBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Neutral);
+					UnitBoard[i]->Team = ETeam::Neutral;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Mine))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(MineBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Neutral);
+					UnitBoard[i]->Team = ETeam::Neutral;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnGreen))
 				{
@@ -115,7 +103,7 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::Green)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Green;
-					spawn->Build(ETeam::Green);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
 				{
@@ -123,7 +111,7 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::Red)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Red;
-					spawn->Build(ETeam::Red);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnPurple))
 				{
@@ -131,7 +119,7 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::Purple)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Purple;
-					spawn->Build(ETeam::Purple);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBrown))
 				{
@@ -139,7 +127,7 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::Brown)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Brown;
-					spawn->Build(ETeam::Brown);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnWhite))
 				{
@@ -147,7 +135,7 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::White)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::White;
-					spawn->Build(ETeam::White);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBlack))
 				{
@@ -155,47 +143,55 @@ void APaperGameMode::BeginGame()
 					GameState->BoardSpawns[static_cast<uint8>(ETeam::Black)].Spawns.Push(spawn);
 					spawn->Coordinates = i;
 					spawn->Team = ETeam::Black;
-					spawn->Build(ETeam::Black);
+					spawn->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleGreen))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Green);
+					UnitBoard[i]->Team = ETeam::Green;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleRed))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Red);
+					UnitBoard[i]->Team = ETeam::Red;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastlePurple))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Purple);
+					UnitBoard[i]->Team = ETeam::Purple;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBrown))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Brown);
+					UnitBoard[i]->Team = ETeam::Brown;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleWhite))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::White);
+					UnitBoard[i]->Team = ETeam::White;
+					UnitBoard[i]->OnRep_Team();
 				}
 				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBlack))
 				{
 					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
 					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Build(ETeam::Black);
+					UnitBoard[i]->Team = ETeam::Black;
+					UnitBoard[i]->OnRep_Team();
 				}
 			}
-			GroundBoard[i]->Build(ETeam::Neutral);
+			GroundBoard[i]->Team = ETeam::Neutral;
 			GroundBoard[i]->Coordinates = i;
+			GroundBoard[i]->OnRep_Team();
+			GroundBoard[i]->BuildArrows();
 		}
 	}
 #pragma endregion
@@ -250,6 +246,8 @@ void APaperGameMode::Logout(AController* Exiting)
 
 void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 {
+	auto OldTeamStatuses = GameState->TeamStatuses;
+
 	ManagedMipMap ManagedBoardLayoutMipMap(&Texture->PlatformData->Mips[0]);
 	int BoardLayoutBounds[2][2];
 	int& BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
@@ -335,7 +333,10 @@ AfterBoundsDetermined:
 		GameState->Gold.Add(StartingGold);
 		GameState->CastleHP.Add(StartingCastleHP);
 		GameState->CastleHPMax.Add(StartingCastleHPMax);
-		GameState->TeamStatuses.Add(EStatus::Open);
+		if (i < OldTeamStatuses.Num())
+			GameState->TeamStatuses.Add(OldTeamStatuses[i]);
+		else
+			GameState->TeamStatuses.Add(EStatus::Open);
 	}
 	GameState->PassiveIncome = StartingPassiveIncome;
 }
@@ -468,7 +469,10 @@ AfterBoundsDetermined:
 		GameState->Gold.Add(StartingGold);
 		GameState->CastleHP.Add(StartingCastleHP);
 		GameState->CastleHPMax.Add(StartingCastleHPMax);
-		GameState->TeamStatuses.Add(EStatus::Open);
+		if (i < BackupTeamStatuses.Num())
+			GameState->TeamStatuses.Add(BackupTeamStatuses[i]);
+		else
+			GameState->TeamStatuses.Add(EStatus::Open);
 	}
 	GameState->PassiveIncome = StartingPassiveIncome;
 

@@ -28,7 +28,7 @@ protected:
 	void Logout(AController* Exiting) override;
 
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
-	TSubclassOf<class AUnit> GroundBP;
+	TSubclassOf<class AGround> GroundBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")
 	TSubclassOf<class AUnit> WallBP;
 	UPROPERTY(EditAnywhere, Category = "Tile Blueprints")

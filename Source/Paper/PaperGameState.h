@@ -68,7 +68,7 @@ public:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> UnitBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
-	TArray<class AUnit*> GroundBoard;
+	TArray<class AGround*> GroundBoard;
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	int PassiveIncome;
 	UPROPERTY(Replicated)

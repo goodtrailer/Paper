@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Cardinal.h"
 #include "MovableTileInfo.h"
 #include "GameFramework/Actor.h"
 #include "Unit.generated.h"
@@ -20,8 +19,6 @@ class PAPER_API AUnit : public AActor
 
 public:
 	AUnit();
-	UFUNCTION(BlueprintNativeEvent)
-	void Build(ETeam DesiredTeam);
 	UFUNCTION(BlueprintNativeEvent)
 	void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
 	UFUNCTION(BlueprintNativeEvent)
@@ -40,8 +37,11 @@ public:
 	class UMaterialInterface* GetMaterial();
 	UFUNCTION()
 	void OnRep_RecordedStat();
+	UFUNCTION()
+	void OnRep_Team();
+	UFUNCTION()
+	void OnRep_HP();
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
-	// on the bright side, blueprintcallable ufunctions can be virtual
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHP() const;
 	UFUNCTION(BlueprintCallable)
@@ -57,14 +57,10 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
-	bool bIsTargetable;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	EType Type;
-	UPROPERTY(Replicated, BlueprintReadWrite, Category = "Meta")
-	FCardinal bIsCollidable;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	FString PassiveString;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
@@ -76,16 +72,18 @@ public:
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")
+	class UTruncatedPrism* HPPrismMeter;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta", DisplayName = "Auto Assign Material For HP Prism Meter")
+	bool bHPPrismMeterAutoMat;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")
+	bool bIsTargetable;
+
 protected:
-	UFUNCTION(BlueprintCallable)
-	void BuildMisc(bool bTargetable, FCardinal bCollidable, ETeam DesiredTeam);
-	UFUNCTION()
-	void OnRep_Team();
-	
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Max Energy")
+	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Max Energy", meta = (ClampMin = "1"))
 	uint8 EnergyMax;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Starting HP")
+	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Starting HP")
 	uint8 HP;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Max HP")
+	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Max HP", meta = (ClampMin = "1"))
 	uint8 HPMax;
 };

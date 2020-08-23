@@ -3,9 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PaperEnums.h"
 #include "MovableTileInfo.generated.h"
-
-enum class EDirection : uint8;
 
 USTRUCT(BlueprintType)
 struct FMovableTileInfo
