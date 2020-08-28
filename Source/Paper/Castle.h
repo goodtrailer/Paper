@@ -12,7 +12,9 @@ class PAPER_API ACastle : public AStaticUnit
 	GENERATED_BODY()
 
 public:
+	ACastle();
 	uint8 GetHP() const override;
 	uint8 GetHPMax() const override;
 	void SetHP(uint8 a) override;
+	void DetermineMesh();
 };

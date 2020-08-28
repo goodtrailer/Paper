@@ -13,6 +13,6 @@ class PAPER_API AGround : public AStaticUnit
 {
 	GENERATED_BODY()
 public:
-	void BuildArrows();				// STATE MACHINE FUNC. DEPENDS ON FIELD CollidableDirections
+	void BuildMisc_Implementation() override;
 	EDirection CollidableDirections;
 };

@@ -14,6 +14,25 @@
 #include "EngineUtils.h"
 #include "stb_image.h"
 
+#define SPAWN_UNIT(CLASS, TEAM, COORDS) { \
+	FVector SpawnLoc(COORDS % GameState->BoardWidth * 200, COORDS / GameState->BoardWidth * 200, 200); \
+	GameState->UnitBoard[COORDS] = GetWorld()->SpawnActor<AUnit>(CLASS, SpawnLoc, FRotator::ZeroRotator); \
+	GameState->UnitBoard[COORDS]->Coordinates = COORDS; \
+	GameState->UnitBoard[COORDS]->Team = TEAM; \
+	GameState->UnitBoard[COORDS]->OnRep_Team(); \
+	GameState->UnitBoard[COORDS]->BuildMisc(); \
+}
+
+#define SPAWN_SPAWN(TEAM, COORDS) { \
+	FVector SpawnLoc(COORDS % GameState->BoardWidth * 200, COORDS / GameState->BoardWidth * 200, 200); \
+	AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLoc, FRotator::ZeroRotator); \
+	GameState->BoardSpawns[static_cast<uint8>(TEAM)].Spawns.Push(spawn); \
+	spawn->Coordinates = COORDS; \
+	spawn->Team = TEAM; \
+	spawn->OnRep_Team(); \
+	spawn->BuildMisc(); \
+}
+
 APaperGameMode::APaperGameMode()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -32,166 +51,77 @@ void APaperGameMode::BeginGame()
 
 
 #pragma region Generate Board
-	TArray<AUnit*>& UnitBoard = GameState->UnitBoard;
-	TArray<AGround*>& GroundBoard = GameState->GroundBoard;
-	int& BoardWidth = GameState->BoardWidth;
-	int& BoardHeight = GameState->BoardHeight;
-	TArray<FColor>& CroppedBoardLayout = GameState->CroppedBoardLayout;
 
-	UnitBoard.Reserve(BoardWidth * BoardHeight);
-	GroundBoard.Reserve(BoardWidth * BoardHeight);
-	for (int i = 0; i < BoardWidth * BoardHeight; i++)
-	{
-		UnitBoard.Push(nullptr);
-		GroundBoard.Push(nullptr);
-	}
+	// acts as a Reserve() because AddZeroed(i) calls Reserve(i), except it also fills with nullptr
+	GameState->UnitBoard.AddZeroed(GameState->BoardWidth * GameState->BoardHeight);
+	GameState->GroundBoard.AddZeroed(GameState->BoardWidth * GameState->BoardHeight);
 
-	for (int i = 0; i < BoardWidth * BoardHeight; i++)
+	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
 	{
-		FVector SpawnLocation(i % BoardWidth * 200, i / BoardWidth * 200, 0);
 		//if not hole, then process, otherwise just skip and never generate
-		if (!ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Hole))
+		if (!ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Hole))
 		{
 			// spawn ground, because the board should have ground underneath regardless
-			GroundBoard[i] = GetWorld()->SpawnActor<AGround>(GroundBP, SpawnLocation, FRotator::ZeroRotator);
+			GameState->GroundBoard[i] = GetWorld()->SpawnActor<AGround>(GroundBP, FVector(i % GameState->BoardWidth * 200, i / GameState->BoardWidth * 200, 0.f), FRotator::ZeroRotator);
 
-			if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Ground))
-				GroundBoard[i]->CollidableDirections = EDirection::Zero;
+			if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Ground))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Zero;
 			// if directional ground
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayU))
-				GroundBoard[i]->CollidableDirections = EDirection::Up;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayR))
-				GroundBoard[i]->CollidableDirections = EDirection::Right;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayD))
-				GroundBoard[i]->CollidableDirections = EDirection::Down;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayL))
-				GroundBoard[i]->CollidableDirections = EDirection::Left;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUL))
-				GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Left;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUR))
-				GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Right;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDR))
-				GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Right;
-			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDL))
-				GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Left;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayU))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayR))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Right;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayD))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayL))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Left;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayUL))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Left;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayUR))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Right;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayDR))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Right;
+			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayDL))
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Left;
 
 			else
 			{
 				// if ground not explicitly normal nor directional, then the ground underneath is normal
-				GroundBoard[i]->CollidableDirections = EDirection::Zero;
-				
-				// surface layer now, so spawn 200 units up (size of a block)
-				SpawnLocation.Z += 200;
+				GameState->GroundBoard[i]->CollidableDirections = EDirection::Zero;
 
-				if		(ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Wall))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(WallBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Neutral;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Mine))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<AUnit>(MineBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Neutral;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnGreen))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::Green)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::Green;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::Red)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::Red;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnPurple))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::Purple)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::Purple;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBrown))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::Brown)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::Brown;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnWhite))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::White)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::White;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBlack))
-				{
-					AUnit* spawn = GetWorld()->SpawnActor<AUnit>(SpawnBP, SpawnLocation, FRotator::ZeroRotator);
-					GameState->BoardSpawns[static_cast<uint8>(ETeam::Black)].Spawns.Push(spawn);
-					spawn->Coordinates = i;
-					spawn->Team = ETeam::Black;
-					spawn->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleGreen))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Green;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleRed))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Red;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastlePurple))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Purple;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBrown))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Brown;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleWhite))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::White;
-					UnitBoard[i]->OnRep_Team();
-				}
-				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBlack))
-				{
-					UnitBoard[i] = GetWorld()->SpawnActor<ACastle>(CastleBP, SpawnLocation, FRotator::ZeroRotator);
-					UnitBoard[i]->Coordinates = i;
-					UnitBoard[i]->Team = ETeam::Black;
-					UnitBoard[i]->OnRep_Team();
-				}
+				if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Wall))
+					SPAWN_UNIT(WallBP, ETeam::Neutral, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Mine))
+					SPAWN_UNIT(MineBP, ETeam::Neutral, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
+					SPAWN_SPAWN(ETeam::Green, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
+					SPAWN_SPAWN(ETeam::Red, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
+					SPAWN_SPAWN(ETeam::Purple, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
+					SPAWN_SPAWN(ETeam::Brown, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
+					SPAWN_SPAWN(ETeam::White, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
+					SPAWN_SPAWN(ETeam::Black, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleGreen))
+					SPAWN_UNIT(CastleBP, ETeam::Green, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleRed))
+					SPAWN_UNIT(CastleBP, ETeam::Red, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastlePurple))
+					SPAWN_UNIT(CastleBP, ETeam::Purple, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleBrown))
+					SPAWN_UNIT(CastleBP, ETeam::Red, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleWhite))
+					SPAWN_UNIT(CastleBP, ETeam::White, i)
+				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleBlack))
+					SPAWN_UNIT(CastleBP, ETeam::Black, i)
 			}
-			GroundBoard[i]->Team = ETeam::Neutral;
-			GroundBoard[i]->Coordinates = i;
-			GroundBoard[i]->OnRep_Team();
-			GroundBoard[i]->BuildArrows();
+			GameState->GroundBoard[i]->Team = ETeam::Neutral;
+			GameState->GroundBoard[i]->Coordinates = i;
+			GameState->GroundBoard[i]->OnRep_Team();
+			GameState->GroundBoard[i]->BuildMisc();
 		}
 	}
 #pragma endregion
@@ -534,3 +464,6 @@ FTexture2DMipMap& APaperGameMode::ManagedMipMap::operator*()
 {
 	return *MipMap;
 }
+
+#undef SPAWN_UNIT
+#undef SPAWN_SPAWN

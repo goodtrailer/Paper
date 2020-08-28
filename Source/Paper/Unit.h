@@ -20,6 +20,8 @@ class PAPER_API AUnit : public AActor
 public:
 	AUnit();
 	UFUNCTION(BlueprintNativeEvent)
+	void BuildMisc();				// this func is for anything random and doesnt need to be implemented, i.e. ground and team dependent mats
+	UFUNCTION(BlueprintNativeEvent)
 	void DetermineAttackableTiles(TSet<int>& OutReachableTiles, TSet<int>& OutAttackableTiles) const;
 	UFUNCTION(BlueprintNativeEvent)
 	void DetermineMovableTiles(TMap<int, FMovableTileInfo>& OutMovableTiles) const;
@@ -29,31 +31,24 @@ public:
 	void Die();
 	UFUNCTION(BlueprintNativeEvent)
 	void Passive();
-	UFUNCTION(BlueprintNativeEvent)
-	int GetCost();
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	class UTexture2D* GetIcon();
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	class UMaterialInterface* GetMaterial();
+	
 	UFUNCTION()
 	void OnRep_RecordedStat();
 	UFUNCTION()
 	void OnRep_Team();
 	UFUNCTION()
 	void OnRep_HP();
-	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
+
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHP() const;
 	UFUNCTION(BlueprintCallable)
-	virtual uint8 GetHPMax() const;
-	UFUNCTION(BlueprintCallable)
 	virtual void SetHP(uint8 a);
 	UFUNCTION(BlueprintCallable)
-	uint8 GetEnergyMax() const;
+	virtual uint8 GetHPMax() const;
+	
 	UFUNCTION(BlueprintCallable)
 	FIntPoint GetCoordinatesVector();			// Returns an FIntPoint, which is essentially an FIntVector2, except FIntVector2 does not exist in the API. FIntVector and FIntVector4 are, though, which is strange.
-	UFUNCTION(BlueprintCallable)
-	virtual class UMeshComponent* GetMeshComponent();
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
@@ -61,16 +56,22 @@ public:
 	int Coordinates;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	EType Type;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Meta")
+	class UTexture2D* Icon;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
+	int Cost;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	FString PassiveString;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	uint8 Damage;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	uint8 Range;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
+	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
 	ERangeType RangeType;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
+	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadOnly, Category = "Stats", DisplayName = "Max Energy", meta = (ClampMin = "1"))
+	uint8 EnergyMax;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	class UTruncatedPrism* HPPrismMeter;
@@ -80,8 +81,7 @@ public:
 	bool bIsTargetable;
 
 protected:
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, Category = "Stats", DisplayName = "Max Energy", meta = (ClampMin = "1"))
-	uint8 EnergyMax;
+	// for castles
 	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Starting HP")
 	uint8 HP;
 	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Max HP", meta = (ClampMin = "1"))

@@ -365,9 +365,9 @@ bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
 void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
 {
 	ETeam& Team = GetPaperPlayerState()->Team;
-
+	int Cost = Type.GetDefaultObject()->Cost;
 	if (GetPaperPlayerState()->IsTurn()
-		&& GameState->GetGold(Team) >= Type.GetDefaultObject()->GetCost())
+		&& GameState->GetGold(Team) >= Cost)
 	{
 		int BoardWidth = GameState->GetBoardWidth();
 		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
@@ -383,14 +383,14 @@ void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> 
 
 				SpawnedUnit->SetOwner(this);
 				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
-				GameState->ChangeGold(Team, -Type.GetDefaultObject()->GetCost());
+				GameState->ChangeGold(Team, -Cost);
 				SpawnedUnit->Team = Team;
 				SpawnedUnit->OnRep_Team();
 				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
 				break;
 			}
 	}
-}			// done
+}
 
 
 

@@ -5,7 +5,7 @@
 #include "GlobalStatics.h"
 
 
-void AGround::BuildArrows()
+void AGround::BuildMisc_Implementation()
 {
 	if (!!(CollidableDirections & EDirection::Up))
 	{

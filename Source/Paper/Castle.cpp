@@ -24,3 +24,13 @@ void ACastle::SetHP(uint8 a)
 {
 	GetWorld()->GetGameState<APaperGameState>()->CastleHP[static_cast<int>(Team)] = a;
 }
+
+ACastle::ACastle()
+{
+	StaticMeshComponent->SetIsReplicated(true);
+}
+
+void ACastle::DetermineMesh()
+{
+	
+}

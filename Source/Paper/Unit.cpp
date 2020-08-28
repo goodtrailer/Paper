@@ -33,6 +33,11 @@ AUnit::AUnit()
 	MinNetUpdateFrequency = 4.f;
 }
 
+void AUnit::BuildMisc_Implementation()
+{
+
+}
+
 void AUnit::DetermineMovableTiles_Implementation(TMap<int, FMovableTileInfo>& OutMovableTiles) const
 {
 	APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
@@ -224,8 +229,6 @@ void AUnit::Passive_Implementation()
 
 void AUnit::OnRep_Team()
 {
-	if (auto Mesh = GetMeshComponent())
-		Mesh->SetMaterial(0, GetMaterial());
 	if (HPPrismMeter && bHPPrismMeterAutoMat && Cast<UGlobalStatics>(GEngine->GameSingleton))
 		HPPrismMeter->SetMaterial(0, Cast<UGlobalStatics>(GEngine->GameSingleton)->HPPrismMeterMaterials[static_cast<uint8>(Team)]);
 }
@@ -247,11 +250,6 @@ void AUnit::OnRep_HP()
 	OnRep_RecordedStat();
 }
 
-int AUnit::GetCost_Implementation()
-{
-	return 0;
-}
-
 uint8 AUnit::GetHP() const { return HP; }
 
 uint8 AUnit::GetHPMax() const { return HPMax; }
@@ -262,19 +260,12 @@ void AUnit::SetHP(uint8 a)
 	OnRep_HP();
 }
 
-uint8 AUnit::GetEnergyMax() const { return EnergyMax; }
-
 FIntPoint AUnit::GetCoordinatesVector()
 {
 	if (APaperGameState* GS = GetWorld()->GetGameState<APaperGameState>())
 		return { Coordinates % GS->GetBoardWidth(), Coordinates / GS->GetBoardWidth() };
 	else
 		return { -1, -1 };
-}
-
-UMeshComponent* AUnit::GetMeshComponent()
-{
-	return nullptr;
 }
 
 void AUnit::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
