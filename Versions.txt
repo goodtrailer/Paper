@@ -112,12 +112,14 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 		1. Knight
 			+ Add animation
 		2. Castles
-			- New models (instead of flipped wall asset)
+			+ New models (instead of flipped wall asset)
+			+ New icon
 		3. Mines
-			- New icon
-		3. Archer
+			+ New icon
+		3. Scout
+			+ .
 		4. Shielder
-		5. Scout
+		5. Archer
 		6. Ninja
 		7. Catapult
 		8. Priest
@@ -130,6 +132,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Version number
 		2. Polish
 			- Rich text for passive text
+			- Redo shop info buttons
 			- Visuals on attacking (i.e. a little red bubble or something)
 			- Rebindable hotkeys + optional RTS movement styles
 			- Select which spawn to spawn units at

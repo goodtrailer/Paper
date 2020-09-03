@@ -28,8 +28,8 @@ enum class EType : uint8
 	Mine,
 	Knight,			//5
 	Castle,
-	Miner
-
+	Miner,
+	Scout
 
 					//10
 };
