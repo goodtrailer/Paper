@@ -50,49 +50,6 @@ void AUnit::DetermineMovableTiles_Implementation(TMap<int, FMovableTileInfo>& Ou
 
 	int UpCoord, RightCoord, DownCoord, LeftCoord;
 
-#if 0
-	// Check above tile
-	if (// Make sure the tile above is within board bounds
-		Coordinates / GameState->GetBoardWidth() > 0
-		// Can't move to tile above if already occupied by another unit. Also, no weird maths, because we are never dealing with edge cases, due to the above condition. im so dam smart.
-		&& !GameState->UnitBoard[UpIndex]
-		// Prevent repeating passing on tiles, since that would result in using up all your energy for any move, even one space moves
-		&& !TilesPreviouslyQueuedForPassing.Contains(UpIndex)
-		// Check if ground tile exists upwards, since there could be holes
-		&& GameState->GroundBoard[UpIndex]
-		// Check if passable upwards, since there are ground tiles that block one direction
-		&& !(GameState->GroundBoard[UpIndex]->CollidableDirections & EDirection::Down))
-	{
-		TilesForNextPass.Add(UpIndex);
-		TilesPreviouslyQueuedForPassing.Add(UpIndex);
-		OutMovableTiles.Add(UpIndex, { 0, Coordinates, EDirection::Down });
-	}
-
-	// Same calculations, but right
-	if (Coordinates % GameState->GetBoardWidth() < GameState->GetBoardWidth() - 1 && !GameState->UnitBoard[RightIndex] && !TilesPreviouslyQueuedForPassing.Contains(RightIndex) && GameState->GroundBoard[RightIndex] && !(GameState->GroundBoard[RightIndex]->CollidableDirections & EDirection::Left))
-	{
-		TilesForNextPass.Add(RightIndex);
-		TilesPreviouslyQueuedForPassing.Add(RightIndex);
-		OutMovableTiles.Add(RightIndex, { 0, Coordinates, EDirection::Left });
-	}
-
-	// Same calculations, but down
-	if (Coordinates / GameState->GetBoardWidth() < GameState->GetBoardHeight() - 1 && !GameState->UnitBoard[DownIndex] && !TilesPreviouslyQueuedForPassing.Contains(DownIndex) && GameState->GroundBoard[DownIndex] && !(GameState->GroundBoard[DownIndex]->CollidableDirections & EDirection::Up))
-	{
-		TilesForNextPass.Add(DownIndex);
-		TilesPreviouslyQueuedForPassing.Add(DownIndex);
-		OutMovableTiles.Add(DownIndex, { 0, Coordinates, EDirection::Up });
-	}
-
-	// Same calculations, but left
-	if (Coordinates % GameState->GetBoardWidth() > 0 && !GameState->UnitBoard[LeftIndex] && !TilesPreviouslyQueuedForPassing.Contains(LeftIndex) && GameState->GroundBoard[LeftIndex] && !(GameState->GroundBoard[LeftIndex]->CollidableDirections & EDirection::Right))
-	{
-		TilesForNextPass.Add(LeftIndex);
-		TilesPreviouslyQueuedForPassing.Add(LeftIndex);
-		OutMovableTiles.Add(LeftIndex, { 0, Coordinates, EDirection::Right });
-	}
-#endif
-
 	for (uint8 EnergyLeft = Energy; EnergyLeft > 0; EnergyLeft--)
 	{
 		TilesForCurrentPass = TilesForNextPass;
