@@ -1,8 +1,6 @@
-# Epic Online Services credentials files (have to make your own)
-Source/Paper/*.txt
-
-# Epic Online Services SDK (download yourself)
-Source/ThirdParty/EpicOnlineServicesSDK/*/
+# Blender exports
+*.fbx
+*.mtl
 
 # Visual Studio 2015 user specific files
 .vs/
