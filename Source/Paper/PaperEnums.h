@@ -29,8 +29,8 @@ enum class EType : uint8
 	Knight,			//5
 	Castle,
 	Miner,
-	Scout
-
+	Scout,
+	Greatshield
 					//10
 };
 
