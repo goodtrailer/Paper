@@ -138,7 +138,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			- Select which spawn to spawn units at
 			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
 			- Death particle effects (animation is out of scope)
-			- US delay timer that scales based off unit count:
+			- Customizable US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams
 				let d represent the delay in seconds
