@@ -118,8 +118,10 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ New icon
 		3. Scout
 			+ .
-		4. Shielder
+		4. Greatshield
+			+ .
 		5. Archer
+			+ .
 		6. Ninja
 		7. Catapult
 		8. Priest
