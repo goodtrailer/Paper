@@ -122,7 +122,6 @@ void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles
 						int ReachableCoord = Coordinates - i + j * BoardWidth;
 						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
 						OutReachableTiles.Add(ReachableCoord);
-						OutReachableTiles.Add(ReachableCoord);
 						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
 							OutAttackableTiles.Add(ReachableCoord);
 					}
@@ -146,7 +145,6 @@ void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles
 					{
 						int ReachableCoord = Coordinates - i + j * BoardWidth;
 						AUnit* ReachableUnit = GameState->UnitBoard[ReachableCoord];
-						OutReachableTiles.Add(ReachableCoord);
 						OutReachableTiles.Add(ReachableCoord);
 						if (ReachableUnit && ReachableUnit->Team != Team && ReachableUnit->bIsTargetable)
 							OutAttackableTiles.Add(ReachableCoord);

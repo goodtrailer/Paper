@@ -30,8 +30,8 @@ enum class EType : uint8
 	Castle,
 	Miner,
 	Scout,
-	Greatshield
-					//10
+	Greatshield,
+	Archer			//10
 };
 
 UENUM(BlueprintType)
