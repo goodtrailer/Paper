@@ -21,17 +21,20 @@ enum class ETeam : uint8
 UENUM(BlueprintType)
 enum class EType : uint8
 {
-	Unit,			//0
+	Unit,			// 0
 	Wall,
 	Spawn,
 	Ground,
 	Mine,
-	Knight,			//5
+	Knight,			// 5
 	Castle,
 	Miner,
 	Scout,
 	Greatshield,
-	Archer			//10
+	Archer,			// 10
+	Ninja,
+	Catapult,
+	Priest
 };
 
 UENUM(BlueprintType)
