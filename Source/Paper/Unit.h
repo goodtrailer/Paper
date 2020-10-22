@@ -62,8 +62,9 @@ public:
 	int Cost;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	FString PassiveString;
+	//needs to be signed to allow healing (negative damage). TIL dont spam uint8 everywhere for space efficiency, it just makes things harder to maintain
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
-	uint8 Damage;
+	int32 Damage;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	uint8 Range;
 	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
