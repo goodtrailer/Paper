@@ -126,6 +126,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 		6. Ninja
 			+ .
 		7. Catapult
+			+ .
 		8. Priest
 1. Release
 	0. Polish, bug fixes, and housekeeping
