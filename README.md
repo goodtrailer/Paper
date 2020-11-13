@@ -1,5 +1,5 @@
 # Paper v0.8.8
-UE4 videogame based on paper board games I used to play as a kid. It is multiplayer through IP connections like Minecraft. It works over LAN and can work over the internet either through port forwarding or direct-linking P2P VPNs like Hamachi/Wippien. It also works for local play if you load up the game twice and enter localhost or 127.0.0.1 as the IP. Source-engine-like server list may come soon using Epic Online Services if UE4 decides to support IPv6 or adds an EOS online subsystem (or if I can get UPnP working with my finicky router, but that is doubtful).<br />
+UE4 videogame based on paper board games I used to play as a kid. It is multiplayer through IP connections like Minecraft. It works over LAN and can work over the internet either through port forwarding or direct-linking P2P VPNs like Hamachi/Wippien (or maybe somebody would be so kind as to set up a matchmaking server for UDP hole punching? :p). It also works for local play if you load up the game twice and enter localhost or 127.0.0.1 as the IP. Source-engine-like server list may come soon using Epic Online Services if UE4 decides to support IPv6 or adds an EOS online subsystem (or if I can get UPnP working with my finicky router, but that is doubtful).<br />
 <br />
 Versions.txt is a todo-list of upcoming updates.<br />
 <br />
