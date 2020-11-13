@@ -128,6 +128,8 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 		7. Catapult
 			+ .
 		8. Priest
+			+ .
+			+ Heal particles
 1. Release
 	0. Polish, bug fixes, and housekeeping
 		0. ESCAPE menu for settings
