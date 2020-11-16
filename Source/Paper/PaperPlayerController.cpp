@@ -67,7 +67,6 @@ void APaperPlayerController::StartGame()
 	LobbyInterface->RemoveFromViewport();
 	UserInterface->AddToViewport();
 	UserInterface->UpdateTurn(GetPaperPlayerState()->IsTurn());
-	UserInterface->UpdateGold(GameState->GetGold(GetPaperPlayerState()->Team));
 	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
 
 	// Log to other players that player has joined the game as <team>. thanks legacy wiki :)
@@ -94,12 +93,14 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Zoom Out", IE_Pressed, this, &APaperPlayerController::ZoomOut);
 	InputComponent->BindAxis("Mouse X", this, &APaperPlayerController::MouseX);
 	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
-	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
+	InputComponent->BindAction("Reset Camera", IE_Pressed, this, &APaperPlayerController::ResetCameraPosition);
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
 	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::ActUnit);
 	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
 	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
 	InputComponent->BindAction("Chat", IE_Pressed, this, &APaperPlayerController::FocusChatbox);
+	InputComponent->BindAction("End Turn", IE_Pressed, this, &APaperPlayerController::Server_EndTurn);
+	InputComponent->BindAction("Menu", IE_Pressed, this, &APaperPlayerController::ToggleMenu);
 }
 
 
@@ -266,16 +267,16 @@ void APaperPlayerController::SelectUnit()
 		if (SelectedUnit && HoveredUnit)
 		{
 			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
+			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
 		}
 		MovableOverlayOff();
-		UpdateSelectedUnit();
 	}
 	// Attack unit
 	else if (bAttackableOverlayOn)
 	{
-		Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
+		if (HoveredUnit)
+			Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
 		AttackableOverlayOff();
-		UpdateSelectedUnit();
 	}
 	// Select unit
 	else
@@ -290,8 +291,6 @@ void APaperPlayerController::SelectUnit()
 				SelectedUnit = nullptr;
 		else
 			SelectedUnit = nullptr;
-
-		UserInterface->UpdateSelectedUnit(SelectedUnit);
 
 		// Show/hide select overlay
 		if (!SelectedUnit)
@@ -316,43 +315,31 @@ void APaperPlayerController::ActUnit()
 		if (SelectedUnit && HoveredUnit)
 		{
 			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
+			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
 		}
 		MovableOverlayOff();
-		UpdateSelectedUnit();
 	}
 	// Attack unit
 	else if (bAttackableOverlayOn)
 	{
-		Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
+		if (HoveredUnit)
+			Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
 		AttackableOverlayOff();
-		UpdateSelectedUnit();
 	}
 	// No select unit, to prevent mouse up on ally unit from making overlay flip inputs
 }
 
-inline void APaperPlayerController::UpdateSelectedUnit()
+void APaperPlayerController::ToggleMenu()
 {
-	if (!bInGame)
-		return;
-
-	UserInterface->UpdateSelectedUnit(SelectedUnit);
-	if (SelectedUnit)
-		SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
-	else
-		SelectOverlay->GetRootComponent()->SetVisibility(false);
+	GLog->Log(L"ToggleMenu");
+	UserInterface->ToggleMenu();
 }
 
-void APaperPlayerController::CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit)
-{
-	if (!bInGame)
-		return;
 
-	if (SelectedUnit == Unit)
-	{
-		if (bUnselectUnit)
+void APaperPlayerController::CheckDeadUnit(AUnit* Unit)
+{
+	if (bInGame && SelectedUnit == Unit)
 			SelectedUnit = nullptr;
-		UpdateSelectedUnit();
-	}
 }
 
 
@@ -452,7 +439,6 @@ void APaperPlayerController::Server_MoveUnit_Implementation(int Origin, int Dest
 			GameState->UnitBoard[Destination] = GameState->UnitBoard[Origin];
 			GameState->UnitBoard[Origin] = nullptr;
 			GameState->UnitBoard[Destination]->Coordinates = Destination;
-			GameState->UnitBoard[Destination]->OnRep_RecordedStat();					// this updates ui stats on the server too, since onrep calls on clients only (weird)
 			GameState->UnitBoard[Destination]->Energy = MovableTiles[Destination].EnergyLeft;
 			GameState->UnitBoard[Destination]->SetActorLocation(FVector(Destination % GameState->GetBoardWidth() * 200, Destination / GameState->GetBoardWidth() * 200, GameState->UnitBoard[Destination]->GetActorLocation().Z));
 		}

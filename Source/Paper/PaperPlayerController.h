@@ -31,7 +31,7 @@ public:
 	void CheckVictory(ETeam WinningTeam);
 	UFUNCTION(BlueprintImplementableEvent)
 	void CheckDefeat(ETeam DefeatedTeam);
-	void CheckUpdatedUnit(AUnit* Unit, bool bUnselectUnit = false);
+	void CheckDeadUnit(AUnit* Unit);
 	UFUNCTION(BlueprintCallable)
 	void ToggleMovableOverlay();
 	UFUNCTION(BlueprintCallable)
@@ -67,7 +67,7 @@ protected:
 	void Debug();
 	void SelectUnit();
 	void ActUnit();
-	inline void UpdateSelectedUnit();
+	void ToggleMenu();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveUnit(int Origin, int Destination);
 	void MovableOverlayOn();
@@ -80,6 +80,7 @@ protected:
 	void FocusChatbox();
 
 	class ACameraPawn* CameraPawn;
+	UPROPERTY(BlueprintReadOnly)
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
 	class AUnit* LastHoveredUnit;

@@ -33,8 +33,6 @@ public:
 	void Passive();
 	
 	UFUNCTION()
-	void OnRep_RecordedStat();
-	UFUNCTION()
 	void OnRep_Team();
 	UFUNCTION()
 	void OnRep_HP();
@@ -52,26 +50,26 @@ public:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Team, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	ETeam Team;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
+	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadWrite, Category = "Meta")
 	int Coordinates;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Meta")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Meta")
 	EType Type;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Meta")
 	class UTexture2D* Icon;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stats")
 	int Cost;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	FString PassiveString;
 	//needs to be signed to allow healing (negative damage). TIL dont spam uint8 everywhere for space efficiency, it just makes things harder to maintain
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	int32 Damage;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats")
 	uint8 Range;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Range Type")
 	ERangeType RangeType;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Stats", DisplayName = "Starting Energy")
 	uint8 Energy;
-	UPROPERTY(ReplicatedUsing = OnRep_RecordedStat, EditAnywhere, BlueprintReadOnly, Category = "Stats", DisplayName = "Max Energy", meta = (ClampMin = "1"))
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Stats", DisplayName = "Max Energy", meta = (ClampMin = "0"))
 	uint8 EnergyMax;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Meta")

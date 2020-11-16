@@ -23,12 +23,12 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite)
 		class USpringArmComponent* SpringArm;
-	UPROPERTY(EditAnywhere, Category = "Sensitivity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sensitivity")
 		float RotateSensitivity;
-	UPROPERTY(EditAnywhere, Category = "Sensitivity")
-		float ZoomSensitivity;
-	UPROPERTY(EditAnywhere, Category = "Sensitivity")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sensitivity")
 		float PanSensitivity;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Sensitivity")
+		float ZoomSensitivity;
 	UPROPERTY(VisibleAnywhere, Category = "Controls State")
 		bool bIsPanning;
 	UPROPERTY(VisibleAnywhere, Category = "Controls State")

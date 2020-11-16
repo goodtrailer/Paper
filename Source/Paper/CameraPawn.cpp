@@ -12,6 +12,10 @@
 #include "Runtime/Engine/Classes/Engine/Engine.h"
 #include "Camera/CameraComponent.h"
 
+#define BAKED_ROTATE_SENSITIVITY 3.f
+#define BAKED_PAN_SENSITIVITY 0.01f
+#define BAKED_ZOOM_SENSITIVITY 0.1f;
+
 ACameraPawn::ACameraPawn()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -30,21 +34,21 @@ void ACameraPawn::Tick(float DeltaTime)
 
 	if (bIsRotating)
 	{
-		AddActorLocalRotation(FRotator(MouseDeltaY, 0.f, 0.f) * RotateSensitivity);
-		AddActorWorldRotation(FRotator(0.f, MouseDeltaX, 0.f) * RotateSensitivity);
+		AddActorLocalRotation(FRotator(MouseDeltaY, 0.f, 0.f) * RotateSensitivity * BAKED_ROTATE_SENSITIVITY);
+		AddActorWorldRotation(FRotator(0.f, MouseDeltaX, 0.f) * RotateSensitivity * BAKED_ROTATE_SENSITIVITY);
 	}
 	else if (bIsPanning)
-		AddActorLocalOffset(FVector(0.f, MouseDeltaX, MouseDeltaY) * -PanSensitivity * SpringArm->TargetArmLength / 1000);
+		AddActorLocalOffset(FVector(0.f, MouseDeltaX, MouseDeltaY) * -PanSensitivity * SpringArm->TargetArmLength * BAKED_PAN_SENSITIVITY);
 }
 
 void ACameraPawn::ZoomIn()
 {
-	SpringArm->TargetArmLength -= ZoomSensitivity * SpringArm->TargetArmLength / 10;
+	SpringArm->TargetArmLength -= ZoomSensitivity * SpringArm->TargetArmLength * BAKED_ZOOM_SENSITIVITY;
 }
 
 void ACameraPawn::ZoomOut()
 {
-	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength / 10;
+	SpringArm->TargetArmLength += ZoomSensitivity * SpringArm->TargetArmLength * BAKED_ZOOM_SENSITIVITY;
 }
 
 void ACameraPawn::ResetPosition()

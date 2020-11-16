@@ -14,10 +14,8 @@ class PAPER_API UPaperUserInterface : public UUserWidget
 public:
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateTurn(bool bIsTurn);
-	UFUNCTION(BlueprintImplementableEvent)
-	void UpdateSelectedUnit(class AUnit* SelectedUnit);
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
-	void UpdateGold(int Gold);
 	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
 	void UpdateTeam(ETeam Team);
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable)
+	void ToggleMenu();
 };

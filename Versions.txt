@@ -132,19 +132,20 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Heal particles
 1. Release
 	0. Polish, bug fixes, and housekeeping
-		0. ESCAPE menu for settings
-		1. Top bar
+		0. Top bar
+			- Ping (in ms)
 			- FPS counter
 			- CLIENT/HOST
 			- Version number
-		2. Polish
+		1. ESCAPE menu for settings
+			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
+			- Rebindable hotkeys + optional RTS movement styles
+		2. Misc
 			- Rich text for passive text
 			- Redo shop info buttons
 			- Visuals on attacking (i.e. a little red bubble or something)
-			- Rebindable hotkeys + optional RTS movement styles
 			- Select which spawn to spawn units at
-			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
-			- Death particle effects (animation is out of scope)
+			- Death particle effects
 			- Customizable US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams

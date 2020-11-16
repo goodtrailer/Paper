@@ -56,7 +56,6 @@ public:
 	void Multicast_RemovePlayerForLocalLobbyUI(const FString& Name);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Message(const FText& Message);
-	void CheckUpdatedUnitForLocalPlayerController(AUnit* Unit);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	
@@ -86,8 +85,6 @@ protected:
 	UFUNCTION()
 	void OnRep_Turn();
 	UFUNCTION()
-	void OnRep_Gold();
-	UFUNCTION()
 	void OnRep_CroppedBoardLayout();
 
 	UFUNCTION(NetMulticast, Reliable)
@@ -95,7 +92,7 @@ protected:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Defeat(ETeam Team);
 
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Gold)
+	UPROPERTY(Replicated, BlueprintReadWrite)
 	TArray<int> Gold;					// stored on game state and not player state: easily accessible by game mode, and it must be remembered if players reconnect
 	UPROPERTY(Replicated)
 	int BoardWidth;

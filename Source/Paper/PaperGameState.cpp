@@ -87,7 +87,7 @@ void APaperGameState::Multicast_CheckDeadUnitForLocalPlayerController_Implementa
 {
 	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
 	if (LocalPlayerController)
-		LocalPlayerController->CheckUpdatedUnit(Unit, true);
+		LocalPlayerController->CheckDeadUnit(Unit);
 }
 
 void APaperGameState::Multicast_StartGameForLocalPlayerController_Implementation()
@@ -105,13 +105,6 @@ void APaperGameState::Multicast_RemovePlayerForLocalLobbyUI_Implementation(const
 			GLog->Log(TEXT("Remove player failed!"));
 }
 
-void APaperGameState::CheckUpdatedUnitForLocalPlayerController(AUnit* Unit)
-{
-	APaperPlayerController* LocalPlayerController = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld()));
-	if (LocalPlayerController)
-		LocalPlayerController->CheckUpdatedUnit(Unit);
-}
-
 int APaperGameState::GetGold(ETeam Team) const
 {
 	if (static_cast<int>(Team) < Gold.Num())
@@ -123,10 +116,7 @@ int APaperGameState::GetGold(ETeam Team) const
 void APaperGameState::SetGold(ETeam Team, int NewAmount)
 {
 	if (static_cast<int>(Team) < Gold.Num())
-	{
 		Gold[static_cast<int>(Team)] = NewAmount;
-		OnRep_Gold();
-	}
 	else
 		GLog->Logf(TEXT("Attempted to set gold for team %d; invalid operation!"), Team);
 }
@@ -134,27 +124,9 @@ void APaperGameState::SetGold(ETeam Team, int NewAmount)
 void APaperGameState::ChangeGold(ETeam Team, int DeltaGold)
 {
 	if (static_cast<int>(Team) < Gold.Num())
-	{
 		Gold[static_cast<int>(Team)] += DeltaGold;
-		OnRep_Gold();
-	}
 	else
 		GLog->Logf(TEXT("Attempted to change gold for team %d; invalid operation!"), Team);
-}
-
-void APaperGameState::OnRep_Gold()
-{
-	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-		if (LocalPC->bInGame)
-		{
-			ETeam Team = LocalPC->GetPaperPlayerState()->Team;
-			if (Team == ETeam::Neutral)
-			{
-				// TODO: In spectator mode, update both player's gold amounts in the display, since spectators should be omniscient
-			}
-			else if (static_cast<int>(Team) < Gold.Num())
-				LocalPC->UserInterface->UpdateGold(Gold[static_cast<int>(Team)]);
-		}
 }
 
 int APaperGameState::GetBoardHeight() const

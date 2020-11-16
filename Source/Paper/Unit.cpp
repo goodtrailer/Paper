@@ -188,21 +188,10 @@ void AUnit::OnRep_Team()
 		HPPrismMeter->SetMaterial(0, Cast<UGlobalStatics>(GEngine->GameSingleton)->HPPrismMeterMaterials[static_cast<uint8>(Team)]);
 }
 
-void AUnit::OnRep_RecordedStat()
-{
-	if (GetWorld())
-	{
-		APaperGameState* const GameState = GetWorld()->GetGameState<APaperGameState>();
-		if (GameState)
-			GameState->CheckUpdatedUnitForLocalPlayerController(this);
-	}
-}
-
 void AUnit::OnRep_HP()
 {
 	if (HPPrismMeter)
 		HPPrismMeter->Truncate((float)HP / (float)HPMax);
-	OnRep_RecordedStat();
 }
 
 uint8 AUnit::GetHP() const { return HP; }
