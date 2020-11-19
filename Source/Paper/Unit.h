@@ -34,8 +34,8 @@ public:
 	
 	UFUNCTION()
 	void OnRep_Team();
-	UFUNCTION()
-	void OnRep_HP();
+	/*UFUNCTION()
+	void OnRep_HP();*/
 
 	UFUNCTION(BlueprintCallable)
 	virtual uint8 GetHP() const;
@@ -81,8 +81,8 @@ public:
 
 protected:
 	// for castles
-	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Starting HP")
+	UPROPERTY(Replicated/*Using = OnRep_HP*/, EditAnywhere, Category = "Stats", DisplayName = "Starting HP")
 	uint8 HP;
-	UPROPERTY(ReplicatedUsing = OnRep_HP, EditAnywhere, Category = "Stats", DisplayName = "Max HP", meta = (ClampMin = "1"))
+	UPROPERTY(Replicated/*Using = OnRep_HP*/, EditAnywhere, Category = "Stats", DisplayName = "Max HP", meta = (ClampMin = "1"))
 	uint8 HPMax;
 };

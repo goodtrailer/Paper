@@ -133,13 +133,12 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 1. Release
 	0. Polish, bug fixes, and housekeeping
 		0. Top bar
-			- FPS counter
-			- CLIENT/HOST
-			- Version number
+			+ FPS counter
+			+ CLIENT/HOST
+			+ Version number
 		1. ESCAPE menu for settings
-			- Show HP numbers for units within certain distance of cursor or show for all (switch option)
+			+ Show HP bars for units within certain distance of cursor
 			+ Rebindable hotkeys
-			- Optional RTS movement styles
 		2. Misc
 			- Rich text for passive text
 			- Redo shop info buttons

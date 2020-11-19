@@ -47,7 +47,6 @@ void APaperPlayerController::BeginPlay()
 		(HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
-
 	}
 
 	LastHoveredUnit = nullptr;
@@ -265,10 +264,7 @@ void APaperPlayerController::SelectUnit()
 	if (bMovableOverlayOn)
 	{
 		if (SelectedUnit && HoveredUnit)
-		{
 			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
-			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
-		}
 		MovableOverlayOff();
 	}
 	// Attack unit
@@ -292,15 +288,8 @@ void APaperPlayerController::SelectUnit()
 		else
 			SelectedUnit = nullptr;
 
-		// Show/hide select overlay
-		if (!SelectedUnit)
-			SelectOverlay->GetRootComponent()->SetVisibility(false);
-		else
-		{
-			SelectOverlay->GetRootComponent()->SetVisibility(true);
-			SelectOverlay->SetActorLocation(SelectedUnit->GetActorLocation() + FVector(0.f, 0.f, 110.f));
+		if (SelectedUnit)
 			MovableOverlayOn();
-		}
 	}
 }
 
@@ -313,10 +302,7 @@ void APaperPlayerController::ActUnit()
 	if (bMovableOverlayOn)
 	{
 		if (SelectedUnit && HoveredUnit)
-		{
 			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
-			SelectOverlay->SetActorLocation(FVector(SelectedUnit->Coordinates % GameState->GetBoardWidth() * 200, SelectedUnit->Coordinates / GameState->GetBoardWidth() * 200, 310.f));
-		}
 		MovableOverlayOff();
 	}
 	// Attack unit
@@ -331,7 +317,6 @@ void APaperPlayerController::ActUnit()
 
 void APaperPlayerController::ToggleMenu()
 {
-	GLog->Log(L"ToggleMenu");
 	UserInterface->ToggleMenu();
 }
 
