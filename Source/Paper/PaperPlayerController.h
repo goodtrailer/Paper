@@ -49,6 +49,7 @@ public:
 	class ULobbyUserInterface* LobbyInterface;
 	UPROPERTY(BlueprintReadWrite)
 	class UChatUserInterface* ChatInterface;
+	class APaperHUD* HUD;
 	UPROPERTY(Replicated)
 	bool bInGame;				// can't be put in PaperPlayerState because it needs to be used immediately. Also, no other player needs to know this value, only the server does.
 
@@ -66,8 +67,9 @@ protected:
 	void MouseY(float);
 	void Debug();
 	void SelectUnit();
-	void ActUnit();
 	void ToggleMenu();
+	void ResizeHPBarShowRadiusStart();
+	void ResizeHPBarShowRadiusStop();
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveUnit(int Origin, int Destination);
 	void MovableOverlayOn();

@@ -14,6 +14,7 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "portable-file-dialogs.h"
+#include "PaperHUD.h"
 
 APaperPlayerController::APaperPlayerController()
 {
@@ -28,6 +29,7 @@ void APaperPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	GameState = GetWorld()->GetGameState<APaperGameState>();
+	HUD = GetHUD<APaperHUD>();
 
 	CameraPawn = GetPawn<ACameraPawn>();
 	SetViewTargetWithBlend(CameraPawn, 1.f);
@@ -94,12 +96,13 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAxis("Mouse Y", this, &APaperPlayerController::MouseY);
 	InputComponent->BindAction("Reset Camera", IE_Pressed, this, &APaperPlayerController::ResetCameraPosition);
 	InputComponent->BindAction("Select Unit", IE_Pressed, this, &APaperPlayerController::SelectUnit);
-	InputComponent->BindAction("Select Unit", IE_Released, this, &APaperPlayerController::ActUnit);
 	InputComponent->BindAction("Attack", IE_Pressed, this, &APaperPlayerController::ToggleAttackableOverlay);
 	InputComponent->BindAction("Move", IE_Pressed, this, &APaperPlayerController::ToggleMovableOverlay);
 	InputComponent->BindAction("Chat", IE_Pressed, this, &APaperPlayerController::FocusChatbox);
 	InputComponent->BindAction("End Turn", IE_Pressed, this, &APaperPlayerController::Server_EndTurn);
 	InputComponent->BindAction("Menu", IE_Pressed, this, &APaperPlayerController::ToggleMenu);
+	InputComponent->BindAction("Resize HP Bar Show Radius", IE_Pressed, this, &APaperPlayerController::ResizeHPBarShowRadiusStart);
+	InputComponent->BindAction("Resize HP Bar Show Radius", IE_Released, this, &APaperPlayerController::ResizeHPBarShowRadiusStop);
 }
 
 
@@ -215,13 +218,17 @@ void APaperPlayerController::PanStop()
 
 void APaperPlayerController::ZoomIn()
 {
-	if (bInGame)
+	if (HUD->bShowRadiusThresholdCircle)
+		HUD->CursorRadiusThreshold += max(HUD->CursorRadiusThreshold * .15f, 1);		// radius can hit 0 due to rounding, and simply doing *= 1.1f means it won't get larger
+	else if (bInGame)
 		CameraPawn->ZoomIn();
 }
 
 void APaperPlayerController::ZoomOut()
 {
-	if (bInGame)
+	if (HUD->bShowRadiusThresholdCircle)
+		HUD->CursorRadiusThreshold *= .85f;
+	else if (bInGame)
 		CameraPawn->ZoomOut();
 }
 
@@ -287,37 +294,23 @@ void APaperPlayerController::SelectUnit()
 				SelectedUnit = nullptr;
 		else
 			SelectedUnit = nullptr;
-
-		if (SelectedUnit)
-			MovableOverlayOn();
 	}
-}
-
-void APaperPlayerController::ActUnit()
-{
-	if (!bInGame)
-		return;
-
-	// Move unit
-	if (bMovableOverlayOn)
-	{
-		if (SelectedUnit && HoveredUnit)
-			Server_MoveUnit(SelectedUnit->Coordinates, HoveredUnit->Coordinates);
-		MovableOverlayOff();
-	}
-	// Attack unit
-	else if (bAttackableOverlayOn)
-	{
-		if (HoveredUnit)
-			Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
-		AttackableOverlayOff();
-	}
-	// No select unit, to prevent mouse up on ally unit from making overlay flip inputs
 }
 
 void APaperPlayerController::ToggleMenu()
 {
 	UserInterface->ToggleMenu();
+}
+
+void APaperPlayerController::ResizeHPBarShowRadiusStart()
+{
+	GLog->Log(L"Start");
+	HUD->bShowRadiusThresholdCircle = true;
+}
+
+void APaperPlayerController::ResizeHPBarShowRadiusStop()
+{
+	HUD->bShowRadiusThresholdCircle = false;
 }
 
 

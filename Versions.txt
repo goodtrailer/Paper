@@ -139,12 +139,11 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 		1. ESCAPE menu for settings
 			+ Show HP bars for units within certain distance of cursor
 			+ Rebindable hotkeys
+			+ Sensitivities
 		2. Misc
 			- Rich text for passive text
 			- Redo shop info buttons
-			- Visuals on attacking (i.e. a little red bubble or something)
 			- Select which spawn to spawn units at
-			- Death particle effects
 			- Customizable US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams
