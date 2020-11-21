@@ -144,11 +144,11 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Rich text for passive text
 			+ TAB scoreboard
 			+ Redo shop info buttons
-			- Select which spawn to spawn units at
+			+ Select which spawn to spawn units at
 			- Customizable US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams
 				let d represent the delay in seconds
 				let u represent the number of units a player controls
-				m = 120 + 12t
-				d = 10u + 25
+				m = 12t + 96
+				d = min(10u, 15)
