@@ -18,7 +18,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	class APaperPlayerState* GetPaperPlayerState();
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
-	void Server_SpawnUnit(TSubclassOf<class AUnit> Type);
+	void Server_SpawnUnit(TSubclassOf<class AUnit> Type, int Coordinates);
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_EndTurn();
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -36,6 +36,8 @@ public:
 	void ToggleMovableOverlay();
 	UFUNCTION(BlueprintCallable)
 	void ToggleAttackableOverlay();
+	UFUNCTION(BlueprintCallable)
+	void ToggleSpawnableOverlay(TSubclassOf<AUnit> Type);
 	UFUNCTION(BlueprintCallable)
 	void ResetCameraPosition();
 	UFUNCTION(BlueprintCallable)
@@ -80,6 +82,8 @@ protected:
 	void MovableOverlayOff();
 	void AttackableOverlayOn();
 	void AttackableOverlayOff();
+	void SpawnableOverlayOn(TSubclassOf<AUnit> Type);
+	void SpawnableOverlayOff();
 	UFUNCTION(Server, Reliable, WithValidation, BlueprintCallable)
 	void Server_SetInGame(bool b);
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
@@ -98,16 +102,23 @@ protected:
 	TSet<int> AttackableTiles;
 	// int is Coords
 	TSet<int> ReachableTiles;
+	// int is Coords
+	TSet<int> SpawnableTiles;
 	TArray<AActor*> AttackableOverlayArray;
 	AActor* SelectOverlay;
 	AActor* HoverOverlay;
 	AActor* AttackOverlay;
 	AActor* MoveOverlay;
+	AActor* SpawnableOverlay;
+	AActor* NonspawnableOverlay;
 	class APaperGameState* GameState;
 	class UPaperGameInstance* GameInstance;
 
+	TSubclassOf<AUnit> UnitToSpawnBP;
+
 	bool bMovableOverlayOn;
 	bool bAttackableOverlayOn;
+	bool bSpawnableOverlayOn;
 
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> MovableOverlayBP;
@@ -127,6 +138,11 @@ protected:
 	TSubclassOf<AActor> MoveJointBP;
 	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
 	TSubclassOf<AActor> AttackableOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+	TSubclassOf<AActor> SpawnableOverlayBP;
+	UPROPERTY(EditAnywhere, Category = "Overlay Blueprints")
+	TSubclassOf<AActor> NonspawnableOverlayBP;
+	
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
 	TSubclassOf<class UPaperUserInterface> UserInterfaceBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
@@ -136,7 +152,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
 	TSubclassOf<class UUserWidget> ScoreboardInterfaceBP;
 
-private:
 	class APaperPlayerState* UnsafePlayerState;
 	friend class ACameraPawn;
 };

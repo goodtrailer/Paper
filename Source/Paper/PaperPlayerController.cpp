@@ -49,6 +49,8 @@ void APaperPlayerController::BeginPlay()
 		(HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(AttackOverlay = GetWorld()->SpawnActor<AActor>(AttackOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(MoveOverlay = GetWorld()->SpawnActor<AActor>(MoveOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+		(SpawnableOverlay = GetWorld()->SpawnActor<AActor>(SpawnableOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
+		(NonspawnableOverlay = GetWorld()->SpawnActor<AActor>(NonspawnableOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 	}
 
 	LastHoveredUnit = nullptr;
@@ -129,12 +131,17 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 			AttackOverlay->GetRootComponent()->SetVisibility(false);
 			HoverOverlay->GetRootComponent()->SetVisibility(false);
 			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			SpawnableOverlay->GetRootComponent()->SetVisibility(false);
+			NonspawnableOverlay->GetRootComponent()->SetVisibility(false);
 		}
 		else if (AttackableTiles.Contains(HoveredUnit->Coordinates))
 		{
 			AttackOverlay->GetRootComponent()->SetVisibility(true);
 			HoverOverlay->GetRootComponent()->SetVisibility(false);
 			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			SpawnableOverlay->GetRootComponent()->SetVisibility(false);
+			NonspawnableOverlay->GetRootComponent()->SetVisibility(false);
+
 			AttackOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 		}
 		else if (MovableTiles.Contains(HoveredUnit->Coordinates))
@@ -142,13 +149,39 @@ void APaperPlayerController::PlayerTick(float DeltaTime)
 			AttackOverlay->GetRootComponent()->SetVisibility(false);
 			HoverOverlay->GetRootComponent()->SetVisibility(false);
 			MoveOverlay->GetRootComponent()->SetVisibility(true);
+			SpawnableOverlay->GetRootComponent()->SetVisibility(false);
+			NonspawnableOverlay->GetRootComponent()->SetVisibility(false);
+
 			MoveOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+		}
+		else if (bSpawnableOverlayOn)
+		{
+			AttackOverlay->GetRootComponent()->SetVisibility(false);
+			HoverOverlay->GetRootComponent()->SetVisibility(false);
+			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			if (SpawnableTiles.Contains(HoveredUnit->Coordinates))
+			{
+				SpawnableOverlay->GetRootComponent()->SetVisibility(true);
+				NonspawnableOverlay->GetRootComponent()->SetVisibility(false);
+
+				SpawnableOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+			}
+			else
+			{
+				SpawnableOverlay->GetRootComponent()->SetVisibility(false);
+				NonspawnableOverlay->GetRootComponent()->SetVisibility(true);
+
+				NonspawnableOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
+			}
 		}
 		else
 		{
 			AttackOverlay->GetRootComponent()->SetVisibility(false);
 			HoverOverlay->GetRootComponent()->SetVisibility(true);
 			MoveOverlay->GetRootComponent()->SetVisibility(false);
+			SpawnableOverlay->GetRootComponent()->SetVisibility(false);
+			NonspawnableOverlay->GetRootComponent()->SetVisibility(false);
+
 			HoverOverlay->SetActorLocation(FVector(HoveredUnit->GetActorLocation().X, HoveredUnit->GetActorLocation().Y, 200));
 		}
 
@@ -283,6 +316,13 @@ void APaperPlayerController::SelectUnit()
 			Server_Attack(SelectedUnit, GameState->UnitBoard[HoveredUnit->Coordinates]);
 		AttackableOverlayOff();
 	}
+	// Spawn unit
+	else if (bSpawnableOverlayOn)
+	{
+		if (HoveredUnit)
+			Server_SpawnUnit(UnitToSpawnBP, HoveredUnit->Coordinates);
+		SpawnableOverlayOff();
+	}
 	// Select unit
 	else
 	{
@@ -336,39 +376,67 @@ void APaperPlayerController::CheckDeadUnit(AUnit* Unit)
 
 
 
-bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type)
+void APaperPlayerController::ToggleSpawnableOverlay(TSubclassOf<AUnit> Type)
+{
+	if (bSpawnableOverlayOn && Type == UnitToSpawnBP)
+		SpawnableOverlayOff();
+	else
+		SpawnableOverlayOn(Type);
+}
+
+void APaperPlayerController::SpawnableOverlayOn(TSubclassOf<AUnit> Type)
+{
+	const int TeamIndex = static_cast<int>(GetPaperPlayerState()->Team);
+	for (auto& Spawn : GameState->BoardSpawns[TeamIndex].Spawns)
+		SpawnableTiles.Add(Spawn->Coordinates);
+	UnitToSpawnBP = Type;
+	bSpawnableOverlayOn = true;
+	LastHoveredUnit = nullptr;			// update overlays in playertick
+}
+
+void APaperPlayerController::SpawnableOverlayOff()
+{
+	SpawnableTiles.Empty();
+	bSpawnableOverlayOn = false;
+	LastHoveredUnit = nullptr;			// update overlays on next tick
+}
+
+bool APaperPlayerController::Server_SpawnUnit_Validate(TSubclassOf<AUnit> Type, int Coordinates)
 {
 	return true;
 }
 
-void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type)
+void APaperPlayerController::Server_SpawnUnit_Implementation(TSubclassOf<AUnit> Type, int Coordinates)
 {
 	ETeam& Team = GetPaperPlayerState()->Team;
 	int Cost = Type.GetDefaultObject()->Cost;
 	if (GetPaperPlayerState()->IsTurn()
 		&& GameState->GetGold(Team) >= Cost)
-	{
-		int BoardWidth = GameState->GetBoardWidth();
-		for (int i = 0; i < GameState->BoardSpawns[static_cast<int>(Team)].Spawns.Num(); i++)
-			if (GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] == nullptr)
+		// recheck if coordinates are actually a spawn, because SpawnableTiles is calculated/stored on client, but this is a server rpc
+		for (auto& Spawn : GameState->BoardSpawns[static_cast<int>(GetPaperPlayerState()->Team)].Spawns)
+			if (Spawn->Coordinates == Coordinates)
 			{
-				#if WITH_EDITOR
-					FActorSpawnParameters SpawnParams;
-					SpawnParams.bHideFromSceneOutliner = false;
-					AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
-				#else
-					AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector((GameState->GetBoardSpawn(Team, i)->Coordinates % BoardWidth) * 200, GameState->GetBoardSpawn(Team, i)->Coordinates / BoardWidth * 200, 200), FRotator(0.f));
-				#endif
+				if (GameState->UnitBoard[Coordinates] == nullptr)
+				{
+					int BoardWidth = GameState->GetBoardWidth();
+					#if WITH_EDITOR
+						FActorSpawnParameters SpawnParams;
+						SpawnParams.bHideFromSceneOutliner = false;
+						AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector(Coordinates % BoardWidth * 200, Coordinates / BoardWidth * 200, 200), FRotator(0.f), SpawnParams);
+					#else
+						AUnit* SpawnedUnit = GetWorld()->SpawnActor<AUnit>(Type, FVector(Coordinates % BoardWidth * 200, Coordinates / BoardWidth * 200, 200), FRotator(0.f));
+					#endif
 
-				SpawnedUnit->SetOwner(this);
-				GameState->UnitBoard[GameState->GetBoardSpawn(Team, i)->Coordinates] = SpawnedUnit;
-				GameState->ChangeGold(Team, -Cost);
-				SpawnedUnit->Team = Team;
-				SpawnedUnit->OnRep_Team();
-				SpawnedUnit->Coordinates = GameState->GetBoardSpawn(Team, i)->Coordinates;
+					SpawnedUnit->SetOwner(this);
+					GameState->UnitBoard[Coordinates] = SpawnedUnit;
+					GameState->ChangeGold(Team, -Cost);
+					SpawnedUnit->Team = Team;
+					SpawnedUnit->OnRep_Team();
+					SpawnedUnit->Coordinates = Coordinates;
+					break;
+				}
 				break;
 			}
-	}
 }
 
 
