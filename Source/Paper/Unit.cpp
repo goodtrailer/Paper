@@ -159,20 +159,25 @@ void AUnit::DetermineAttackableTiles_Implementation(TSet<int>& OutReachableTiles
 void AUnit::Attack_Implementation(AUnit* Victim)
 {
 	Energy -= 2;
+
+	APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
+	GameState->TeamStats[static_cast<int>(Team)].NetDamage += FMath::Clamp(Victim->GetHP() - Victim->GetHPMax(), Damage, static_cast<int>(Victim->GetHP()));
 	if (Damage < Victim->GetHP())
-		Victim->SetHP(Victim->GetHP() - Damage);
+		Victim->SetHP(FMath::Min(static_cast<int>(Victim->GetHPMax()), Victim->GetHP() - Damage));
 	else
 	{
-		APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
 		GameState->Multicast_CheckDeadUnitForLocalPlayerController(Victim);
 		Victim->Die();
 		GameState->UnitBoard[Victim->Coordinates] = nullptr;
+		GameState->TeamStats[static_cast<int>(Team)].Kills++;
 	}
 }
 
 // should only be called by server
 void AUnit::Die_Implementation()
 {
+	if (Team != ETeam::Neutral)
+		GetWorld()->GetGameState<APaperGameState>()->TeamStats[static_cast<int>(Team)].Deaths++;
 	Destroy();
 }
 

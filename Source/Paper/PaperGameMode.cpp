@@ -187,6 +187,7 @@ void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 	GameState->CastleHP.Empty();
 	GameState->CastleHPMax.Empty();
 	GameState->TeamStatuses.Empty();
+	GameState->TeamStats.Empty();
 	GameState->TeamCount = 0;
 
 	// quickly run through texture to determine bounds
@@ -258,11 +259,13 @@ AfterBoundsDetermined:
 	GameState->CastleHP.Reserve(GameState->TeamCount);
 	GameState->CastleHPMax.Reserve(GameState->TeamCount);
 	GameState->TeamStatuses.Reserve(GameState->TeamCount);
+	GameState->TeamStats.Reserve(GameState->TeamCount);
 	for (uint8 i = 0; i < GameState->TeamCount; i++)
 	{
 		GameState->Gold.Add(StartingGold);
 		GameState->CastleHP.Add(StartingCastleHP);
 		GameState->CastleHPMax.Add(StartingCastleHPMax);
+		GameState->TeamStats[GameState->TeamStats.Emplace()].GDP = StartingGold;
 		if (i < OldTeamStatuses.Num())
 			GameState->TeamStatuses.Add(OldTeamStatuses[i]);
 		else

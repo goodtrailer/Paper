@@ -18,6 +18,21 @@ struct FTeamSpawns
 		TArray<class AUnit*> Spawns;
 };
 
+USTRUCT(BlueprintType)
+struct FTeamStats
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(BlueprintReadWrite)
+		int Kills;
+	UPROPERTY(BlueprintReadWrite)
+		int Deaths;
+	UPROPERTY(BlueprintReadWrite)
+		int NetDamage;
+	UPROPERTY(BlueprintReadWrite)
+		int GDP;
+};
+
 UCLASS()
 class PAPER_API APaperGameState : public AGameStateBase
 {
@@ -76,6 +91,8 @@ public:
 	TArray<uint8> CastleHPMax;			// An array of the maximum HP value for each team's castle.
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	TArray<EStatus> TeamStatuses;
+	UPROPERTY(Replicated, BlueprintReadOnly)
+	TArray<FTeamStats> TeamStats;
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	uint8 TeamCount;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)

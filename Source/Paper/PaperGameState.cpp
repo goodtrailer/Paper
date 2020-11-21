@@ -124,7 +124,11 @@ void APaperGameState::SetGold(ETeam Team, int NewAmount)
 void APaperGameState::ChangeGold(ETeam Team, int DeltaGold)
 {
 	if (static_cast<int>(Team) < Gold.Num())
+	{
 		Gold[static_cast<int>(Team)] += DeltaGold;
+		if (DeltaGold > 0)
+			TeamStats[static_cast<int>(Team)].GDP += DeltaGold;
+	}
 	else
 		GLog->Logf(TEXT("Attempted to change gold for team %d; invalid operation!"), Team);
 }
@@ -167,6 +171,7 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, CastleHP)
 	DOREPLIFETIME(APaperGameState, CastleHPMax)
 	DOREPLIFETIME(APaperGameState, TeamStatuses)
+	DOREPLIFETIME(APaperGameState, TeamStats)
 	DOREPLIFETIME(APaperGameState, TeamCount)
 	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
 	DOREPLIFETIME(APaperGameState, bGameStarted)
@@ -176,7 +181,6 @@ APaperGameState::APaperGameState()
 {
 	bReplicates = true;
 	bAlwaysRelevant = true;
-//	Turn = -1;			// force replication whenever a client joins.
 }
 
 AUnit* APaperGameState::GetBoardSpawn(ETeam team, int index) const

@@ -103,6 +103,8 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Menu", IE_Pressed, this, &APaperPlayerController::ToggleMenu);
 	InputComponent->BindAction("Resize HP Bar Show Radius", IE_Pressed, this, &APaperPlayerController::ResizeHPBarShowRadiusStart);
 	InputComponent->BindAction("Resize HP Bar Show Radius", IE_Released, this, &APaperPlayerController::ResizeHPBarShowRadiusStop);
+	InputComponent->BindAction("Scoreboard", IE_Pressed, this, &APaperPlayerController::ShowScoreboard);
+	InputComponent->BindAction("Scoreboard", IE_Released, this, &APaperPlayerController::HideScoreboard);
 }
 
 
@@ -302,6 +304,18 @@ void APaperPlayerController::ToggleMenu()
 	UserInterface->ToggleMenu();
 }
 
+void APaperPlayerController::ShowScoreboard()
+{
+	if (bInGame)
+		(ScoreboardInterface = CreateWidget<UUserWidget>(this, ScoreboardInterfaceBP))->AddToViewport();
+}
+
+void APaperPlayerController::HideScoreboard()
+{
+	if (ScoreboardInterface && bInGame)
+		ScoreboardInterface->RemoveFromViewport();
+}
+
 void APaperPlayerController::ResizeHPBarShowRadiusStart()
 {
 	GLog->Log(L"Start");
@@ -316,7 +330,7 @@ void APaperPlayerController::ResizeHPBarShowRadiusStop()
 
 void APaperPlayerController::CheckDeadUnit(AUnit* Unit)
 {
-	if (bInGame && SelectedUnit == Unit)
+	if (SelectedUnit == Unit)
 			SelectedUnit = nullptr;
 }
 

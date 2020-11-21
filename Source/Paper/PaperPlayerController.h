@@ -49,6 +49,8 @@ public:
 	class ULobbyUserInterface* LobbyInterface;
 	UPROPERTY(BlueprintReadWrite)
 	class UChatUserInterface* ChatInterface;
+	UPROPERTY(BlueprintReadWrite)
+	class UUserWidget* ScoreboardInterface;
 	class APaperHUD* HUD;
 	UPROPERTY(Replicated)
 	bool bInGame;				// can't be put in PaperPlayerState because it needs to be used immediately. Also, no other player needs to know this value, only the server does.
@@ -68,6 +70,8 @@ protected:
 	void Debug();
 	void SelectUnit();
 	void ToggleMenu();
+	void ShowScoreboard();
+	void HideScoreboard();
 	void ResizeHPBarShowRadiusStart();
 	void ResizeHPBarShowRadiusStop();
 	UFUNCTION(Server, Reliable, WithValidation)
@@ -82,7 +86,7 @@ protected:
 	void FocusChatbox();
 
 	class ACameraPawn* CameraPawn;
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadWrite)
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
 	class AUnit* LastHoveredUnit;
@@ -129,6 +133,8 @@ protected:
 	TSubclassOf<class ULobbyUserInterface> LobbyInterfaceBP;
 	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
 	TSubclassOf<class UChatUserInterface> ChatInterfaceBP;
+	UPROPERTY(EditAnywhere, Category = "Miscellaneous Blueprints")
+	TSubclassOf<class UUserWidget> ScoreboardInterfaceBP;
 
 private:
 	class APaperPlayerState* UnsafePlayerState;
