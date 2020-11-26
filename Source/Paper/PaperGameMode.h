@@ -21,9 +21,10 @@ protected:
 
 	bool ColorsNearlyEqual(FColor, FColor);			// Somewhat unnecessary since the switch to pngs. Was previously used due to jpg compression.
 	UFUNCTION(BlueprintCallable)
-	void ParseBoardLayoutTexture(const UTexture2D* Texture);				// Sets values in PaperGameState
+	bool ParseBoardLayoutTexture(const UTexture2D* Texture);				// Sets values in PaperGameState
 	UFUNCTION(BlueprintCallable)
 	bool ParseBoardLayoutFile(const FString& Filename);
+	bool ParseBoardLayout(const uint8* BoardImage, const int BoardLayoutWidth, const int BoardLayoutHeight);
 	APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	void Logout(AController* Exiting) override;
 
@@ -48,6 +49,10 @@ protected:
 	uint8 StartingCastleHP;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	uint8 StartingCastleHPMax;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	uint8 TimerCoefficient;
+	UPROPERTY(EditAnywhere, Category = "Gameplay")
+	uint8 TimerBase;
 	UPROPERTY(VisibleAnywhere, Category = "Misc")
 	TMap<FString, uint8> NameCount;
 	
@@ -59,7 +64,8 @@ struct APaperGameMode::ManagedMipMap
 public:
 	ManagedMipMap(FTexture2DMipMap* Source);
 	~ManagedMipMap();
-	inline FColor* GetColorArray() const;
+	const FColor* GetColorArray() const;
+	FColor* GetColorArray();
 	const FTexture2DMipMap* GetMipMap() const;
 	FTexture2DMipMap* GetMipMap();
 	FTexture2DMipMap* operator->();

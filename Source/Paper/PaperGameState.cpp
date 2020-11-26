@@ -12,6 +12,9 @@
 #include "PaperPlayerController.h"
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
+#include "Components/SpinBox.h"
+
+#define TIMER_DELAY_MIN 15
 
 AUnit* APaperGameState::GetUnit(const FIntPoint& CoordinatesVector)
 {
@@ -145,6 +148,14 @@ int APaperGameState::GetBoardWidth() const
 
 void APaperGameState::EndTurn()
 {
+	if (Turn / TeamCount > 0)
+	{
+		float Now = GetWorld()->GetTimeSeconds();
+		float Elapsed = Now - TurnStartTime;
+		TeamTimers[Turn % TeamCount] -= FMath::Max(0.f, Elapsed - CurrentDelay);
+		TurnStartTime = Now;
+	}
+	
 	do
 	{
 		++Turn;
@@ -172,7 +183,10 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, CastleHPMax)
 	DOREPLIFETIME(APaperGameState, TeamStatuses)
 	DOREPLIFETIME(APaperGameState, TeamStats)
+	DOREPLIFETIME(APaperGameState, TeamTimers)
 	DOREPLIFETIME(APaperGameState, TeamCount)
+	DOREPLIFETIME(APaperGameState, InitialTimer)
+	DOREPLIFETIME(APaperGameState, DelayCoefficient)
 	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
 	DOREPLIFETIME(APaperGameState, bGameStarted)
 }
@@ -213,4 +227,31 @@ void APaperGameState::OnRep_CroppedBoardLayout()
 			}
 		LocalPC->ResetCameraPosition();
 	}
+}
+
+void APaperGameState::OnRep_TeamTimers()
+{
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (LocalPC->bInGame)
+		{
+
+		}
+}
+
+void APaperGameState::OnRep_InitialTimer()
+{
+	GLog->Log(L"OnRep_InitialTimer");
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
+			if (USpinBox* TimerUI = LobbyUI->TimerInterface)
+				TimerUI->SetValue(InitialTimer);
+}
+
+void APaperGameState::OnRep_DelayCoefficient()
+{
+	GLog->Log(L"OnRep_DelayCoefficient");
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
+			if (USpinBox* DelayCoefficientUI = LobbyUI->DelayCoefficientInterface)
+				DelayCoefficientUI->SetValue(DelayCoefficient);
 }

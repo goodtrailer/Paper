@@ -47,6 +47,8 @@ void APaperGameMode::BeginPlay()
 void APaperGameMode::BeginGame()
 {
 	GameState->Turn = static_cast<uint8>(ETeam::Green);
+	for (auto& TeamTimer : GameState->TeamTimers)
+		TeamTimer = GameState->InitialTimer;
 	GameState->BoardSpawns.AddDefaulted(GameState->TeamCount);
 
 
@@ -128,6 +130,7 @@ void APaperGameMode::BeginGame()
 
 	GameState->bGameStarted = true;
 	GameState->Multicast_StartGameForLocalPlayerController();
+	GameState->TurnStartTime = GetWorld()->GetSeconds();
 }
 
 // set player name
@@ -174,132 +177,55 @@ void APaperGameMode::Logout(AController* Exiting)
 	}
 }
 
-void APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
+bool APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 {
 	auto OldTeamStatuses = GameState->TeamStatuses;
-
 	ManagedMipMap ManagedBoardLayoutMipMap(&Texture->PlatformData->Mips[0]);
-	int BoardLayoutBounds[2][2];
-	int& BoardLayoutWidth = ManagedBoardLayoutMipMap->SizeX;
-	// reset values in case this wasn't the first time a board was chosen
-	GameState->CroppedBoardLayout.Empty();
-	GameState->Gold.Empty();
-	GameState->CastleHP.Empty();
-	GameState->CastleHPMax.Empty();
-	GameState->TeamStatuses.Empty();
-	GameState->TeamStats.Empty();
-	GameState->TeamCount = 0;
+	const FColor* ColorArray = ManagedBoardLayoutMipMap.GetColorArray();
 
-	// quickly run through texture to determine bounds
+	uint8* RGBAArray = new uint8[4 * ManagedBoardLayoutMipMap->SizeX * ManagedBoardLayoutMipMap->SizeY];
+	for (int i = 0; i < ManagedBoardLayoutMipMap->SizeX * ManagedBoardLayoutMipMap->SizeY; i++)
 	{
-		uint8 CurrentBound = 0;
-		for (int x = 0; x < BoardLayoutWidth; x++)
-			for (int y = 0; y < ManagedBoardLayoutMipMap->SizeY; y++)
-				if (ColorsNearlyEqual(ColorCode::Bounds, ManagedBoardLayoutMipMap.GetColorArray()[x + y * BoardLayoutWidth]))
-				{
-					BoardLayoutBounds[CurrentBound][0] = x;
-					BoardLayoutBounds[CurrentBound][1] = y;
-					if (CurrentBound)
-						goto AfterBoundsDetermined;				// breaking out of nested loops. goto is okay here says stackoverflow
-					else
-						CurrentBound++;
-				}
+		// FColor::ToPackedRGBA and ::ToPackedBGRA are fucked. idk why but the alpha byte is put second in order.
+		// don't even think it's epic's fault. the source code for both funcs look fine.
+		RGBAArray[4 * i] = ColorArray[i].R;
+		RGBAArray[4 * i + 1] = ColorArray[i].G;
+		RGBAArray[4 * i + 2] = ColorArray[i].B;
+		RGBAArray[4 * i + 3] = ColorArray[i].A;
 	}
 
-AfterBoundsDetermined:
+	return ParseBoardLayout(
+		reinterpret_cast<uint8*>(RGBAArray),
+		ManagedBoardLayoutMipMap->SizeX,
+		ManagedBoardLayoutMipMap->SizeY
+	);
 
-	BoardLayoutBounds[0][0]++; BoardLayoutBounds[0][1]++; BoardLayoutBounds[1][0]--; BoardLayoutBounds[1][1]--; // crop unused outline around playable board
-
-	GameState->BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
-	GameState->BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
-	GameState->CroppedBoardLayout.Reserve(GameState->BoardWidth * GameState->BoardHeight);
-
-	// inefficient because processing texture a second time... too bad!
-	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
-	{
-		// fill in CroppedBoardLayout values
-		GameState->CroppedBoardLayout.Add(ManagedBoardLayoutMipMap.GetColorArray()[i % GameState->BoardWidth + BoardLayoutBounds[0][0] + (i / GameState->BoardWidth + BoardLayoutBounds[0][1]) * BoardLayoutWidth]);
-
-		// increment TeamCount accordingly
-		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Green))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Green) + 1;			// ETeam values start a 0, and we want the count, so add 1
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Purple))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Purple) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Brown))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Brown) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::White))
-				GameState->TeamCount = static_cast<uint8>(ETeam::White) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Black))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Black) + 1;
-		}
-	}
-
-	GameState->OnRep_CroppedBoardLayout();
-
-	GameState->Gold.Reserve(GameState->TeamCount);
-	GameState->CastleHP.Reserve(GameState->TeamCount);
-	GameState->CastleHPMax.Reserve(GameState->TeamCount);
-	GameState->TeamStatuses.Reserve(GameState->TeamCount);
-	GameState->TeamStats.Reserve(GameState->TeamCount);
-	for (uint8 i = 0; i < GameState->TeamCount; i++)
-	{
-		GameState->Gold.Add(StartingGold);
-		GameState->CastleHP.Add(StartingCastleHP);
-		GameState->CastleHPMax.Add(StartingCastleHPMax);
-		GameState->TeamStats[GameState->TeamStats.Emplace()].GDP = StartingGold;
-		if (i < OldTeamStatuses.Num())
-			GameState->TeamStatuses.Add(OldTeamStatuses[i]);
-		else
-			GameState->TeamStatuses.Add(EStatus::Open);
-	}
-	GameState->PassiveIncome = StartingPassiveIncome;
+	delete RGBAArray;
 }
 
 bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
 {
-	// backup game state values in case things go wrong
-	auto BackupCroppedBoardLayout = GameState->CroppedBoardLayout;
-	auto BackupGold = GameState->Gold;
-	auto BackupCastleHP = GameState->CastleHP;
-	auto BackupCastleHPMax = GameState->CastleHPMax;
-	auto BackupTeamStatuses = GameState->TeamStatuses;
-	auto BackupTeamCount = GameState->TeamCount;
-
-	// reset values in case this wasn't the first time a board was chosen
-	GameState->CroppedBoardLayout.Empty();
-	GameState->Gold.Empty();
-	GameState->CastleHP.Empty();
-	GameState->CastleHPMax.Empty();
-	GameState->TeamStatuses.Empty();
-	GameState->TeamCount = 0;
-
-
 	constexpr int PNG_CHANNEL_COUNT = 4;
 	int BoardLayoutWidth, BoardLayoutHeight, ChannelCount;
 	uint8* BoardImage = stbi_load(TCHAR_TO_UTF8(*Filename), &BoardLayoutWidth, &BoardLayoutHeight, &ChannelCount, PNG_CHANNEL_COUNT);
-	// image could not be processed or was not a 32 bit png, so invalid.
-	if (!BoardImage || ChannelCount != PNG_CHANNEL_COUNT)
-		goto RestoreGameStateValues;
 
+	
+	if (BoardImage && ChannelCount == PNG_CHANNEL_COUNT)
+	{
+		bool bSuccess = ParseBoardLayout(BoardImage, BoardLayoutWidth, BoardLayoutHeight);
+		stbi_image_free(BoardImage);
+		return bSuccess;
+	}
+	else // image could not be processed or was not a 32 bit png, so invalid.
+	{
+		stbi_image_free(BoardImage);
+		return false;
+	}
+
+}
+
+bool APaperGameMode::ParseBoardLayout(const uint8* BoardImage, const int BoardLayoutWidth, const int BoardLayoutHeight)
+{
 
 	// quickly run through texture to determine bounds
 	int BoardLayoutBounds[2][2];
@@ -316,7 +242,6 @@ bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
 						BoardImage[4 * (x + y * BoardLayoutWidth) + 3]				// A
 					}))
 				{
-
 					BoardLayoutBounds[CurrentBound][0] = x;
 					BoardLayoutBounds[CurrentBound][1] = y;
 					if (CurrentBound)
@@ -324,103 +249,111 @@ bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
 					else
 						CurrentBound++;
 				}
-
-		// not enough bounds were detected to goto AfterBoundsDetermined, so invalid.
-		goto RestoreGameStateValues;
+		// Not enough bounds detected
+		return false;
 	}
 
 AfterBoundsDetermined:
 	BoardLayoutBounds[0][0]++; BoardLayoutBounds[0][1]++; BoardLayoutBounds[1][0]--; BoardLayoutBounds[1][1]--; // crop unused outline around playable board
 
-	GameState->BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
-	GameState->BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
-
+	const int BoardWidth = BoardLayoutBounds[1][0] - BoardLayoutBounds[0][0] + 1;
+	const int BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
+	
 	// board width/height aren't positive, so invalid.
-	if (GameState->BoardWidth <= 0 || GameState->BoardHeight <= 0)
-		goto RestoreGameStateValues;
-
-	GameState->CroppedBoardLayout.Reserve(GameState->BoardWidth * GameState->BoardHeight);
-
-	// inefficient because processing texture a second time... too bad!
-	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
+	if (BoardWidth > 0 && BoardHeight > 0)
 	{
-		// fill in CroppedBoardLayout values
-		int x = i % GameState->BoardWidth + BoardLayoutBounds[0][0];
-		int y = (i / GameState->BoardWidth + BoardLayoutBounds[0][1]);
-		GameState->CroppedBoardLayout.Add({
-			BoardImage[4 * (x + y * BoardLayoutWidth)],
-			BoardImage[4 * (x + y * BoardLayoutWidth) + 1],
-			BoardImage[4 * (x + y * BoardLayoutWidth) + 2],
-			BoardImage[4 * (x + y * BoardLayoutWidth) + 3]
-			});
+		TArray<FColor> CroppedBoardLayout;
+		CroppedBoardLayout.Reserve(BoardWidth * BoardHeight);
+		int TeamCount = 0;
 
-		// increment TeamCount accordingly
-		if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
+		// inefficient because processing texture a second time... too bad!
+		for (int i = 0; i < BoardLayoutWidth * BoardLayoutHeight; i++)
 		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Green))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Green) + 1;			// ETeam values start a 0, and we want the count, so add 1
+			// fill in CroppedBoardLayout values
+			int x = i % BoardWidth + BoardLayoutBounds[0][0];
+			int y = (i / BoardWidth + BoardLayoutBounds[0][1]);
+			CroppedBoardLayout.Add({
+				BoardImage[4 * (x + y * BoardLayoutWidth)],
+				BoardImage[4 * (x + y * BoardLayoutWidth) + 1],
+				BoardImage[4 * (x + y * BoardLayoutWidth) + 2],
+				BoardImage[4 * (x + y * BoardLayoutWidth) + 3]
+				});
+
+			// increment TeamCount accordingly
+			if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnGreen))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::Green))
+					TeamCount = static_cast<uint8>(ETeam::Green) + 1;			// ETeam values start a 0, and we want the count, so add 1
+			}
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::Red))
+					TeamCount = static_cast<uint8>(ETeam::Red) + 1;
+			}
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnPurple))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::Purple))
+					TeamCount = static_cast<uint8>(ETeam::Purple) + 1;
+			}
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBrown))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::Brown))
+					TeamCount = static_cast<uint8>(ETeam::Brown) + 1;
+			}
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnWhite))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::White))
+					TeamCount = static_cast<uint8>(ETeam::White) + 1;
+			}
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBlack))
+			{
+				if (TeamCount <= static_cast<uint8>(ETeam::Black))
+					TeamCount = static_cast<uint8>(ETeam::Black) + 1;
+			}
 		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
+
+		// if there were no board spawns, then invalid.
+		if (TeamCount > 0)
 		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Red))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Red) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Purple))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Purple) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Brown))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Brown) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::White))
-				GameState->TeamCount = static_cast<uint8>(ETeam::White) + 1;
-		}
-		else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
-		{
-			if (GameState->TeamCount <= static_cast<uint8>(ETeam::Black))
-				GameState->TeamCount = static_cast<uint8>(ETeam::Black) + 1;
+			auto OldTeamStatuses = GameState->TeamStatuses;
+
+			// reset values in case this wasn't the first time a board was chosen
+			GameState->Gold.Empty();
+			GameState->CastleHP.Empty();
+			GameState->CastleHPMax.Empty();
+			GameState->TeamStatuses.Empty();
+			GameState->TeamStats.Empty();
+			GameState->TeamTimers.Empty();
+
+			GameState->TeamCount = TeamCount;
+			GameState->InitialTimer = TeamCount * TimerCoefficient + TimerBase;
+			GameState->OnRep_InitialTimer();
+			GameState->CroppedBoardLayout = CroppedBoardLayout;
+			GameState->BoardWidth = BoardWidth;
+			GameState->BoardHeight = BoardHeight;
+			GameState->OnRep_CroppedBoardLayout();
+
+			GameState->Gold.Reserve(GameState->TeamCount);
+			GameState->CastleHP.Reserve(GameState->TeamCount);
+			GameState->CastleHPMax.Reserve(GameState->TeamCount);
+			GameState->TeamStatuses.Reserve(GameState->TeamCount);
+			GameState->TeamStats.Reserve(GameState->TeamCount);
+			GameState->TeamTimers.AddZeroed(GameState->TeamCount);
+			for (uint8 i = 0; i < GameState->TeamCount; i++)
+			{
+				GameState->Gold.Add(StartingGold);
+				GameState->CastleHP.Add(StartingCastleHP);
+				GameState->CastleHPMax.Add(StartingCastleHPMax);
+				GameState->TeamStats[GameState->TeamStats.Emplace()].GDP = StartingGold;
+				if (i < OldTeamStatuses.Num())
+					GameState->TeamStatuses.Add(OldTeamStatuses[i]);
+				else
+					GameState->TeamStatuses.Add(EStatus::Open);
+			}
+			GameState->PassiveIncome = StartingPassiveIncome;
+			return true;
 		}
 	}
-
-	// if there were no board spawns, then invalid.
-	if (!GameState->TeamCount)
-		goto RestoreGameStateValues;
-
-	GameState->OnRep_CroppedBoardLayout();
-
-	GameState->Gold.Reserve(GameState->TeamCount);
-	GameState->CastleHP.Reserve(GameState->TeamCount);
-	GameState->CastleHPMax.Reserve(GameState->TeamCount);
-	GameState->TeamStatuses.Reserve(GameState->TeamCount);
-	for (uint8 i = 0; i < GameState->TeamCount; i++)
-	{
-		GameState->Gold.Add(StartingGold);
-		GameState->CastleHP.Add(StartingCastleHP);
-		GameState->CastleHPMax.Add(StartingCastleHPMax);
-		if (i < BackupTeamStatuses.Num())
-			GameState->TeamStatuses.Add(BackupTeamStatuses[i]);
-		else
-			GameState->TeamStatuses.Add(EStatus::Open);
-	}
-	GameState->PassiveIncome = StartingPassiveIncome;
-
-	// everything went well, so valid.
-	stbi_image_free(BoardImage);
-	return true;
-
-RestoreGameStateValues:
-	stbi_image_free(BoardImage);
-	GameState->CroppedBoardLayout = BackupCroppedBoardLayout;
-	GameState->Gold = BackupGold;
-	GameState->CastleHP = BackupCastleHP;
-	GameState->CastleHPMax = BackupCastleHPMax;
-	GameState->TeamStatuses = BackupTeamStatuses;
-	GameState->TeamCount = BackupTeamCount;
 	return false;
 }
 
@@ -443,7 +376,12 @@ APaperGameMode::ManagedMipMap::~ManagedMipMap()
 	MipMap->BulkData.Unlock();
 }
 
-inline FColor* APaperGameMode::ManagedMipMap::GetColorArray() const
+const FColor* APaperGameMode::ManagedMipMap::GetColorArray() const
+{
+	return ColorArray;
+}
+
+FColor* APaperGameMode::ManagedMipMap::GetColorArray()
 {
 	return ColorArray;
 }

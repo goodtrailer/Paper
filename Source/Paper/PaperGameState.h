@@ -89,12 +89,18 @@ public:
 	TArray<uint8> CastleHP;				// An array of the current HP value for each team's castle.
 	UPROPERTY(Replicated)
 	TArray<uint8> CastleHPMax;			// An array of the maximum HP value for each team's castle.
+	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_TeamTimers, VisibleAnywhere)
+	TArray<float> TeamTimers;
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	TArray<EStatus> TeamStatuses;
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	TArray<FTeamStats> TeamStats;
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	uint8 TeamCount;
+	UPROPERTY(ReplicatedUsing = OnRep_InitialTimer, BlueprintReadWrite)
+	int InitialTimer = 125;
+	UPROPERTY(ReplicatedUsing = OnRep_DelayCoefficient, BlueprintReadWrite)
+	int DelayCoefficient = 10;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	bool bGameStarted;
 	
@@ -103,7 +109,12 @@ protected:
 	void OnRep_Turn();
 	UFUNCTION()
 	void OnRep_CroppedBoardLayout();
-
+	UFUNCTION()
+	void OnRep_TeamTimers();
+	UFUNCTION()
+	void OnRep_InitialTimer();
+	UFUNCTION()
+	void OnRep_DelayCoefficient();
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Victory(ETeam Team);
 	UFUNCTION(NetMulticast, Reliable)
@@ -117,4 +128,6 @@ protected:
 	int BoardHeight;
 	UPROPERTY(ReplicatedUsing = OnRep_CroppedBoardLayout)
 	TArray<FColor> CroppedBoardLayout;
+	float TurnStartTime;
+	int CurrentDelay;
 };
