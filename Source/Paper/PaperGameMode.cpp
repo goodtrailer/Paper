@@ -49,7 +49,10 @@ void APaperGameMode::BeginPlay()
 
 void APaperGameMode::BeginGame()
 {
-	GameState->Turn = static_cast<uint8>(ETeam::Green);
+	GameState->Turn = 0;
+	while (GameState->TeamStatuses[GameState->Turn % GameState->TeamCount] != EStatus::Alive)
+		++GameState->Turn;
+
 	for (auto& TeamTimer : GameState->TeamTimers)
 		TeamTimer = GameState->InitialTimer;
 	GameState->BoardSpawns.AddDefaulted(GameState->TeamCount);
