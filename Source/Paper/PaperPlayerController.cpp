@@ -107,6 +107,7 @@ void APaperPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Resize HP Bar Show Radius", IE_Released, this, &APaperPlayerController::ResizeHPBarShowRadiusStop);
 	InputComponent->BindAction("Scoreboard", IE_Pressed, this, &APaperPlayerController::ShowScoreboard);
 	InputComponent->BindAction("Scoreboard", IE_Released, this, &APaperPlayerController::HideScoreboard);
+	InputComponent->BindAction("Debug", IE_Pressed, this, &APaperPlayerController::Debug);
 }
 
 

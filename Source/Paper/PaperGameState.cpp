@@ -59,6 +59,7 @@ void APaperGameState::Defeat(ETeam DefeatedTeam)
 					winner = static_cast<ETeam>(i);
 				}
 			}
+			bGameStarted = false;
 			Multicast_Victory(winner);				// if we get here, then no multicast_defeat, meaning either at most one player is alive, so broadcast victory screen to that living player. if there is none, the victory goes to team -1, which doesn't exist (hopefully ?).
 		}
 
@@ -108,6 +109,14 @@ void APaperGameState::Multicast_RemovePlayerForLocalLobbyUI_Implementation(const
 			GLog->Log(TEXT("Remove player failed!"));
 }
 
+float APaperGameState::GetTimer(ETeam Team) const
+{
+	if (static_cast<int>(Team) < TeamTimers.Num())
+		return TeamTimers[static_cast<int>(Team)];
+	else
+		return -1.f;
+}
+
 int APaperGameState::GetGold(ETeam Team) const
 {
 	if (static_cast<int>(Team) < Gold.Num())
@@ -136,6 +145,18 @@ void APaperGameState::ChangeGold(ETeam Team, int DeltaGold)
 		GLog->Logf(TEXT("Attempted to change gold for team %d; invalid operation!"), Team);
 }
 
+float APaperGameState::GetRemainingDelay() const
+{
+	float ClampedDelay = FMath::Max(CurrentDelay, TIMER_DELAY_MIN);
+	if (Turn / TeamCount > 0)
+	{
+		float Elapsed = GetServerWorldTimeSeconds() - TurnStartTime;
+		return ClampedDelay - Elapsed;
+	}
+	else
+		return ClampedDelay;
+}
+
 int APaperGameState::GetBoardHeight() const
 {
 	return BoardHeight;
@@ -148,23 +169,33 @@ int APaperGameState::GetBoardWidth() const
 
 void APaperGameState::EndTurn()
 {
-	if (Turn / TeamCount > 0)
-	{
-		float Now = GetWorld()->GetTimeSeconds();
-		float Elapsed = Now - TurnStartTime;
-		TeamTimers[Turn % TeamCount] -= FMath::Max(0.f, Elapsed - CurrentDelay);
-		TurnStartTime = Now;
-	}
+	if (GetRemainingDelay() < 0)
+		TeamTimers[Turn % TeamCount] += GetRemainingDelay();
+	TurnStartTime = GetServerWorldTimeSeconds();
 	
 	do
-	{
 		++Turn;
-	} while (TeamStatuses[Turn % TeamCount] != EStatus::Alive);
+	while (TeamStatuses[Turn % TeamCount] != EStatus::Alive);
 
-	ChangeGold(static_cast<ETeam>((Turn) % BoardSpawns.Num()), PassiveIncome);
+	ChangeGold(static_cast<ETeam>(Turn % TeamCount), PassiveIncome);
+	CurrentDelay = 0;
+	
 	for (auto Unit : UnitBoard)
-		if (Unit && Turn % BoardSpawns.Num() == static_cast<uint8>(Unit->Team))
+		if (Unit && static_cast<ETeam>(Turn % TeamCount) == Unit->Team)
+		{
 			Unit->Passive();
+			if (Unit->Type != EType::Castle)
+				CurrentDelay += DelayCoefficient;
+			else
+				CurrentTurnCastle = Unit;
+		}
+
+	auto& TimerManager = GetWorldTimerManager();
+	TimerManager.SetTimer(TurnTimerHandle, [&](void) {
+		if (CurrentTurnCastle && bGameStarted)
+			CurrentTurnCastle->Die();				// a very VERY janky way of defeating a player. this func BP overriden.
+	}, GetRemainingDelay() + TeamTimers[Turn % TeamCount], false);
+
 	OnRep_Turn();
 }
 
@@ -189,6 +220,8 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, DelayCoefficient)
 	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
 	DOREPLIFETIME(APaperGameState, bGameStarted)
+	DOREPLIFETIME(APaperGameState, TurnStartTime)
+	DOREPLIFETIME(APaperGameState, CurrentDelay)
 }
 
 APaperGameState::APaperGameState()
@@ -229,18 +262,8 @@ void APaperGameState::OnRep_CroppedBoardLayout()
 	}
 }
 
-void APaperGameState::OnRep_TeamTimers()
-{
-	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-		if (LocalPC->bInGame)
-		{
-
-		}
-}
-
 void APaperGameState::OnRep_InitialTimer()
 {
-	GLog->Log(L"OnRep_InitialTimer");
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
 			if (USpinBox* TimerUI = LobbyUI->TimerInterface)
@@ -249,9 +272,14 @@ void APaperGameState::OnRep_InitialTimer()
 
 void APaperGameState::OnRep_DelayCoefficient()
 {
-	GLog->Log(L"OnRep_DelayCoefficient");
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
 			if (USpinBox* DelayCoefficientUI = LobbyUI->DelayCoefficientInterface)
 				DelayCoefficientUI->SetValue(DelayCoefficient);
+}
+
+void APaperGameState::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorldTimerManager().ClearAllTimersForObject(this);
+	Super::EndPlay(EndPlayReason);
 }

@@ -14,6 +14,9 @@
 #include "EngineUtils.h"
 #include "stb_image.h"
 
+#define TIMER_BASE 96
+#define TIMER_COEFFICIENT 12
+
 #define SPAWN_UNIT(CLASS, TEAM, COORDS) { \
 	FVector SpawnLoc(COORDS % GameState->BoardWidth * 200, COORDS / GameState->BoardWidth * 200, 200); \
 	GameState->UnitBoard[COORDS] = GetWorld()->SpawnActor<AUnit>(CLASS, SpawnLoc, FRotator::ZeroRotator); \
@@ -130,7 +133,8 @@ void APaperGameMode::BeginGame()
 
 	GameState->bGameStarted = true;
 	GameState->Multicast_StartGameForLocalPlayerController();
-	GameState->TurnStartTime = GetWorld()->GetSeconds();
+	GameState->TurnStartTime = GameState->GetServerWorldTimeSeconds();
+	GameState->CurrentDelay = 0;
 }
 
 // set player name
@@ -326,7 +330,7 @@ AfterBoundsDetermined:
 			GameState->TeamTimers.Empty();
 
 			GameState->TeamCount = TeamCount;
-			GameState->InitialTimer = TeamCount * TimerCoefficient + TimerBase;
+			GameState->InitialTimer = TeamCount * TIMER_COEFFICIENT + TIMER_BASE;
 			GameState->OnRep_InitialTimer();
 			GameState->CroppedBoardLayout = CroppedBoardLayout;
 			GameState->BoardWidth = BoardWidth;

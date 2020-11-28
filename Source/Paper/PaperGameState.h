@@ -50,6 +50,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	int GetGold(ETeam Team) const;
 	UFUNCTION(BlueprintCallable)
+	float GetTimer(ETeam Team) const;
+	UFUNCTION(BlueprintCallable)
+	float GetRemainingDelay() const;
+	UFUNCTION(BlueprintCallable)
 	class AUnit* GetBoardSpawn(ETeam team, int index) const;
 	UFUNCTION(BlueprintCallable)
 	class AUnit* GetUnit(const FIntPoint& CoordinatesVector);
@@ -73,6 +77,7 @@ public:
 	void Multicast_Message(const FText& Message);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
+	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
@@ -89,7 +94,7 @@ public:
 	TArray<uint8> CastleHP;				// An array of the current HP value for each team's castle.
 	UPROPERTY(Replicated)
 	TArray<uint8> CastleHPMax;			// An array of the maximum HP value for each team's castle.
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_TeamTimers, VisibleAnywhere)
+	UPROPERTY(BlueprintReadWrite, Replicated, VisibleAnywhere)
 	TArray<float> TeamTimers;
 	UPROPERTY(Replicated, BlueprintReadOnly)
 	TArray<EStatus> TeamStatuses;
@@ -110,8 +115,6 @@ protected:
 	UFUNCTION()
 	void OnRep_CroppedBoardLayout();
 	UFUNCTION()
-	void OnRep_TeamTimers();
-	UFUNCTION()
 	void OnRep_InitialTimer();
 	UFUNCTION()
 	void OnRep_DelayCoefficient();
@@ -128,6 +131,10 @@ protected:
 	int BoardHeight;
 	UPROPERTY(ReplicatedUsing = OnRep_CroppedBoardLayout)
 	TArray<FColor> CroppedBoardLayout;
+	UPROPERTY(Replicated)
 	float TurnStartTime;
+	UPROPERTY(Replicated)
 	int CurrentDelay;
+	FTimerHandle TurnTimerHandle;
+	AUnit* CurrentTurnCastle;		// any arbitrary castle that the player whose turn it currently is owns
 };

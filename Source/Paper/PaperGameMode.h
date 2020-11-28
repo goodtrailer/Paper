@@ -49,10 +49,6 @@ protected:
 	uint8 StartingCastleHP;
 	UPROPERTY(EditAnywhere, Category = "Gameplay")
 	uint8 StartingCastleHPMax;
-	UPROPERTY(EditAnywhere, Category = "Gameplay")
-	uint8 TimerCoefficient;
-	UPROPERTY(EditAnywhere, Category = "Gameplay")
-	uint8 TimerBase;
 	UPROPERTY(VisibleAnywhere, Category = "Misc")
 	TMap<FString, uint8> NameCount;
 	

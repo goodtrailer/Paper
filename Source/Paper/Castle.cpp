@@ -29,8 +29,3 @@ ACastle::ACastle()
 {
 	StaticMeshComponent->SetIsReplicated(true);
 }
-
-void ACastle::DetermineMesh()
-{
-	
-}
