@@ -52,7 +52,7 @@ void APaperGameMode::BeginGame()
 	GameState->Turn = 0;
 	for (int i = 0; i < GameState->TeamCount; i++)
 	{
-		if (GameState->TeamStatuses[GameState->Turn % GameState->TeamCount] == EStatus::Alive)
+		if (GameState->TeamStatuses[i % GameState->TeamCount] == EStatus::Alive)
 		{
 			GameState->Turn = i;
 			break;

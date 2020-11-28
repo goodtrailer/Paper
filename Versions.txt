@@ -145,7 +145,8 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ TAB scoreboard
 			+ Redo shop info buttons
 			+ Select which spawn to spawn units at
-			- Customizable US delay timer that scales based off unit count:
+			+ Main menu background slideshow
+			+ Customizable US delay timer that scales based off unit count:
 				let m represent the main time in seconds
 				let t represent the number of teams
 				let d represent the delay in seconds
