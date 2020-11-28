@@ -50,8 +50,14 @@ void APaperGameMode::BeginPlay()
 void APaperGameMode::BeginGame()
 {
 	GameState->Turn = 0;
-	while (GameState->TeamStatuses[GameState->Turn % GameState->TeamCount] != EStatus::Alive)
-		++GameState->Turn;
+	for (int i = 0; i < GameState->TeamCount; i++)
+	{
+		if (GameState->TeamStatuses[GameState->Turn % GameState->TeamCount] == EStatus::Alive)
+		{
+			GameState->Turn = i;
+			break;
+		}
+	}
 
 	for (auto& TeamTimer : GameState->TeamTimers)
 		TeamTimer = GameState->InitialTimer;
