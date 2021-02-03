@@ -13,6 +13,8 @@
 #include "PaperUserInterface.h"
 #include "PaperPlayerState.h"
 #include "Components/SpinBox.h"
+#include "Kismet/GameplayStatics.h"
+#include "GlobalStatics.h"
 
 #define TIMER_DELAY_MIN 15
 
@@ -109,6 +111,11 @@ void APaperGameState::Multicast_RemovePlayerForLocalLobbyUI_Implementation(const
 			GLog->Log(TEXT("Remove player failed!"));
 }
 
+void APaperGameState::Multicast_PlaySound_Implementation(USoundBase* Sound)
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), Sound);
+}
+
 float APaperGameState::GetTimer(ETeam Team) const
 {
 	if (static_cast<int>(Team) < TeamTimers.Num())
@@ -196,6 +203,8 @@ void APaperGameState::EndTurn()
 			CurrentTurnCastle->Die();				// a very VERY janky way of defeating a player. this func BP overriden.
 	}, GetRemainingDelay() + TeamTimers[Turn % TeamCount], false);
 
+	auto* GlobalStatics = Cast<UGlobalStatics>(GEngine->GameSingleton);
+	Multicast_PlaySound(GlobalStatics->EndTurnSound);
 	OnRep_Turn();
 }
 
@@ -218,7 +227,6 @@ void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	DOREPLIFETIME(APaperGameState, TeamCount)
 	DOREPLIFETIME(APaperGameState, InitialTimer)
 	DOREPLIFETIME(APaperGameState, DelayCoefficient)
-	DOREPLIFETIME(APaperGameState, CroppedBoardLayout)
 	DOREPLIFETIME(APaperGameState, bGameStarted)
 	DOREPLIFETIME(APaperGameState, TurnStartTime)
 	DOREPLIFETIME(APaperGameState, CurrentDelay)
@@ -242,7 +250,7 @@ void APaperGameState::OnRep_Turn()
 			LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
 }
 
-void APaperGameState::OnRep_CroppedBoardLayout()
+void APaperGameState::Multicast_UpdateBoardPreview_Implementation(const TArray<FColor>& CroppedBoardLayout)
 {
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 	{

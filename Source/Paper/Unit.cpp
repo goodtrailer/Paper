@@ -160,7 +160,7 @@ void AUnit::Attack_Implementation(AUnit* Victim)
 {
 	Energy -= 2;
 
-	APaperGameState* GameState = GetWorld()->GetGameState<APaperGameState>();
+	auto* GameState = GetWorld()->GetGameState<APaperGameState>();
 	GameState->TeamStats[static_cast<int>(Team)].NetDamage += FMath::Clamp(Victim->GetHP() - Victim->GetHPMax(), Damage, static_cast<int>(Victim->GetHP()));
 	if (Damage < Victim->GetHP())
 		Victim->SetHP(FMath::Min(static_cast<int>(Victim->GetHPMax()), Victim->GetHP() - Damage));
@@ -178,6 +178,9 @@ void AUnit::Die_Implementation()
 {
 	if (Team != ETeam::Neutral)
 		GetWorld()->GetGameState<APaperGameState>()->TeamStats[static_cast<int>(Team)].Deaths++;
+	auto* GameState = GetWorld()->GetGameState<APaperGameState>();
+	auto* GlobalStatics = Cast<UGlobalStatics>(GEngine->GameSingleton);
+	GameState->Multicast_PlaySound(GlobalStatics->DieSound);
 	Destroy();
 }
 
@@ -211,7 +214,7 @@ void AUnit::SetHP(uint8 a)
 
 FIntPoint AUnit::GetCoordinatesVector()
 {
-	if (APaperGameState* GS = GetWorld()->GetGameState<APaperGameState>())
+	if (auto* GS = GetWorld()->GetGameState<APaperGameState>())
 		return { Coordinates % GS->GetBoardWidth(), Coordinates / GS->GetBoardWidth() };
 	else
 		return { -1, -1 };

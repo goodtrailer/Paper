@@ -153,3 +153,11 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 				let u represent the number of units a player controls
 				m = 12t + 96
 				d = min(10u, 15)
+		3. Local Multiplayer
+			- .
+			+ End turn/die sounds
+			+ Remove debug values
+			+ Fix lobby board uploading
+			+ Main menu background change button
+			- Nicer main menu buttons
+			

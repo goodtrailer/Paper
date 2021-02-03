@@ -75,6 +75,10 @@ public:
 	void Multicast_RemovePlayerForLocalLobbyUI(const FString& Name);
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_Message(const FText& Message);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlaySound(USoundBase* Sound);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_UpdateBoardPreview(const TArray<FColor>& CroppedBoardLayout);
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
@@ -113,8 +117,6 @@ protected:
 	UFUNCTION()
 	void OnRep_Turn();
 	UFUNCTION()
-	void OnRep_CroppedBoardLayout();
-	UFUNCTION()
 	void OnRep_InitialTimer();
 	UFUNCTION()
 	void OnRep_DelayCoefficient();
@@ -129,8 +131,6 @@ protected:
 	int BoardWidth;
 	UPROPERTY(Replicated)
 	int BoardHeight;
-	UPROPERTY(ReplicatedUsing = OnRep_CroppedBoardLayout)
-	TArray<FColor> CroppedBoardLayout;
 	UPROPERTY(Replicated)
 	float TurnStartTime;
 	UPROPERTY(Replicated)

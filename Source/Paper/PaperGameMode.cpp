@@ -73,29 +73,29 @@ void APaperGameMode::BeginGame()
 	for (int i = 0; i < GameState->BoardWidth * GameState->BoardHeight; i++)
 	{
 		//if not hole, then process, otherwise just skip and never generate
-		if (!ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Hole))
+		if (!ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Hole))
 		{
 			// spawn ground, because the board should have ground underneath regardless
 			GameState->GroundBoard[i] = GetWorld()->SpawnActor<AGround>(GroundBP, FVector(i % GameState->BoardWidth * 200, i / GameState->BoardWidth * 200, 0.f), FRotator::ZeroRotator);
 
-			if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Ground))
+			if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Ground))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Zero;
 			// if directional ground
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayU))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayU))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayR))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayR))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Right;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayD))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayD))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayL))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayL))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Left;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayUL))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUL))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Left;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayUR))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayUR))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Up | EDirection::Right;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayDR))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDR))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Right;
-			else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::OneWayDL))
+			else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::OneWayDL))
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Down | EDirection::Left;
 
 			else
@@ -103,33 +103,33 @@ void APaperGameMode::BeginGame()
 				// if ground not explicitly normal nor directional, then the ground underneath is normal
 				GameState->GroundBoard[i]->CollidableDirections = EDirection::Zero;
 
-				if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Wall))
+				if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Wall))
 					SPAWN_UNIT(WallBP, ETeam::Neutral, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::Mine))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::Mine))
 					SPAWN_UNIT(MineBP, ETeam::Neutral, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnGreen))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnGreen))
 					SPAWN_SPAWN(ETeam::Green, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnRed))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnRed))
 					SPAWN_SPAWN(ETeam::Red, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnPurple))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnPurple))
 					SPAWN_SPAWN(ETeam::Purple, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBrown))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBrown))
 					SPAWN_SPAWN(ETeam::Brown, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnWhite))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnWhite))
 					SPAWN_SPAWN(ETeam::White, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::SpawnBlack))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::SpawnBlack))
 					SPAWN_SPAWN(ETeam::Black, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleGreen))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleGreen))
 					SPAWN_UNIT(CastleBP, ETeam::Green, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleRed))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleRed))
 					SPAWN_UNIT(CastleBP, ETeam::Red, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastlePurple))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastlePurple))
 					SPAWN_UNIT(CastleBP, ETeam::Purple, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleBrown))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBrown))
 					SPAWN_UNIT(CastleBP, ETeam::Brown, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleWhite))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleWhite))
 					SPAWN_UNIT(CastleBP, ETeam::White, i)
-				else if (ColorsNearlyEqual(GameState->CroppedBoardLayout[i], ColorCode::CastleBlack))
+				else if (ColorsNearlyEqual(CroppedBoardLayout[i], ColorCode::CastleBlack))
 					SPAWN_UNIT(CastleBP, ETeam::Black, i)
 			}
 			GameState->GroundBoard[i]->Team = ETeam::Neutral;
@@ -207,13 +207,15 @@ bool APaperGameMode::ParseBoardLayoutTexture(const UTexture2D* Texture)
 		RGBAArray[4 * i + 3] = ColorArray[i].A;
 	}
 
-	return ParseBoardLayout(
+	bool bSuccess = ParseBoardLayout(
 		reinterpret_cast<uint8*>(RGBAArray),
 		ManagedBoardLayoutMipMap->SizeX,
 		ManagedBoardLayoutMipMap->SizeY
 	);
 
 	delete RGBAArray;
+
+	return bSuccess;
 }
 
 bool APaperGameMode::ParseBoardLayoutFile(const FString& Filename)
@@ -273,14 +275,14 @@ AfterBoundsDetermined:
 	const int BoardHeight = BoardLayoutBounds[1][1] - BoardLayoutBounds[0][1] + 1;
 	
 	// board width/height aren't positive, so invalid.
-	if (BoardWidth > 0 && BoardHeight > 0)
+	if (BoardWidth > 0 && BoardHeight > 0 && BoardWidth * BoardHeight <= PAPER_MAX_BOARD_AREA)
 	{
-		TArray<FColor> CroppedBoardLayout;
+		CroppedBoardLayout.Empty();
 		CroppedBoardLayout.Reserve(BoardWidth * BoardHeight);
 		int TeamCount = 0;
 
 		// inefficient because processing texture a second time... too bad!
-		for (int i = 0; i < BoardLayoutWidth * BoardLayoutHeight; i++)
+		for (int i = 0; i < BoardWidth * BoardHeight; i++)
 		{
 			// fill in CroppedBoardLayout values
 			int x = i % BoardWidth + BoardLayoutBounds[0][0];
@@ -341,10 +343,9 @@ AfterBoundsDetermined:
 			GameState->TeamCount = TeamCount;
 			GameState->InitialTimer = TeamCount * TIMER_COEFFICIENT + TIMER_BASE;
 			GameState->OnRep_InitialTimer();
-			GameState->CroppedBoardLayout = CroppedBoardLayout;
+			CroppedBoardLayout = CroppedBoardLayout;
 			GameState->BoardWidth = BoardWidth;
 			GameState->BoardHeight = BoardHeight;
-			GameState->OnRep_CroppedBoardLayout();
 
 			GameState->Gold.Reserve(GameState->TeamCount);
 			GameState->CastleHP.Reserve(GameState->TeamCount);
@@ -364,6 +365,7 @@ AfterBoundsDetermined:
 					GameState->TeamStatuses.Add(EStatus::Open);
 			}
 			GameState->PassiveIncome = StartingPassiveIncome;
+			GameState->Multicast_UpdateBoardPreview(CroppedBoardLayout);
 			return true;
 		}
 	}

@@ -6,6 +6,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "PaperGameMode.generated.h"
 
+#define PAPER_MAX_BOARD_AREA 16256
+
 UCLASS()
 class PAPER_API APaperGameMode : public AGameModeBase
 {
@@ -51,6 +53,8 @@ protected:
 	uint8 StartingCastleHPMax;
 	UPROPERTY(VisibleAnywhere, Category = "Misc")
 	TMap<FString, uint8> NameCount;
+	UPROPERTY(VisibleAnywhere, Category = "Misc")
+	TArray<FColor> CroppedBoardLayout;
 	
 	class APaperGameState* GameState;
 };
