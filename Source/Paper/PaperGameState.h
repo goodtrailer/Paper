@@ -1,3 +1,4 @@
+
 // Copyright (c) 2019–2020 Alden Wu
 
 #pragma once
@@ -42,7 +43,6 @@ class PAPER_API APaperGameState : public AGameStateBase
 
 public:
 	APaperGameState();
-	
 	UFUNCTION(BlueprintCallable)
 	int GetBoardWidth() const;
 	UFUNCTION(BlueprintCallable)
@@ -59,8 +59,8 @@ public:
 	class AUnit* GetUnit(const FIntPoint& CoordinatesVector);
 	
 	UFUNCTION(BlueprintCallable)
-	void Defeat(ETeam DefeatedTeam);
-	void EndTurn();
+	virtual void Defeat(ETeam DefeatedTeam);										// override
+	virtual void EndTurn();															// override
 	
 	UFUNCTION(BlueprintCallable)
 	void SetGold(ETeam Team, int NewAmount);
@@ -86,7 +86,7 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, Replicated)
 	TArray<FTeamSpawns> BoardSpawns;
-	UPROPERTY(BlueprintReadWrite, ReplicatedUsing = OnRep_Turn)
+	UPROPERTY(BlueprintReadWrite, Replicated)
 	int32 Turn;							// Modulus by number of teams in game should return the team that is currently taking their turn.
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<class AUnit*> UnitBoard;
@@ -108,14 +108,12 @@ public:
 	uint8 TeamCount;
 	UPROPERTY(ReplicatedUsing = OnRep_InitialTimer, BlueprintReadWrite)
 	int InitialTimer = 125;
-	UPROPERTY(ReplicatedUsing = OnRep_DelayCoefficient, BlueprintReadWrite)
+	UPROPERTY(Replicated = OnRep_DelayCoefficient, BlueprintReadWrite)
 	int DelayCoefficient = 10;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Replicated)
 	bool bGameStarted;
 	
 protected:
-	UFUNCTION()
-	void OnRep_Turn();
 	UFUNCTION()
 	void OnRep_InitialTimer();
 	UFUNCTION()

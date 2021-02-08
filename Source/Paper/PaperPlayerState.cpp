@@ -22,7 +22,10 @@ bool APaperPlayerState::IsTurn()
 	// UPDATE 3: figured it out. ue4 stack trace was wrong. it kept saying it was throwing on the line below, but not actually. what was actually going wrong was that playerstate doesn't even exist. which is weird, because then it should be throwing on the line that you try to call this member function, but that's ue4 for you.
 	if (UWorld* W = GetWorld())
 		if (APaperGameState* GS = W->GetGameState<APaperGameState>())
-			return (GS->Turn % GS->TeamCount == static_cast<uint8>(Team)) ? true : false;
+			if (GS->TeamCount == 0)
+				return false;
+			else
+				return (GS->Turn % GS->TeamCount == static_cast<uint8>(Team)) ? true : false;
 	return false;
 }
 

@@ -159,5 +159,5 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Remove debug values
 			+ Fix lobby board uploading
 			+ Main menu background change button
-			- Nicer main menu buttons
+			+ Nicer main menu buttons
 			

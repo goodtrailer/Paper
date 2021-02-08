@@ -146,6 +146,36 @@ void APaperGameMode::BeginGame()
 	GameState->CurrentDelay = 0;
 }
 
+void APaperGameMode::SetStat(int X, int Y, FString Stat, uint8 Value)
+{
+	int Coordinates = X + Y * GameState->BoardWidth;
+	if (Coordinates < GameState->UnitBoard.Num())
+	{
+		if (auto* Unit = GameState->UnitBoard[Coordinates])
+			if (Stat.Compare(L"HP", ESearchCase::IgnoreCase) == 0)
+				Unit->SetHP(Value);
+			else if (Stat.Compare(L"Energy", ESearchCase::IgnoreCase) == 0)
+				Unit->Energy = Value;
+			else if (Stat.Compare(L"Damage", ESearchCase::IgnoreCase) == 0)
+				Unit->Damage = Value;
+			else if (Stat.Compare(L"Range", ESearchCase::IgnoreCase) == 0)
+				Unit->Range = Value;
+			else if (Stat.Compare(L"RangeType", ESearchCase::IgnoreCase) == 0)
+				if (Unit->Type == EType::Archer)
+					GLog->Log(L"Archers do not support changing range types.");
+				else
+					Unit->RangeType = static_cast<ERangeType>(Value);
+			else
+				GLog->Logf(L"Unrecognized stat: %s.", *Stat);
+		else
+			GLog->Logf(L"No unit at coordinates: (%d, %d).", X, Y);
+	}
+	else
+	{
+		GLog->Logf(L"Unresolvable coordinates: (%d, %d).", X, Y);
+	}
+}
+
 // set player name
 APlayerController* APaperGameMode::Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage)
 {

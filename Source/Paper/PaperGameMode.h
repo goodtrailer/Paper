@@ -16,8 +16,10 @@ public:
 	APaperGameMode();
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable)
-	void BeginGame();
-
+	virtual void BeginGame();
+	UFUNCTION(Exec)
+	void SetStat(int X, int Y, FString Stat, uint8 Value);
+	
 protected:
 	struct ManagedMipMap;
 
@@ -26,7 +28,7 @@ protected:
 	bool ParseBoardLayoutTexture(const UTexture2D* Texture);				// Sets values in PaperGameState
 	UFUNCTION(BlueprintCallable)
 	bool ParseBoardLayoutFile(const FString& Filename);
-	bool ParseBoardLayout(const uint8* BoardImage, const int BoardLayoutWidth, const int BoardLayoutHeight);
+	virtual bool ParseBoardLayout(const uint8* BoardImage, const int BoardLayoutWidth, const int BoardLayoutHeight);
 	APlayerController* Login(UPlayer* NewPlayer, ENetRole InRemoteRole, const FString& Portal, const FString& Options, const FUniqueNetIdRepl& UniqueId, FString& ErrorMessage) override;
 	void Logout(AController* Exiting) override;
 

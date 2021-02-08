@@ -14,6 +14,8 @@
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "portable-file-dialogs.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Kismet/GameplayStatics.h"
 #include "PaperHUD.h"
 
 APaperPlayerController::APaperPlayerController()
@@ -43,7 +45,8 @@ void APaperPlayerController::BeginPlay()
 
 		(LobbyInterface = CreateWidget<ULobbyUserInterface>(this, LobbyInterfaceBP))->AddToViewport();
 		(ChatInterface = CreateWidget<UChatUserInterface>(this, ChatInterfaceBP))->AddToViewport();
-		UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP);
+		(UserInterface = CreateWidget<UPaperUserInterface>(this, UserInterfaceBP))->AddToViewport();
+		UserInterface->SetVisibility(ESlateVisibility::Hidden);
 
 		(SelectOverlay = GetWorld()->SpawnActor<AActor>(SelectOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
 		(HoverOverlay = GetWorld()->SpawnActor<AActor>(HoverOverlayBP, FVector(0, 0, 200), FRotator::ZeroRotator))->GetRootComponent()->SetVisibility(false);
@@ -67,9 +70,8 @@ void APaperPlayerController::StartGame()
 	CameraPawn->ResetPosition();
 
 	// switch ui and update all the widgets
-	LobbyInterface->RemoveFromViewport();
-	UserInterface->AddToViewport();
-	UserInterface->UpdateTurn(GetPaperPlayerState()->IsTurn());
+	LobbyInterface->SetVisibility(ESlateVisibility::Hidden);
+	UserInterface->SetVisibility(ESlateVisibility::Visible);
 	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
 
 	// Log to other players that player has joined the game as <team>. thanks legacy wiki :)
@@ -81,7 +83,7 @@ void APaperPlayerController::StartGame()
 		TeamString = EnumPtr->GetNameByValue(static_cast<int64>(GetPaperPlayerState()->Team)).ToString();
 	TeamString.RemoveFromStart("ETeam::");
 	TeamString.ToUpperInline();
-	GameState->Multicast_Message(FText::FromString(GetPaperPlayerState()->Name + " joined the game as " + TeamString + "."));
+	Server_SendMessage(FText::FromString("joined the game as " + TeamString + "."));
 }
 
 void APaperPlayerController::SetupInputComponent()
@@ -359,7 +361,6 @@ void APaperPlayerController::HideScoreboard()
 
 void APaperPlayerController::ResizeHPBarShowRadiusStart()
 {
-	GLog->Log(L"Start");
 	HUD->bShowRadiusThresholdCircle = true;
 }
 

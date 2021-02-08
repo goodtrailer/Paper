@@ -35,9 +35,12 @@ void APaperGameState::Defeat(ETeam DefeatedTeam)
 	if (static_cast<uint8>(DefeatedTeam) < TeamCount)
 	{
 		// destroys the team's units
-		for (auto& Unit : UnitBoard)
-			if (Unit && Unit->Team == DefeatedTeam)
-				Unit->Destroy();
+		for (int i = 0; i < UnitBoard.Num(); i++)
+		{
+			if (UnitBoard[i] && UnitBoard[i]->Team == DefeatedTeam)
+				UnitBoard[i]->Destroy();
+			UnitBoard[i] = nullptr;
+		}
 
 		// destroys the team's spawns
 		for (auto& Spawn : BoardSpawns[static_cast<uint8>(DefeatedTeam)].Spawns)
@@ -107,13 +110,31 @@ void APaperGameState::Multicast_RemovePlayerForLocalLobbyUI_Implementation(const
 	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
 		if (ULobbyUserInterface* UI = LocalPC->LobbyInterface)
 			UI->RemoveLobbySlot(Name);
-		else
-			GLog->Log(TEXT("Remove player failed!"));
 }
 
 void APaperGameState::Multicast_PlaySound_Implementation(USoundBase* Sound)
 {
 	UGameplayStatics::PlaySound2D(GetWorld(), Sound);
+}
+
+void APaperGameState::Multicast_UpdateBoardPreview_Implementation(const TArray<FColor>& CroppedBoardLayout)
+{
+	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
+	{
+		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
+			if (UBoardPreviewUserInterface* BoardPreviewUI = LobbyUI->BoardPreviewInterface)
+			{
+				UTexture2D* BoardPreviewTexture = UTexture2D::CreateTransient(BoardWidth, BoardHeight);
+				FColor* BoardPreviewMip = reinterpret_cast<FColor*>(BoardPreviewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
+				FMemory::Memcpy(BoardPreviewMip, CroppedBoardLayout.GetData(), BoardWidth * BoardHeight * sizeof(FColor));
+				BoardPreviewTexture->PlatformData->Mips[0].BulkData.Unlock();
+				BoardPreviewMip = nullptr;
+				BoardPreviewTexture->Filter = TF_Nearest;
+				BoardPreviewTexture->UpdateResource();
+				BoardPreviewUI->UpdateBoardPreview(BoardPreviewTexture);
+			}
+		LocalPC->ResetCameraPosition();
+	}
 }
 
 float APaperGameState::GetTimer(ETeam Team) const
@@ -196,16 +217,18 @@ void APaperGameState::EndTurn()
 			else
 				CurrentTurnCastle = Unit;
 		}
-
-	auto& TimerManager = GetWorldTimerManager();
-	TimerManager.SetTimer(TurnTimerHandle, [&](void) {
-		if (CurrentTurnCastle && bGameStarted)
-			CurrentTurnCastle->Die();				// a very VERY janky way of defeating a player. this func BP overriden.
-	}, GetRemainingDelay() + TeamTimers[Turn % TeamCount], false);
+	
+	if (Turn / TeamCount > 0)
+	{
+		auto& TimerManager = GetWorldTimerManager();
+		TimerManager.SetTimer(TurnTimerHandle, [&](void) {
+			if (CurrentTurnCastle && bGameStarted)
+				CurrentTurnCastle->Die();				// a very VERY janky way of defeating a player. this func BP overriden.
+		}, GetRemainingDelay() + TeamTimers[Turn % TeamCount], false);
+	}
 
 	auto* GlobalStatics = Cast<UGlobalStatics>(GEngine->GameSingleton);
 	Multicast_PlaySound(GlobalStatics->EndTurnSound);
-	OnRep_Turn();
 }
 
 void APaperGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -241,33 +264,6 @@ APaperGameState::APaperGameState()
 AUnit* APaperGameState::GetBoardSpawn(ETeam team, int index) const
 {
 	return BoardSpawns[static_cast<int>(team)].Spawns[index];
-}
-
-void APaperGameState::OnRep_Turn()
-{
-	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-		if (LocalPC->bInGame)
-			LocalPC->UserInterface->UpdateTurn(Turn % TeamCount == static_cast<uint8>(LocalPC->GetPaperPlayerState()->Team));
-}
-
-void APaperGameState::Multicast_UpdateBoardPreview_Implementation(const TArray<FColor>& CroppedBoardLayout)
-{
-	if (APaperPlayerController* LocalPC = Cast<APaperPlayerController>(GEngine->GetFirstLocalPlayerController(GetWorld())))
-	{
-		if (ULobbyUserInterface* LobbyUI = LocalPC->LobbyInterface)
-			if (UBoardPreviewUserInterface* BoardPreviewUI = LobbyUI->BoardPreviewInterface)
-			{
-				UTexture2D* BoardPreviewTexture = UTexture2D::CreateTransient(BoardWidth, BoardHeight);
-				FColor* BoardPreviewMip = reinterpret_cast<FColor*>(BoardPreviewTexture->PlatformData->Mips[0].BulkData.Lock(LOCK_READ_WRITE));
-				FMemory::Memcpy(BoardPreviewMip, CroppedBoardLayout.GetData(), BoardWidth * BoardHeight * sizeof(FColor));
-				BoardPreviewTexture->PlatformData->Mips[0].BulkData.Unlock();
-				BoardPreviewMip = nullptr;
-				BoardPreviewTexture->Filter = TF_Nearest;
-				BoardPreviewTexture->UpdateResource();
-				BoardPreviewUI->UpdateBoardPreview(BoardPreviewTexture);
-			}
-		LocalPC->ResetCameraPosition();
-	}
 }
 
 void APaperGameState::OnRep_InitialTimer()

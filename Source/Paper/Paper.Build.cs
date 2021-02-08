@@ -12,6 +12,8 @@ public class Paper : ModuleRules
 
 		PublicIncludePaths.Add(ModuleDirectory);
 
+		PublicDefinitions.Add("ALLOW_CONSOLE_IN_SHIPPING=1");
+
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core",
 			"CoreUObject",

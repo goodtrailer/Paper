@@ -54,8 +54,9 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	class UUserWidget* ScoreboardInterface;
 	class APaperHUD* HUD;
-	UPROPERTY(Replicated)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bInGame;				// can't be put in PaperPlayerState because it needs to be used immediately. Also, no other player needs to know this value, only the server does.
+	class ACameraPawn* CameraPawn;
 
 protected:
 	void BeginPlay() override;
@@ -89,7 +90,6 @@ protected:
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&) const override;
 	void FocusChatbox();
 
-	class ACameraPawn* CameraPawn;
 	UPROPERTY(BlueprintReadWrite)
 	class AUnit* SelectedUnit;
 	class AUnit* HoveredUnit;
