@@ -71,7 +71,7 @@ void APaperPlayerController::StartGame()
 
 	// switch ui and update all the widgets
 	LobbyInterface->SetVisibility(ESlateVisibility::Hidden);
-	UserInterface->SetVisibility(ESlateVisibility::Visible);
+	UserInterface->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	UserInterface->UpdateTeam(GetPaperPlayerState()->Team);
 
 	// Log to other players that player has joined the game as <team>. thanks legacy wiki :)
