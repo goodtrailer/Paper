@@ -154,7 +154,7 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 				m = 12t + 96
 				d = min(10u, 15)
 		3. Local Multiplayer
-			- .
+			+ .
 			+ End turn/die sounds
 			+ Remove debug values
 			+ Fix lobby board uploading
