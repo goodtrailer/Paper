@@ -160,4 +160,6 @@ Note: this document is more of a todo-list than a changelog, because my commits 
 			+ Fix lobby board uploading
 			+ Main menu background change button
 			+ Nicer main menu buttons
+			1. Hotfix
+				+ Removed Archer debug value (0 HP)
 			
