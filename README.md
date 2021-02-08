@@ -9,7 +9,7 @@ UE4 videogame based on paper board games I used to play as a kid. It is multipla
 This project has nothing to do with Paper2D. It's just called paper because of the paper games mentioned earlier.
 
 # Downloads
-Grab the latest build: <a href="https://github.com/goodtrailer/Paper/releases/tag/v1.0.2">https://github.com/goodtrailer/Paper/releases/tag/v1.0.2</a>
+Grab the latest build: <a href="https://github.com/goodtrailer/Paper/releases/latest">https://github.com/goodtrailer/Paper/releases/latest</a>
 
 For a full list of releases: <a href="https://github.com/goodtrailer/Paper/releases">https://github.com/goodtrailer/Paper/releases</a>
 
